@@ -1,4 +1,4 @@
-import Preloader from '../components/loader/Preloader';
+import Preloader from '../../components/loader/Preloader';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
     return (

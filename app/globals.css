@@ -1,8 +1,28 @@
 @import "tailwindcss";
 
 :root {
+  --bg: #0a0e14;
+  --surface: #131a24;
+  --text: #e7e9ec;
+  --muted: #e8eaec;
+  --signal: #c36dfc;
+  --cta: #ff6b4a;
+  --rail-width: 72px;
   --brand-purple: #4e1f6e;
   --preloader-glow: rgba(110, 0, 255, 0.9);
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+.font-display {
+  font-family: var(--font-space-grotesk), sans-serif;
+}
+
+.font-mono {
+  font-family: var(--font-jetbrains-mono), monospace;
 }
 
 .stroke-text {
@@ -17,4 +37,20 @@
 
 .glow-text {
   filter: drop-shadow(0 0 10px var(--preloader-glow));
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
 }

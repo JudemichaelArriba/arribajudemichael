@@ -1,0 +1,16 @@
+.hero {
+    min-height: 100vh;
+}
+
+.roleLine {
+    color: var(--signal);
+}
+
+.description {
+    color: var(--muted);
+}
+
+.cta {
+    background: #ffffff;
+    color: #000000;
+}
