@@ -2,14 +2,19 @@
 
 :root {
   --brand-purple: #4e1f6e;
+  --preloader-glow: rgba(110, 0, 255, 0.9);
 }
 
 .stroke-text {
-  fill: transparent;
-  stroke: rgba(255, 255, 255, 0.4);
-  stroke-width: 1.5px;
+  fill: none;
+  stroke: #ffffff;
+  stroke-width: 1.2px;
 }
 
 .fill-text {
   fill: #ffffff;
+}
+
+.glow-text {
+  filter: drop-shadow(0 0 10px var(--preloader-glow));
 }
