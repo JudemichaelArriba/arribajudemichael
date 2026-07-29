@@ -1,5 +1,7 @@
 .hero {
-    min-height: 100vh;
+    min-height: 100svh;
+    padding-top: calc(var(--nav-height, 80px) + env(safe-area-inset-top) + clamp(1.5rem, 4vh, 3rem));
+    padding-bottom: clamp(3rem, 8vh, 6rem);
 }
 
 .roleLine {

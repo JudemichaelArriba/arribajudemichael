@@ -29,10 +29,7 @@ const Magnet = ({
     const magnetRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        if (disabled) {
-            setPosition({ x: 0, y: 0 });
-            return;
-        }
+        if (disabled) return;
         const handleMouseMove = (e: MouseEvent) => {
             if (!magnetRef.current) return;
             const { left, top, width, height } = magnetRef.current.getBoundingClientRect();
@@ -56,7 +53,8 @@ const Magnet = ({
         };
     }, [padding, disabled, magnetStrength]);
 
-    const transitionStyle = isActive ? activeTransition : inactiveTransition;
+    const displayPosition = disabled ? { x: 0, y: 0 } : position;
+    const transitionStyle = !disabled && isActive ? activeTransition : inactiveTransition;
 
     return (
         <div
@@ -68,7 +66,7 @@ const Magnet = ({
             <div
                 className={innerClassName}
                 style={{
-                    transform: `translate3d(${position.x}px, ${position.y}px, 0)`,
+                    transform: `translate3d(${displayPosition.x}px, ${displayPosition.y}px, 0)`,
                     transition: transitionStyle,
                     willChange: 'transform',
                 }}

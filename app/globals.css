@@ -7,9 +7,14 @@
   --muted: #e8eaec;
   --signal: #c36dfc;
   --cta: #ff6b4a;
+  --nav-height: 80px;
   --rail-width: 72px;
   --brand-purple: #4e1f6e;
   --preloader-glow: rgba(110, 0, 255, 0.9);
+}
+
+html {
+  scroll-padding-top: calc(var(--nav-height, 80px) + env(safe-area-inset-top) + 2rem);
 }
 
 body {

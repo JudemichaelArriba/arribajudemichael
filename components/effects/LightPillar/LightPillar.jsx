@@ -27,15 +27,11 @@ const LightPillar = ({
     const mouseRef = useRef(new THREE.Vector2(0, 0));
     const timeRef = useRef(0);
     const rotationSpeedRef = useRef(rotationSpeed);
-    const [webGLSupported, setWebGLSupported] = useState(true);
-
-    useEffect(() => {
+    const [webGLSupported, setWebGLSupported] = useState(() => {
+        if (typeof document === 'undefined') return true;
         const canvas = document.createElement('canvas');
-        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-        if (!gl) {
-            setWebGLSupported(false);
-        }
-    }, []);
+        return Boolean(canvas.getContext('webgl') || canvas.getContext('experimental-webgl'));
+    });
 
     useEffect(() => {
         if (!containerRef.current || !webGLSupported) return;
@@ -80,9 +76,9 @@ const LightPillar = ({
                 stencil: false,
                 depth: false
             });
-        } catch (error) {
-            setWebGLSupported(false);
-            return;
+        } catch {
+            const fallbackTimer = window.setTimeout(() => setWebGLSupported(false), 0);
+            return () => window.clearTimeout(fallbackTimer);
         }
 
         renderer.setSize(width, height);
@@ -305,7 +301,7 @@ const LightPillar = ({
             geometryRef.current = null;
             rafRef.current = null;
         };
-    }, [webGLSupported, quality]);
+    }, [webGLSupported, quality, topColor, bottomColor, intensity, interactive, glowAmount, pillarWidth, pillarHeight, noiseIntensity, pillarRotation]);
 
     useEffect(() => {
         rotationSpeedRef.current = rotationSpeed;

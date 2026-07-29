@@ -15,9 +15,9 @@ export default function Home() {
     return (
         <section
             id="home"
-            className={`${styles.hero} relative flex flex-col items-center justify-center overflow-hidden px-8 text-center md:px-16`}
+            className={`${styles.hero} isolate relative flex flex-col items-center justify-center overflow-hidden px-8 text-center md:px-16`}
         >
-            <div className="absolute inset-0 -z-10">
+            <div className="pointer-events-none absolute inset-0 -z-10" aria-hidden="true">
                 <LightPillar
                     topColor="#5227FF"
                     bottomColor="#FF9FFC"
