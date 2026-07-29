@@ -1,6 +1,17 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, type ReactNode, type HTMLAttributes } from 'react';
+
+export interface MagnetProps extends HTMLAttributes<HTMLDivElement> {
+    children?: ReactNode;
+    padding?: number;
+    disabled?: boolean;
+    magnetStrength?: number;
+    activeTransition?: string;
+    inactiveTransition?: string;
+    wrapperClassName?: string;
+    innerClassName?: string;
+}
 
 const Magnet = ({
     children,
@@ -12,17 +23,17 @@ const Magnet = ({
     wrapperClassName = '',
     innerClassName = '',
     ...props
-}) => {
+}: MagnetProps) => {
     const [isActive, setIsActive] = useState(false);
     const [position, setPosition] = useState({ x: 0, y: 0 });
-    const magnetRef = useRef(null);
+    const magnetRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (disabled) {
             setPosition({ x: 0, y: 0 });
             return;
         }
-        const handleMouseMove = e => {
+        const handleMouseMove = (e: MouseEvent) => {
             if (!magnetRef.current) return;
             const { left, top, width, height } = magnetRef.current.getBoundingClientRect();
             const centerX = left + width / 2;
@@ -59,7 +70,7 @@ const Magnet = ({
                 style={{
                     transform: `translate3d(${position.x}px, ${position.y}px, 0)`,
                     transition: transitionStyle,
-                    willChange: 'transform'
+                    willChange: 'transform',
                 }}
             >
                 {children}

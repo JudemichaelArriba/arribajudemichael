@@ -14,6 +14,9 @@ interface ButtonProps {
     size?: Size;
     radius?: number;
     magnetic?: boolean;
+    magnetStrength?: number;
+    magnetPadding?: number;
+    glowProximity?: number;
     href?: string;
     onClick?: MouseEventHandler<HTMLButtonElement>;
     type?: 'button' | 'submit';
@@ -37,6 +40,9 @@ export default function Button({
     size = 'md',
     radius = 12,
     magnetic = false,
+    magnetStrength = 25,
+    magnetPadding = 20,
+    glowProximity = 80,
     href,
     onClick,
     type = 'button',
@@ -65,7 +71,7 @@ export default function Button({
                 thickness={1.2}
                 speed={0.3}
                 followMouse
-                proximity={220}
+                proximity={glowProximity}
                 onClick={handleClick}
                 type={type}
                 className={className}
@@ -84,7 +90,7 @@ export default function Button({
         );
 
     return magnetic ? (
-        <Magnet padding={60} magnetStrength={6} wrapperClassName="inline-block">
+        <Magnet padding={magnetPadding} magnetStrength={magnetStrength} wrapperClassName="inline-block">
             {content}
         </Magnet>
     ) : (

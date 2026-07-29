@@ -49,13 +49,13 @@ export default function Home() {
                     href="/cv.pdf"
                     variant="specular"
                     size="lg"
-                    radius={16}
+                    radius={999}
                     magnetic
-
+                    magnetPadding={15}
+                    glowProximity={60}
                 >
                     Download CV
                 </Button>
-
             </div>
         </section>
     );
