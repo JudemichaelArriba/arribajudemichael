@@ -79,3 +79,10 @@
     position: relative;
     z-index: 2;
 }
+
+.specular-button__label {
+    position: relative;
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+}

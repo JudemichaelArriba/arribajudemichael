@@ -54,3 +54,7 @@ body {
     transition: none !important;
   }
 }
+
+.font-name {
+  font-family: var(--font-name), sans-serif;
+}

@@ -3,6 +3,7 @@
 import dynamic from 'next/dynamic';
 import styles from './Home.module.css';
 import Button from '@/components/ui/Button';
+import { Download } from 'lucide-react';
 
 const LightPillar = dynamic(() => import('@/components/effects/LightPillar/LightPillar'), {
     ssr: false,
@@ -32,7 +33,7 @@ export default function Home() {
                 />
             </div>
 
-            <h1 className="font-display text-5xl font-bold leading-[1.05] tracking-tight md:text-7xl">
+            <h1 className="font-name text-5xl font-extrabold leading-[1.05] tracking-tight md:text-7xl">
                 Jude Michael Arriba
             </h1>
 
@@ -54,7 +55,11 @@ export default function Home() {
                     magnetPadding={15}
                     glowProximity={60}
                 >
-                    Download CV
+
+                    <span className="inline-flex items-center gap-2">
+                        Download CV
+                        <Download size={18} strokeWidth={2.5} />
+                    </span>
                 </Button>
             </div>
         </section>

@@ -11,7 +11,7 @@ interface PreloaderLogoProps {
 
 export function PreloaderLogo({ outlineRef, colorRef, fontFamily }: PreloaderLogoProps) {
     return (
-        <svg viewBox="0 0 480 110" className="w-[240px] md:w-[320px]" style={{ overflow: 'visible' }}>
+        <svg viewBox="0 0 520 130" className="w-[280px] md:w-[380px]" style={{ overflow: 'visible' }}>
             <defs>
                 <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
                     <feGaussianBlur stdDeviation="6" result="blur" />
@@ -28,7 +28,7 @@ export function PreloaderLogo({ outlineRef, colorRef, fontFamily }: PreloaderLog
                 y="50%"
                 textAnchor="middle"
                 dominantBaseline="middle"
-                fontSize="72"
+                fontSize="79"
                 fontWeight="700"
                 letterSpacing="2"
                 strokeDasharray={PRELOADER_DASH_LENGTH}
@@ -45,7 +45,7 @@ export function PreloaderLogo({ outlineRef, colorRef, fontFamily }: PreloaderLog
                 y="50%"
                 textAnchor="middle"
                 dominantBaseline="middle"
-                fontSize="72"
+                fontSize="79"
                 fontWeight="700"
                 letterSpacing="2"
                 filter="url(#glow)"
