@@ -1,18 +1,41 @@
 .section {
     position: relative;
-    min-height: min(90svh, 760px);
+    min-height: min(96svh, 860px);
     overflow: hidden;
     background:
-        radial-gradient(circle at 50% 8%, rgba(82, 39, 255, 0.18), transparent 34rem),
-        radial-gradient(circle at 50% 72%, rgba(195, 109, 252, 0.1), transparent 30rem),
+        linear-gradient(180deg, rgba(10, 14, 20, 0) 0%, var(--bg) 18%, var(--bg) 100%),
+        radial-gradient(circle at 50% 8%, rgba(82, 39, 255, 0.24), transparent 38rem),
+        radial-gradient(circle at 18% 72%, rgba(255, 159, 252, 0.08), transparent 28rem),
+        radial-gradient(circle at 82% 68%, rgba(195, 109, 252, 0.12), transparent 30rem),
         var(--bg);
     color: var(--signal);
+}
+
+.section::before {
+    content: '';
+    position: absolute;
+    inset: -18vh 0 auto;
+    height: 34vh;
+    pointer-events: none;
+    background: linear-gradient(180deg, rgba(82, 39, 255, 0), rgba(10, 14, 20, 0.86) 72%, var(--bg));
+}
+
+.section::after {
+    content: '';
+    position: absolute;
+    inset: auto 8% 8%;
+    height: 42%;
+    pointer-events: none;
+    border-radius: 999px;
+    background: rgba(82, 39, 255, 0.12);
+    filter: blur(90px);
 }
 
 .inner {
     position: relative;
     z-index: 1;
-    width: min(100%, 1180px);
+    width: min(100%, 1280px);
+    transform: translateY(clamp(-3rem, -5vh, -1rem));
     text-align: center;
 }
 
@@ -29,9 +52,9 @@
 
 .statement {
     margin: 0 auto;
-    max-width: 11ch;
+    width: min(100%, 1180px);
     color: var(--signal);
-    font-size: clamp(1.85rem, 5.5vw, 5rem);
+    font-size: clamp(2.65rem, 8.4vw, 8.6rem);
     font-weight: 900;
     letter-spacing: 0;
     text-align: center;
@@ -40,11 +63,15 @@
 
 .statementText {
     text-align: center;
-    text-shadow: 0 0 28px rgba(195, 109, 252, 0.28);
+    text-shadow: 0 0 30px rgba(195, 109, 252, 0.3);
 }
 
-@media (min-width: 768px) {
+@media (max-width: 640px) {
+    .section {
+        min-height: 88svh;
+    }
+
     .statement {
-        max-width: 12ch;
+        font-size: clamp(2.35rem, 13vw, 4.6rem);
     }
 }

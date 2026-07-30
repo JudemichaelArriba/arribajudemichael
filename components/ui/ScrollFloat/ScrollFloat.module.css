@@ -5,12 +5,14 @@
 
 .scrollFloatText {
     display: inline-block;
+    max-width: 100%;
     line-height: 1.08;
     text-align: center;
 }
 
 .char {
     display: inline-block;
+    transform: translateZ(0);
 }
 
 .animating .char {
@@ -23,4 +25,8 @@
         transform: none;
         will-change: auto;
     }
+}
+
+.word {
+    display: inline-block;
 }

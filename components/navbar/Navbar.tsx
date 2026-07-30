@@ -1,11 +1,13 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { Menu, X } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useActiveSection } from '@/lib/useActiveSection';
 import RollingText from '@/components/ui/RollingText';
+import LineSidebar from '@/components/ui/LineSidebar/LineSidebar';
+import type { LineSidebarItem } from '@/components/ui/LineSidebar/LineSidebar';
+import styles from './Navbar.module.css';
 
-const NAV_ITEMS = [
+const NAV_ITEMS: LineSidebarItem[] = [
     { id: 'home', label: 'Home' },
     { id: 'about', label: 'About' },
     { id: 'techstack', label: 'Tech Stack' },
@@ -15,20 +17,23 @@ const NAV_ITEMS = [
 ];
 
 const NAV_ITEM_IDS = NAV_ITEMS.map((item) => item.id);
+const TOP_THRESHOLD = 24;
+const SCROLL_DELTA = 6;
+
+type NavMode = 'top' | 'hidden' | 'compact';
 
 export default function Navbar() {
-    const [mobileOpen, setMobileOpen] = useState(false);
-    const [scrolled, setScrolled] = useState(false);
+    const [menuOpen, setMenuOpen] = useState(false);
+    const [mode, setMode] = useState<NavMode>('top');
     const navRef = useRef<HTMLElement>(null);
+    const lastScrollYRef = useRef(0);
+    const tickingRef = useRef(false);
     const active = useActiveSection(NAV_ITEM_IDS);
 
-    useEffect(() => {
-        const handleScroll = () => {
-            setScrolled(window.scrollY > 20);
-        };
-        window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, []);
+    const activeIndex = useMemo(() => {
+        const index = NAV_ITEMS.findIndex((item) => item.id === active);
+        return index >= 0 ? index : 0;
+    }, [active]);
 
     useEffect(() => {
         const el = navRef.current;
@@ -46,90 +51,160 @@ export default function Navbar() {
         const observer = new ResizeObserver(setVar);
         observer.observe(el);
         return () => observer.disconnect();
+    }, [mode, menuOpen]);
+
+    useEffect(() => {
+        const updateMode = () => {
+            const currentY = window.scrollY;
+            const previousY = lastScrollYRef.current;
+            const diff = currentY - previousY;
+
+            if (currentY <= TOP_THRESHOLD) {
+                setMode('top');
+                setMenuOpen(false);
+            } else if (diff > SCROLL_DELTA) {
+                setMode('hidden');
+                setMenuOpen(false);
+            } else if (diff < -SCROLL_DELTA) {
+                setMode('compact');
+            }
+
+            lastScrollYRef.current = Math.max(currentY, 0);
+            tickingRef.current = false;
+        };
+
+        const handleScroll = () => {
+            if (tickingRef.current) return;
+            tickingRef.current = true;
+            window.requestAnimationFrame(updateMode);
+        };
+
+        lastScrollYRef.current = window.scrollY;
+        updateMode();
+        window.addEventListener('scroll', handleScroll, { passive: true });
+
+        return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
-    const scrollTo = (id: string) => {
+    useEffect(() => {
+        if (!menuOpen) return;
+
+        const previousOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+
+        return () => {
+            document.body.style.overflow = previousOverflow;
+        };
+    }, [menuOpen]);
+
+    const scrollTo = useCallback((id: string) => {
         document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
-        setMobileOpen(false);
-    };
+        setMenuOpen(false);
+    }, []);
+
+    const handleSidebarClick = useCallback(
+        (_index: number, item: LineSidebarItem) => {
+            scrollTo(item.id);
+        },
+        [scrollTo]
+    );
+
+    const showPill = mode === 'top' && !menuOpen;
+    const showCompact = mode === 'compact' || menuOpen;
 
     return (
-        <header className="pointer-events-none fixed inset-x-0 top-0 z-50 isolate px-4 pt-[calc(env(safe-area-inset-top)+1rem)] md:px-6 md:pt-[calc(env(safe-area-inset-top)+1.5rem)]">
-            <nav
-                ref={navRef}
-                className={`pointer-events-auto mx-auto flex max-w-5xl items-center justify-between rounded-full px-6 py-3 transition-all duration-500 ${
-                    scrolled
-                        ? 'border border-white/10 bg-[var(--bg)]/70 shadow-lg shadow-black/20 backdrop-blur-xl'
-                        : 'border border-white/10 bg-white/[0.03] backdrop-blur-md'
-                }`}
-            >
-                <button
-                    onClick={() => scrollTo('home')}
-                    className="group relative font-name text-2xl font-extrabold tracking-tight text-[var(--text)] transition-transform duration-300 hover:scale-105"
+        <>
+            <header className={styles.header}>
+                <nav
+                    ref={navRef}
+                    className={`${styles.pillNav} ${showPill ? styles.visible : styles.hidden}`}
+                    aria-label="Primary navigation"
+                    aria-hidden={!showPill}
                 >
-                    <span className="relative z-10">JM</span>
-                    <span className="absolute -inset-2 rounded-full bg-[var(--signal)]/20 blur-md opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                </button>
+                    <button onClick={() => scrollTo('home')} className={styles.logoButton} type="button">
+                        <span className={styles.logoText}>JM</span>
+                        <span className={styles.logoGlow} aria-hidden="true" />
+                    </button>
 
-                {/* Desktop Nav Items */}
-                <ul className="hidden items-center gap-1 lg:gap-2 md:flex">
-                    {NAV_ITEMS.map((item) => {
-                        const isActive = active === item.id;
-                        return (
-                            <li key={item.id}>
-                                <button
-                                    onClick={() => scrollTo(item.id)}
-                                    className={`px-3 py-2 font-mono text-sm uppercase tracking-wider transition-colors duration-300 ${
-                                        isActive
-                                            ? 'font-bold text-[var(--signal)]'
-                                            : 'text-[var(--muted)] hover:text-[var(--text)]'
-                                    }`}
-                                >
-                                    <RollingText>{item.label}</RollingText>
-                                </button>
-                            </li>
-                        );
-                    })}
-                </ul>
-
-                <button
-                    onClick={() => setMobileOpen((prev) => !prev)}
-                    className="relative rounded-full p-2 text-[var(--text)] transition-colors hover:bg-white/10 md:hidden"
-                    aria-label="Toggle menu"
-                    aria-expanded={mobileOpen}
-                    aria-controls="mobile-navigation"
-                >
-                    {mobileOpen ? <X size={22} /> : <Menu size={22} />}
-                </button>
-            </nav>
-
-            {/* Mobile Nav Menu */}
-            {mobileOpen && (
-                <div
-                    id="mobile-navigation"
-                    className="pointer-events-auto mx-auto mt-3 max-w-5xl overflow-hidden rounded-2xl border border-white/10 bg-[var(--bg)]/90 p-4 shadow-2xl backdrop-blur-2xl md:hidden"
-                >
-                    <ul className="flex flex-col gap-1">
+                    <ul className={styles.desktopList}>
                         {NAV_ITEMS.map((item) => {
                             const isActive = active === item.id;
                             return (
                                 <li key={item.id}>
                                     <button
                                         onClick={() => scrollTo(item.id)}
-                                        className={`block w-full rounded-xl px-4 py-3 text-left font-mono text-base uppercase tracking-wider transition-colors duration-200 ${
-                                            isActive
-                                                ? 'font-bold text-[var(--signal)]'
-                                                : 'text-[var(--muted)] hover:text-[var(--text)]'
-                                        }`}
+                                        className={`${styles.navLink} ${isActive ? styles.activeLink : ''}`}
+                                        type="button"
                                     >
-                                        {item.label}
+                                        <RollingText>{item.label}</RollingText>
                                     </button>
                                 </li>
                             );
                         })}
                     </ul>
+
+                    <button
+                        onClick={() => setMenuOpen((prev) => !prev)}
+                        className={`${styles.mobileMenuButton} ${menuOpen ? styles.menuButtonOpen : ''}`}
+                        type="button"
+                        aria-label={menuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+                        aria-expanded={menuOpen}
+                        aria-controls="portfolio-navigation-overlay"
+                    >
+                        <span aria-hidden="true" />
+                        <span aria-hidden="true" />
+                        <span aria-hidden="true" />
+                    </button>
+                </nav>
+
+                <nav
+                    className={`${styles.compactNav} ${showCompact ? styles.visible : styles.hidden}`}
+                    aria-label="Compact navigation"
+                    aria-hidden={!showCompact}
+                >
+                    <button onClick={() => scrollTo('home')} className={styles.compactLogo} type="button">
+                        <span>J</span>
+                        <span className={styles.logoAccent}>M</span>
+                    </button>
+
+                    <button
+                        onClick={() => setMenuOpen((prev) => !prev)}
+                        className={`${styles.compactMenuButton} ${menuOpen ? styles.menuButtonOpen : ''}`}
+                        type="button"
+                        aria-label={menuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+                        aria-expanded={menuOpen}
+                        aria-controls="portfolio-navigation-overlay"
+                    >
+                        <span aria-hidden="true" />
+                        <span aria-hidden="true" />
+                        <span aria-hidden="true" />
+                    </button>
+                </nav>
+            </header>
+
+            <div
+                id="portfolio-navigation-overlay"
+                className={`${styles.overlay} ${menuOpen ? styles.overlayOpen : ''}`}
+                aria-hidden={!menuOpen}
+            >
+                <div className={styles.overlayScrim} onClick={() => setMenuOpen(false)} aria-hidden="true" />
+                <div className={styles.overlayPanel}>
+                    <LineSidebar
+                        items={NAV_ITEMS}
+                        accentColor="#c36dfc"
+                        textColor="#e7e9ec"
+                        markerColor="rgba(231, 233, 236, 0.34)"
+                        defaultActive={activeIndex}
+                        proximityRadius={120}
+                        maxShift={34}
+                        markerLength={76}
+                        itemGap={24}
+                        fontSize={1.28}
+                        smoothing={90}
+                        onItemClick={handleSidebarClick}
+                    />
                 </div>
-            )}
-        </header>
+            </div>
+        </>
     );
 }

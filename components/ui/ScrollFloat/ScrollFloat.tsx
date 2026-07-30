@@ -16,9 +16,12 @@ interface ScrollFloatProps {
     textClassName?: string;
     animationDuration?: number;
     ease?: string;
+    settleEase?: string;
     scrollStart?: string;
     scrollEnd?: string;
-    stagger?: number;
+    charStagger?: number;
+    wordStagger?: number;
+    playOnce?: boolean;
 }
 
 export default function ScrollFloat({
@@ -26,22 +29,21 @@ export default function ScrollFloat({
     scrollContainerRef,
     containerClassName = '',
     textClassName = '',
-    animationDuration = 0.72,
-    ease = 'back.out(1.35)',
-    scrollStart = 'top bottom-=10%',
-    scrollEnd = 'center center',
-    stagger = 0.012,
+    animationDuration = 0.5,
+    ease = 'power3.out',
+    settleEase = 'back.out(1.4)',
+    scrollStart = 'top bottom',
+    scrollEnd = 'bottom top',
+    charStagger = 0.05,
+    wordStagger = 0.09,
+    playOnce = true,
 }: ScrollFloatProps) {
     const containerRef = useRef<HTMLHeadingElement>(null);
+    const hasPlayedRef = useRef(false);
 
-    const splitText = useMemo(() => {
+    const words = useMemo(() => {
         const text = typeof children === 'string' ? children : '';
-
-        return Array.from(text).map((char, index) => (
-            <span className={styles.char} key={`${char}-${index}`}>
-                {char === ' ' ? '\u00A0' : char}
-            </span>
-        ));
+        return text.split(' ').filter(Boolean);
     }, [children]);
 
     useGSAP(
@@ -52,50 +54,115 @@ export default function ScrollFloat({
             if (!el || prefersReducedMotion) return;
 
             const scroller = scrollContainerRef?.current ?? window;
-            const charElements = gsap.utils.toArray<HTMLElement>(`.${styles.char}`, el);
+            const wordElements = gsap.utils.toArray<HTMLElement>(`.${styles.word}`, el);
+            const allChars = gsap.utils.toArray<HTMLElement>(`.${styles.char}`, el);
 
-            gsap.fromTo(
-                charElements,
-                {
-                    autoAlpha: 0,
-                    yPercent: 56,
-                    scaleY: 1.18,
-                    scaleX: 0.96,
-                    transformOrigin: '50% 0%',
-                },
-                {
-                    autoAlpha: 1,
-                    yPercent: 0,
-                    scaleY: 1,
-                    scaleX: 1,
-                    duration: animationDuration,
-                    ease,
-                    stagger,
-                    force3D: true,
-                    overwrite: 'auto',
-                    scrollTrigger: {
-                        trigger: el,
-                        scroller,
-                        start: scrollStart,
-                        end: scrollEnd,
-                        scrub: 0.35,
-                        onEnter: () => el.classList.add(styles.animating),
-                        onEnterBack: () => el.classList.add(styles.animating),
-                        onLeave: () => el.classList.remove(styles.animating),
-                        onLeaveBack: () => el.classList.remove(styles.animating),
+            gsap.set(allChars, {
+                autoAlpha: 0,
+                yPercent: 78,
+                scaleY: 0.92,
+                scaleX: 0.98,
+                transformOrigin: '50% 100%',
+            });
+
+            const riseDuration = animationDuration * 0.48;
+            const settleDuration = animationDuration * 0.52;
+            const settleOverlap = riseDuration * 0.4;
+
+            const playBounce = (trigger?: ScrollTrigger) => {
+                if (playOnce && hasPlayedRef.current) return;
+
+                hasPlayedRef.current = true;
+                el.classList.add(styles.animating);
+
+                const tl = gsap.timeline({
+                    defaults: { force3D: true, overwrite: 'auto' },
+                    onComplete: () => {
+                        el.classList.remove(styles.animating);
+                        if (playOnce) trigger?.kill(false);
                     },
-                }
-            );
+                });
+
+                wordElements.forEach((wordEl, wordIndex) => {
+                    const chars = gsap.utils.toArray<HTMLElement>(`.${styles.char}`, wordEl);
+                    const startTime = wordIndex * wordStagger;
+
+                    tl.to(
+                        chars,
+                        {
+                            autoAlpha: 1,
+                            yPercent: -20,
+                            scaleY: 1.06,
+                            scaleX: 0.98,
+                            duration: riseDuration,
+                            ease,
+                            stagger: { amount: charStagger, from: 'start' },
+                        },
+                        startTime
+                    ).to(
+                        chars,
+                        {
+                            yPercent: 0,
+                            scaleY: 1,
+                            scaleX: 1,
+                            duration: settleDuration,
+                            ease: settleEase,
+                            stagger: { amount: charStagger * 0.45, from: 'start' },
+                        },
+                        startTime + riseDuration - settleOverlap
+                    );
+                });
+            };
+
+            const trigger = ScrollTrigger.create({
+                trigger: el,
+                scroller,
+                start: scrollStart,
+                end: scrollEnd,
+                once: playOnce,
+                onEnter: (self) => playBounce(self),
+                onEnterBack: (self) => {
+                    if (!playOnce) playBounce(self);
+                },
+            });
+
+            return () => {
+                trigger.kill(false);
+                gsap.killTweensOf(allChars);
+                el.classList.remove(styles.animating);
+            };
         },
         {
             scope: containerRef,
-            dependencies: [animationDuration, ease, scrollContainerRef, scrollStart, scrollEnd, stagger],
+            dependencies: [
+                animationDuration,
+                ease,
+                settleEase,
+                playOnce,
+                scrollContainerRef,
+                scrollStart,
+                scrollEnd,
+                charStagger,
+                wordStagger,
+                words,
+            ],
         }
     );
 
     return (
         <h2 ref={containerRef} className={`${styles.scrollFloat} ${containerClassName}`}>
-            <span className={`${styles.scrollFloatText} ${textClassName}`}>{splitText}</span>
+            <span className={`${styles.scrollFloatText} ${textClassName}`}>
+                {words.map((word, wordIndex) => (
+                    <span className={styles.word} key={`word-${wordIndex}`}>
+                        {Array.from(word).map((char, charIndex) => (
+                            <span className={styles.char} key={`${char}-${wordIndex}-${charIndex}`}>
+                                {char}
+                            </span>
+                        ))}
+                        {wordIndex < words.length - 1 ? '\u00A0' : ''}
+                    </span>
+                ))}
+            </span>
         </h2>
     );
 }
