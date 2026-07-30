@@ -52,11 +52,13 @@
 
 .statement {
     margin: 0 auto;
-    width: min(100%, 1180px);
+    width: min(100%, 1080px);
     color: var(--signal);
-    font-size: clamp(2.65rem, 8.4vw, 8.6rem);
+    /* Reduced from clamp(2.65rem, 8.4vw, 8.6rem) */
+    font-size: clamp(1.75rem, 4.5vw, 4.25rem);
     font-weight: 900;
-    letter-spacing: 0;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
     text-align: center;
     text-wrap: balance;
 }
@@ -72,6 +74,7 @@
     }
 
     .statement {
-        font-size: clamp(2.35rem, 13vw, 4.6rem);
+        /* Reduced from clamp(2.35rem, 13vw, 4.6rem) */
+        font-size: clamp(1.6rem, 7.5vw, 2.5rem);
     }
 }

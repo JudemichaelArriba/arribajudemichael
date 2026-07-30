@@ -1,7 +1,6 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import styles from './Home.module.css';
 import Button from '@/components/ui/Button';
 import { Download } from 'lucide-react';
 
@@ -15,7 +14,7 @@ export default function Home() {
     return (
         <section
             id="home"
-            className={`${styles.hero} isolate relative flex flex-col items-center justify-center overflow-hidden px-8 text-center md:px-16`}
+            className="isolate relative flex min-h-svh flex-col items-center justify-center overflow-hidden px-8 pb-12 pt-[calc(var(--nav-height,80px)+env(safe-area-inset-top)+clamp(1.5rem,4vh,3rem))] text-center md:px-16 md:pb-24"
         >
             <div className="pointer-events-none absolute inset-0 -z-10" aria-hidden="true">
                 <LightPillar
@@ -37,11 +36,11 @@ export default function Home() {
                 Jude Michael Arriba
             </h1>
 
-            <p className={`${styles.roleLine} font-display mt-5 max-w-2xl text-sm font-bold uppercase tracking-[0.15em] md:text-base`}>
+            <p className="font-display mt-5 max-w-2xl text-sm font-bold uppercase tracking-[0.15em] text-[var(--signal)] md:text-base">
                 {ROLE_LINE}
             </p>
 
-        <p className="mx-auto mt-5 max-w-2xl text-base leading-relaxed md:text-lg">
+            <p className="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-[var(--muted)] md:text-lg">
                 I architect and deploy scalable backend APIs, high-availability data layers, and polished mobile experiences driven by an unyielding commitment to performance optimization, long-term maintainability, and clean architecture.
             </p>
 
@@ -55,7 +54,6 @@ export default function Home() {
                     magnetPadding={15}
                     glowProximity={60}
                 >
-
                     <span className="inline-flex items-center gap-2">
                         Download CV
                         <Download size={18} strokeWidth={2.5} />

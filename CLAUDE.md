@@ -22,12 +22,17 @@ app/
     layout.tsx       → Public layout
     page.tsx         → Home page
   layout.tsx         → Root layout (fonts, metadata)
-  globals.css        → Global styles
+  globals.css        → Global styles, scrollbar, Tailwind directives
 
 components/
   sections/          → Page sections (Home, WhatIDo, etc.)
-  ui/                → Reusable UI (Button, RollingText)
-  navbar/            → Navigation
+    home/            → Home.tsx (Tailwind CSS only)
+    WhatIDo/         → WhatIDo.tsx + WhatIDo.module.css (complex gradients)
+  ui/                → Reusable UI (Button, RollingText, ScrollFloat)
+    ScrollFloat/     → ScrollFloat.tsx (Tailwind CSS only)
+    PurpleScrollbar/ → PurpleScrollbar.tsx (styles in globals.css)
+    LineSidebar/     → LineSidebar.tsx + .module.css (CSS variables)
+  navbar/            → Navbar.tsx + .module.css (complex transitions)
   loader/            → Preloader components
   effects/           → Visual effects (Magnet, SpecularButton, LightPillar)
 
@@ -39,14 +44,38 @@ lib/
 
 #### Key Technical Decisions
 - **Server Components by default** - Only add `'use client'` when needed
-- **CSS Modules + Tailwind** - Component-specific styles use `.module.css`
+- **Tailwind CSS 4 FIRST** - Use utility classes for all standard styling
+- **Native CSS only when necessary** - Complex gradients, transitions, CSS variables, WebGL effects
+- **CSS Modules** (`.module.css`) for component-specific complex styles that Tailwind can't handle
 - **Dynamic imports for heavy components** - e.g., `LightPillar` uses `dynamic(() => import(), { ssr: false })`
 - **GSAP for animations** - Complex timelines and interactions
 - **Three.js/OGL for WebGL** - Advanced visual effects
 
 ### Component Patterns to Follow
 
-#### Client Component Template
+#### Client Component Template (Tailwind CSS - Preferred)
+```typescript
+'use client';
+
+import { useState } from 'react';
+
+interface ComponentProps {
+  title: string;
+  onAction?: () => void;
+}
+
+export default function Component({ title, onAction }: ComponentProps) {
+  const [state, setState] = useState<string>('');
+  
+  return (
+    <div className="relative flex items-center justify-center p-4">
+      {/* Use Tailwind utility classes for all standard styling */}
+    </div>
+  );
+}
+```
+
+#### Client Component Template (with Complex CSS - Use only when necessary)
 ```typescript
 'use client';
 
@@ -62,8 +91,8 @@ export default function Component({ title, onAction }: ComponentProps) {
   const [state, setState] = useState<string>('');
   
   return (
-    <div className={styles.container}>
-      {/* component content */}
+    <div className={styles.complexGradient}>
+      {/* Use CSS Module only for complex effects Tailwind can't handle */}
     </div>
   );
 }
@@ -103,7 +132,7 @@ export default function Page({ params }: PageProps) {
 #### Creating a UI Component
 1. Create in `components/ui/[ComponentName].tsx`
 2. Define TypeScript interface for props
-3. Use Tailwind utilities + CSS Module for custom styles
+3. **Use Tailwind utilities FIRST** - Only add CSS Module for complex styles Tailwind can't handle
 4. Export component with proper typing
 
 #### Implementing Animations
@@ -114,15 +143,21 @@ export default function Page({ params }: PageProps) {
 
 ### Styling Guidelines
 
-#### Tailwind CSS 4 Usage
-- Use utility classes for layout, spacing, colors
-- Responsive design: `md:`, `lg:` breakpoints
-- Custom classes in CSS Modules for complex styles
+#### Tailwind CSS 4 Usage (ALWAYS USE FIRST)
+- **Default choice for all styling** - Use utility classes for layout, spacing, colors, typography
+- **Responsive design** - Use `md:`, `lg:`, `xl:` breakpoints
+- **Arbitrary values** - Use `text-[#5227FF]`, `p-[clamp(1rem,2vw,3rem)]` for custom values
+- **Combine with CSS variables** - `text-[var(--signal)]`, `bg-[var(--surface)]`
 
-#### CSS Modules
-- Named exports: `import styles from './Component.module.css'`
-- BEM-like naming inside modules: `.container`, `.button`, `.button__icon`
-- Co-locate with component files
+#### CSS Modules (USE ONLY WHEN NECESSARY)
+- **When Tailwind can't handle it:**
+  - Complex multi-layer radial gradients
+  - Complex state transitions with multiple properties
+  - Dynamic CSS custom properties
+  - Backdrop filters with complex layering
+  - WebGL/Canvas container styles
+- **Naming:** `Component.module.css` co-located with component
+- **BEM-like naming inside modules:** `.container`, `.button`, `.button__icon`
 
 #### Brand Colors
 - Primary gradient: `#5227FF` → `#FF9FFC`
@@ -256,6 +291,20 @@ npm run dev         # Test in development
 
 ### AI Assistant Guidelines
 
+#### Converted Components (Now Using Tailwind CSS Only)
+The following components have been converted from CSS Modules to pure Tailwind CSS:
+- **Home.tsx** - Hero section (removed `Home.module.css`)
+- **ScrollFloat.tsx** - Scroll animation component (removed `ScrollFloat.module.css`)
+- **PurpleScrollbar.tsx** - Scrollbar styles moved to `app/globals.css`
+
+#### Components That MUST Keep Native CSS
+The following components require CSS Modules for complex effects:
+- **WhatIDo.module.css** - Multi-layer radial gradients with complex layering
+- **Navbar.module.css** - Complex state transitions, backdrop filters, overlay animations
+- **LineSidebar.module.css** - Dynamic CSS custom properties for proximity effects
+- **LightPillar.css** - WebGL container styles
+- **SpecularButton.css** - Canvas effect styling
+
 #### What to Do
 ✅ Read `AGENTS.md` for comprehensive information  
 ✅ Match existing code patterns and conventions  
@@ -275,6 +324,8 @@ npm run dev         # Test in development
 ❌ Don't break existing component APIs  
 ❌ Don't ignore TypeScript/ESLint errors  
 ❌ Don't use deprecated Next.js APIs  
+❌ **Don't create CSS Modules for simple styling - use Tailwind instead**  
+❌ **Don't convert complex CSS Modules (Navbar, LineSidebar, WhatIDo) to Tailwind**  
 
 ### Quick Reference
 
@@ -316,6 +367,6 @@ When reviewing AI-generated code:
 
 ---
 
-**Last Updated:** 2026-07-30  
+**Last Updated:** 2026-07-31  
 **Primary Reference:** `AGENTS.md`  
 **Purpose:** AI assistant quick reference and context document

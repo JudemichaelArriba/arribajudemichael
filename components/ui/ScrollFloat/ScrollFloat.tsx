@@ -5,7 +5,6 @@ import type { ReactNode, RefObject } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useGSAP } from '@gsap/react';
-import styles from './ScrollFloat.module.css';
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
@@ -54,8 +53,8 @@ export default function ScrollFloat({
             if (!el || prefersReducedMotion) return;
 
             const scroller = scrollContainerRef?.current ?? window;
-            const wordElements = gsap.utils.toArray<HTMLElement>(`.${styles.word}`, el);
-            const allChars = gsap.utils.toArray<HTMLElement>(`.${styles.char}`, el);
+            const wordElements = gsap.utils.toArray<HTMLElement>('.scroll-float-word', el);
+            const allChars = gsap.utils.toArray<HTMLElement>('.scroll-float-char', el);
 
             gsap.set(allChars, {
                 autoAlpha: 0,
@@ -73,18 +72,18 @@ export default function ScrollFloat({
                 if (playOnce && hasPlayedRef.current) return;
 
                 hasPlayedRef.current = true;
-                el.classList.add(styles.animating);
+                el.classList.add('scroll-float-animating');
 
                 const tl = gsap.timeline({
                     defaults: { force3D: true, overwrite: 'auto' },
                     onComplete: () => {
-                        el.classList.remove(styles.animating);
+                        el.classList.remove('scroll-float-animating');
                         if (playOnce) trigger?.kill(false);
                     },
                 });
 
                 wordElements.forEach((wordEl, wordIndex) => {
-                    const chars = gsap.utils.toArray<HTMLElement>(`.${styles.char}`, wordEl);
+                    const chars = gsap.utils.toArray<HTMLElement>('.scroll-float-char', wordEl);
                     const startTime = wordIndex * wordStagger;
 
                     tl.to(
@@ -129,7 +128,7 @@ export default function ScrollFloat({
             return () => {
                 trigger.kill(false);
                 gsap.killTweensOf(allChars);
-                el.classList.remove(styles.animating);
+                el.classList.remove('scroll-float-animating');
             };
         },
         {
@@ -150,12 +149,15 @@ export default function ScrollFloat({
     );
 
     return (
-        <h2 ref={containerRef} className={`${styles.scrollFloat} ${containerClassName}`}>
-            <span className={`${styles.scrollFloatText} ${textClassName}`}>
+        <h2 ref={containerRef} className={`overflow-hidden text-center ${containerClassName}`}>
+            <span className={`inline-block max-w-full text-center leading-[1.08] ${textClassName}`}>
                 {words.map((word, wordIndex) => (
-                    <span className={styles.word} key={`word-${wordIndex}`}>
+                    <span className="scroll-float-word inline-block" key={`word-${wordIndex}`}>
                         {Array.from(word).map((char, charIndex) => (
-                            <span className={styles.char} key={`${char}-${wordIndex}-${charIndex}`}>
+                            <span
+                                className="scroll-float-char inline-block translate-z-0"
+                                key={`${char}-${wordIndex}-${charIndex}`}
+                            >
                                 {char}
                             </span>
                         ))}

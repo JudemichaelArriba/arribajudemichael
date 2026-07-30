@@ -7,7 +7,7 @@ interface WhatIDoProps {
     sentence?: string;
 }
 
-const DEFAULT_SENTENCE = 'I build scalable APIs, resilient systems, and fluid digital experiences.';
+const DEFAULT_SENTENCE = 'I build scalable APIs, resilient backend infrastructure, and fluid digital experiences that bridge technical excellence with intuitive design.';
 
 export default function WhatIDo({ sentence = DEFAULT_SENTENCE }: WhatIDoProps) {
     return (
@@ -21,7 +21,7 @@ export default function WhatIDo({ sentence = DEFAULT_SENTENCE }: WhatIDoProps) {
                     ease="power3.out"
                     scrollStart="top bottom-=18%"
                     scrollEnd="bottom top"
-                    stagger={0.012}
+
                     playOnce
                 >
                     {sentence}

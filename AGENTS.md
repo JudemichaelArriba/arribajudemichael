@@ -26,21 +26,28 @@ arribajudemichael/
 │   │   ├── layout.tsx          # Public layout with Preloader + Navbar
 │   │   └── page.tsx            # Home page (renders Home section)
 │   ├── layout.tsx              # Root layout with fonts and metadata
-│   ├── globals.css             # Global styles and Tailwind directives
+│   ├── globals.css             # Global styles, Tailwind directives, scrollbar styles
 │   └── favicon.ico             # Site favicon
 ├── components/
 │   ├── sections/               # Page sections
 │   │   ├── home/              # Hero section with LightPillar effect
-│   │   │   ├── Home.tsx
-│   │   │   └── Home.module.css
-│   │   └── WhatIDo/           # (In development)
+│   │   │   └── Home.tsx       # Uses Tailwind CSS (no CSS module)
+│   │   └── WhatIDo/           # What I Do section
 │   │       ├── WhatIDo.tsx
-│   │       └── WhatIDo.css
+│   │       └── WhatIDo.module.css  # Complex gradients (keep native CSS)
 │   ├── ui/                    # Reusable UI components
 │   │   ├── Button.tsx        # Custom button with specular/magnetic variants
-│   │   └── RollingText.tsx   # Animated text roller component
+│   │   ├── RollingText.tsx   # Animated text roller component
+│   │   ├── ScrollFloat/      # Scroll-triggered float animation
+│   │   │   └── ScrollFloat.tsx  # Uses Tailwind CSS (no CSS module)
+│   │   ├── PurpleScrollbar/  # Global scrollbar styles
+│   │   │   └── PurpleScrollbar.tsx  # Empty component (styles in globals.css)
+│   │   └── LineSidebar/      # Proximity-based sidebar navigation
+│   │       ├── LineSidebar.tsx
+│   │       └── LineSidebar.module.css  # Custom CSS variables (keep native CSS)
 │   ├── navbar/               # Navigation
-│   │   └── Navbar.tsx       # Main navigation bar
+│   │   ├── Navbar.tsx       # Main navigation bar
+│   │   └── Navbar.module.css  # Complex transitions (keep native CSS)
 │   ├── loader/              # Loading components
 │   │   ├── Preloader.tsx   # Page preloader wrapper
 │   │   └── PreloaderLogo.tsx
@@ -49,10 +56,10 @@ arribajudemichael/
 │       │   └── Magnet.tsx
 │       ├── SpecularButton/ # Specular light button effect
 │       │   ├── SpecularButton.tsx
-│       │   └── SpecularButton.css
+│       │   └── SpecularButton.css  # Canvas effects (keep native CSS)
 │       └── LightPillar/    # WebGL light pillar effect (Three.js)
 │           ├── LightPillar.jsx
-│           └── LightPillar.css
+│           └── LightPillar.css  # WebGL container (keep native CSS)
 ├── lib/
 │   ├── fonts.ts              # Font configurations (Bricolage Grotesque)
 │   ├── useActiveSection.ts   # Hook for active section detection
@@ -86,11 +93,15 @@ arribajudemichael/
 - Component co-location: styles next to component files
 
 ### 3. Styling Approach
-- **Tailwind CSS 4** (latest version) for utility classes
-- CSS Modules for component-specific styles (`*.module.css`)
-- Global styles in `app/globals.css`
-- Custom CSS variables via Tailwind config
-- Mix of utility-first and CSS-in-JS patterns
+- **Tailwind CSS 4 FIRST** - Use Tailwind utility classes for all standard styling
+- **Use native CSS ONLY when necessary** for:
+  - Complex radial/multi-layer gradients (e.g., WhatIDo section)
+  - Complex state transitions and backdrop filters (e.g., Navbar)
+  - Dynamic CSS custom properties (e.g., LineSidebar proximity effects)
+  - WebGL/Canvas effects (e.g., LightPillar, SpecularButton)
+- CSS Modules (`.module.css`) for component-specific complex styles
+- Global styles in `app/globals.css` for scrollbar, reduced-motion, and utility classes
+- Tailwind arbitrary values (`className="text-[#5227FF]"`) for one-off custom values
 
 ### 4. Animation & Effects
 - **GSAP 3.15** for complex animations (@gsap/react)
@@ -123,7 +134,29 @@ arribajudemichael/
 
 ### Component Patterns
 ```typescript
-// Client component template
+// Client component template (Tailwind CSS)
+'use client';
+
+import { useState } from 'react';
+
+interface ComponentProps {
+  title: string;
+  onAction?: () => void;
+}
+
+export default function Component({ title, onAction }: ComponentProps) {
+  const [state, setState] = useState<string>('');
+  
+  return (
+    <div className="relative flex items-center justify-center p-4">
+      {/* Use Tailwind utility classes */}
+    </div>
+  );
+}
+```
+
+```typescript
+// Component with complex CSS (only when necessary)
 'use client';
 
 import { useState } from 'react';
@@ -138,8 +171,8 @@ export default function Component({ title, onAction }: ComponentProps) {
   const [state, setState] = useState<string>('');
   
   return (
-    <div className={styles.container}>
-      {/* component content */}
+    <div className={styles.complexGradient}>
+      {/* Use CSS Module only for complex effects that Tailwind can't handle */}
     </div>
   );
 }
@@ -201,7 +234,7 @@ export default function Component({ title, onAction }: ComponentProps) {
 ### Adding a New UI Component
 1. Create in `components/ui/[ComponentName].tsx`
 2. Define TypeScript interface for props
-3. Add relevant styling (Tailwind + CSS Module if needed)
+3. Use Tailwind utilities + CSS Module if needed for complex styles
 4. Export and document usage patterns
 5. Consider reusability and composition
 
@@ -285,5 +318,5 @@ npm run lint     # Run ESLint
 
 ---
 
-**Last Updated:** 2026-07-30  
+**Last Updated:** 2026-07-31  
 **Maintained by:** AI Agents working on this project
