@@ -209,19 +209,48 @@ const LightPillar = dynamic(
 
 ### Testing & Verification
 
+### Testing & Verification
+
+#### Test Commands
+```bash
+npm test            # Run all tests
+npm run test:watch  # Run tests in watch mode
+npm run test:coverage  # Run tests with coverage report
+```
+
 #### Before Submitting Changes
 ```bash
 npm run lint        # Check for errors
+npm test            # Run all tests
 npm run build       # Verify production build
 npm run dev         # Test in development
 ```
 
 #### Manual Checks
 - [ ] TypeScript compiles without errors
+- [ ] Tests pass (npm test)
 - [ ] No console warnings/errors
 - [ ] Responsive design works (mobile, tablet, desktop)
 - [ ] Animations run smoothly
 - [ ] Accessibility maintained (keyboard nav, screen readers)
+
+#### Test Coverage
+This project has **235+ test cases** covering:
+- UI components (Button, RollingText, Magnet, ScrollFloat)
+- Custom hooks (useActiveSection, useRoleCycle)
+- Page sections (Home, WhatIDo)
+- Navigation and layout (Navbar, Preloader)
+
+Tests are co-located with components in `__tests__/` directories.
+
+#### CI/CD Pipeline
+GitHub Actions runs on every push/PR to all branches:
+- ✅ Linting
+- ✅ Unit tests with coverage
+- ✅ Production build
+- ✅ Artifact archiving
+
+See `.github/workflows/test.yml` for workflow configuration.
 
 ### Security & Best Practices
 

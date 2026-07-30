@@ -276,20 +276,49 @@ export default function Component({ title, onAction }: ComponentProps) {
 
 ## Testing & Build
 
-### Commands
+### Testing Infrastructure
+This project uses **Jest** and **React Testing Library** for unit testing.
+
+#### Commands
 ```bash
 npm run dev      # Development server (localhost:3000)
 npm run build    # Production build
 npm run start    # Production server
 npm run lint     # Run ESLint
+npm test         # Run all tests
+npm run test:watch      # Run tests in watch mode
+npm run test:coverage   # Run tests with coverage report
 ```
+
+#### Test Structure
+- Tests are co-located with components in `__tests__/` directories
+- **235+ test cases** covering:
+  - UI components (Button, RollingText, Magnet, ScrollFloat)
+  - Custom hooks (useActiveSection, useRoleCycle)
+  - Page sections (Home, WhatIDo)
+  - Navigation and layout (Navbar, Preloader)
+
+#### Configuration Files
+- `jest.config.ts` - Jest configuration with Next.js 16 support
+- `jest.setup.ts` - Test setup with mocks for Next.js, GSAP, observers
+
+#### GitHub Actions CI/CD
+Tests run automatically on every push and pull request to all branches:
+- Linting with ESLint
+- Unit tests with coverage
+- Production build verification
+- Artifact archiving
+- Coverage upload to Codecov (optional)
+
+See `.github/workflows/test.yml` for the complete workflow configuration.
 
 ### Before Committing
 1. Run `npm run lint` - fix all errors
-2. Run `npm run build` - ensure build succeeds
-3. Test in browser (dev mode)
-4. Check console for warnings/errors
-5. Verify responsive design
+2. Run `npm test` - ensure tests pass
+3. Run `npm run build` - ensure build succeeds
+4. Test in browser (dev mode)
+5. Check console for warnings/errors
+6. Verify responsive design
 
 ## Notes for AI Agents
 
