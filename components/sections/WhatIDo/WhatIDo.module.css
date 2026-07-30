@@ -1,11 +1,19 @@
 .section {
+    position: relative;
     min-height: min(90svh, 760px);
-    background: #000000;
+    overflow: hidden;
+    background:
+        radial-gradient(circle at 50% 8%, rgba(82, 39, 255, 0.18), transparent 34rem),
+        radial-gradient(circle at 50% 72%, rgba(195, 109, 252, 0.1), transparent 30rem),
+        var(--bg);
     color: var(--signal);
 }
 
 .inner {
+    position: relative;
+    z-index: 1;
     width: min(100%, 1180px);
+    text-align: center;
 }
 
 .eyebrow {
@@ -15,6 +23,7 @@
     font-weight: 800;
     letter-spacing: 0.14em;
     line-height: 1.2;
+    text-align: center;
     text-transform: uppercase;
 }
 
@@ -22,14 +31,15 @@
     margin: 0 auto;
     max-width: 11ch;
     color: var(--signal);
-    /* Reduced slightly from clamp(2.25rem, 7vw, 6.4rem) */
     font-size: clamp(1.85rem, 5.5vw, 5rem);
     font-weight: 900;
     letter-spacing: 0;
+    text-align: center;
     text-wrap: balance;
 }
 
 .statementText {
+    text-align: center;
     text-shadow: 0 0 28px rgba(195, 109, 252, 0.28);
 }
 

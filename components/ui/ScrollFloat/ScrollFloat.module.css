@@ -1,14 +1,19 @@
 .scrollFloat {
     overflow: hidden;
+    text-align: center;
 }
 
 .scrollFloatText {
     display: inline-block;
     line-height: 1.08;
+    text-align: center;
 }
 
 .char {
     display: inline-block;
+}
+
+.animating .char {
     will-change: opacity, transform;
 }
 

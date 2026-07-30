@@ -26,11 +26,11 @@ export default function ScrollFloat({
     scrollContainerRef,
     containerClassName = '',
     textClassName = '',
-    animationDuration = 0.9,
-    ease = 'back.inOut(1.7)',
+    animationDuration = 0.72,
+    ease = 'back.out(1.35)',
     scrollStart = 'top bottom-=10%',
     scrollEnd = 'center center',
-    stagger = 0.018,
+    stagger = 0.012,
 }: ScrollFloatProps) {
     const containerRef = useRef<HTMLHeadingElement>(null);
 
@@ -58,9 +58,9 @@ export default function ScrollFloat({
                 charElements,
                 {
                     autoAlpha: 0,
-                    yPercent: 90,
-                    scaleY: 1.8,
-                    scaleX: 0.82,
+                    yPercent: 56,
+                    scaleY: 1.18,
+                    scaleX: 0.96,
                     transformOrigin: '50% 0%',
                 },
                 {
@@ -78,7 +78,11 @@ export default function ScrollFloat({
                         scroller,
                         start: scrollStart,
                         end: scrollEnd,
-                        scrub: 0.65,
+                        scrub: 0.35,
+                        onEnter: () => el.classList.add(styles.animating),
+                        onEnterBack: () => el.classList.add(styles.animating),
+                        onLeave: () => el.classList.remove(styles.animating),
+                        onLeaveBack: () => el.classList.remove(styles.animating),
                     },
                 }
             );

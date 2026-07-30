@@ -17,11 +17,11 @@ export default function WhatIDo({ sentence = DEFAULT_SENTENCE }: WhatIDoProps) {
                 <ScrollFloat
                     containerClassName={`${styles.statement} font-display`}
                     textClassName={styles.statementText}
-                    animationDuration={0.9}
-                    ease="back.inOut(1.7)"
+                    animationDuration={0.72}
+                    ease="back.out(1.35)"
                     scrollStart="top bottom-=15%"
                     scrollEnd="center center"
-                    stagger={0.016}
+                    stagger={0.012}
                 >
                     {sentence}
                 </ScrollFloat>
