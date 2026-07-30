@@ -9,7 +9,7 @@ const LightPillar = dynamic(() => import('@/components/effects/LightPillar/Light
     ssr: false,
 });
 
-const ROLE_LINE = 'Full-Stack Developer - Mobile & Web';
+const ROLE_LINE = 'Full-Stack Software Engineer Robust Backend APIs & Fluid Mobile/Web Clients';
 
 export default function Home() {
     return (
@@ -41,8 +41,8 @@ export default function Home() {
                 {ROLE_LINE}
             </p>
 
-            <p className={`${styles.description} mx-auto mt-6 max-w-xl text-base leading-relaxed md:text-lg`}>
-                I design and build clean, scalable applications, from efficient backend APIs to refined mobile experiences, with a focus on performance, maintainability, and long-term reliability.
+        <p className="mx-auto mt-5 max-w-2xl text-base leading-relaxed md:text-lg">
+                I architect and deploy scalable backend APIs, high-availability data layers, and polished mobile experiences driven by an unyielding commitment to performance optimization, long-term maintainability, and clean architecture.
             </p>
 
             <div className="mt-10 flex flex-wrap items-center justify-center gap-4">

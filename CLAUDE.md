@@ -1,1 +1,321 @@
-@AGENTS.md
+# Claude AI Instructions for arribajudemichael Portfolio
+
+> **Primary Documentation:** See `AGENTS.md` for complete project structure, patterns, and guidelines.
+
+## Quick Context
+This is Jude Michael Arriba's personal portfolio website built with Next.js 16.2.12 (App Router), React 19, TypeScript 5, Tailwind CSS 4, and GSAP 3.15. The site showcases full-stack engineering expertise with advanced interactive effects.
+
+## Critical Information for AI Assistants
+
+### Before Making Any Changes
+1. **Read AGENTS.md first** - Contains full project structure and patterns
+2. **Check existing code** - Match patterns, naming conventions, and architecture
+3. **Verify Next.js 16 compatibility** - This version uses App Router with potential breaking changes
+4. **TypeScript strict mode** - All code must be properly typed, no `any` types
+
+### Project Architecture at a Glance
+
+#### File Organization
+```
+app/
+  (public)/          → Public pages (wrapped with Preloader + Navbar)
+    layout.tsx       → Public layout
+    page.tsx         → Home page
+  layout.tsx         → Root layout (fonts, metadata)
+  globals.css        → Global styles
+
+components/
+  sections/          → Page sections (Home, WhatIDo, etc.)
+  ui/                → Reusable UI (Button, RollingText)
+  navbar/            → Navigation
+  loader/            → Preloader components
+  effects/           → Visual effects (Magnet, SpecularButton, LightPillar)
+
+lib/
+  fonts.ts           → Font configurations
+  useActiveSection.ts → Scroll detection hook
+  animations/        → Animation logic (useRoleCycle, preloader)
+```
+
+#### Key Technical Decisions
+- **Server Components by default** - Only add `'use client'` when needed
+- **CSS Modules + Tailwind** - Component-specific styles use `.module.css`
+- **Dynamic imports for heavy components** - e.g., `LightPillar` uses `dynamic(() => import(), { ssr: false })`
+- **GSAP for animations** - Complex timelines and interactions
+- **Three.js/OGL for WebGL** - Advanced visual effects
+
+### Component Patterns to Follow
+
+#### Client Component Template
+```typescript
+'use client';
+
+import { useState } from 'react';
+import styles from './Component.module.css';
+
+interface ComponentProps {
+  title: string;
+  onAction?: () => void;
+}
+
+export default function Component({ title, onAction }: ComponentProps) {
+  const [state, setState] = useState<string>('');
+  
+  return (
+    <div className={styles.container}>
+      {/* component content */}
+    </div>
+  );
+}
+```
+
+#### Server Component Template
+```typescript
+import type { Metadata } from 'next';
+
+interface PageProps {
+  params: { slug: string };
+}
+
+export const metadata: Metadata = {
+  title: 'Page Title',
+  description: 'Page description',
+};
+
+export default function Page({ params }: PageProps) {
+  return (
+    <div>
+      {/* content */}
+    </div>
+  );
+}
+```
+
+### Common Operations
+
+#### Adding a New Section
+1. Create `components/sections/[SectionName]/`
+2. Add `SectionName.tsx` and optional `.module.css` or `.css`
+3. Add `'use client'` if using hooks or animations
+4. Import in `app/(public)/page.tsx`
+5. Update `Navbar.tsx` with new link
+
+#### Creating a UI Component
+1. Create in `components/ui/[ComponentName].tsx`
+2. Define TypeScript interface for props
+3. Use Tailwind utilities + CSS Module for custom styles
+4. Export component with proper typing
+
+#### Implementing Animations
+1. Import GSAP: `import gsap from 'gsap'`
+2. Use `useGSAP` hook from `@gsap/react` for React integration
+3. Create custom hooks in `lib/animations/` for reusable logic
+4. Always clean up animations in useEffect return
+
+### Styling Guidelines
+
+#### Tailwind CSS 4 Usage
+- Use utility classes for layout, spacing, colors
+- Responsive design: `md:`, `lg:` breakpoints
+- Custom classes in CSS Modules for complex styles
+
+#### CSS Modules
+- Named exports: `import styles from './Component.module.css'`
+- BEM-like naming inside modules: `.container`, `.button`, `.button__icon`
+- Co-locate with component files
+
+#### Brand Colors
+- Primary gradient: `#5227FF` → `#FF9FFC`
+- Use in effects and highlights
+- Maintain high contrast for accessibility
+
+### Dependencies & Imports
+
+#### Available Packages
+```typescript
+// React & Next.js
+import { useState, useEffect, useRef } from 'react';
+import dynamic from 'next/dynamic';
+import Image from 'next/image';
+import Link from 'next/link';
+
+// Animation
+import gsap from 'gsap';
+import { useGSAP } from '@gsap/react';
+
+// Icons
+import { Download, Menu, X } from 'lucide-react';
+
+// 3D/WebGL
+import { Renderer, Camera, Transform, Mesh } from 'ogl';
+import * as THREE from 'three';
+```
+
+#### Path Aliases
+- `@/` maps to project root
+- Use: `import Button from '@/components/ui/Button'`
+
+### Performance Considerations
+
+#### Code Splitting
+```typescript
+// Heavy components (WebGL, large libraries)
+const LightPillar = dynamic(
+  () => import('@/components/effects/LightPillar/LightPillar'),
+  { ssr: false }
+);
+```
+
+#### Animation Performance
+- Use CSS transforms (translate, scale, rotate)
+- Avoid animating layout properties (width, height)
+- Use `will-change` sparingly
+- Target 60fps minimum
+
+### Testing & Verification
+
+#### Before Submitting Changes
+```bash
+npm run lint        # Check for errors
+npm run build       # Verify production build
+npm run dev         # Test in development
+```
+
+#### Manual Checks
+- [ ] TypeScript compiles without errors
+- [ ] No console warnings/errors
+- [ ] Responsive design works (mobile, tablet, desktop)
+- [ ] Animations run smoothly
+- [ ] Accessibility maintained (keyboard nav, screen readers)
+
+### Security & Best Practices
+
+#### Environment Variables
+- Never read or expose `.env` file contents
+- Use `process.env.NEXT_PUBLIC_*` for client-side vars
+- Template provided in `.env.example`
+
+#### Data Safety
+- Don't modify `.env`, `.gitignore`, or security configs without explicit permission
+- Don't add new dependencies without discussion
+- Don't expose API keys or secrets in code/logs
+
+### Brand Voice & Content
+
+#### Jude Michael Arriba's Professional Identity
+- **Title:** Full-Stack Software Engineer
+- **Focus:** Backend APIs, Mobile/Web clients, System architecture
+- **Values:** Clean code, performance, maintainability, long-term reliability
+
+#### Writing Style
+- Professional but approachable
+- Technical competency emphasized
+- Clear, concise explanations
+- Focus on engineering excellence
+
+### Known Patterns in Codebase
+
+#### Button Component
+```typescript
+<Button
+  href="/cv.pdf"
+  variant="specular"    // or "default", "ghost"
+  size="lg"             // or "sm", "md"
+  radius={999}          // Border radius
+  magnetic              // Enable magnetic hover
+  magnetPadding={15}    // Magnetic effect area
+  glowProximity={60}    // Glow effect distance
+>
+  Download CV
+</Button>
+```
+
+#### LightPillar Effect
+```typescript
+<LightPillar
+  topColor="#5227FF"
+  bottomColor="#FF9FFC"
+  intensity={0.6}
+  rotationSpeed={0.3}
+  glowAmount={0.002}
+  pillarWidth={3}
+  pillarHeight={0.4}
+  noiseIntensity={0.5}
+  pillarRotation={25}
+  interactive={false}
+  mixBlendMode="normal"
+/>
+```
+
+#### Magnet Wrapper
+```typescript
+<Magnet padding={20} disabled={false}>
+  <button>Hover me</button>
+</Magnet>
+```
+
+### AI Assistant Guidelines
+
+#### What to Do
+✅ Read `AGENTS.md` for comprehensive information  
+✅ Match existing code patterns and conventions  
+✅ Maintain TypeScript strict typing  
+✅ Follow Next.js 16 App Router conventions  
+✅ Test changes with `npm run build` and `npm run lint`  
+✅ Ask for clarification when requirements are unclear  
+✅ Consider performance implications  
+✅ Maintain accessibility standards  
+
+#### What NOT to Do
+❌ Don't use Next.js Pages Router patterns  
+❌ Don't add `'use client'` unnecessarily  
+❌ Don't use `any` type in TypeScript  
+❌ Don't add new dependencies without asking  
+❌ Don't modify `.env` or expose secrets  
+❌ Don't break existing component APIs  
+❌ Don't ignore TypeScript/ESLint errors  
+❌ Don't use deprecated Next.js APIs  
+
+### Quick Reference
+
+#### File Naming
+- Components: `PascalCase.tsx`
+- Utilities/hooks: `camelCase.ts`
+- Styles: `ComponentName.module.css` or `ComponentName.css`
+- Routes: `lowercase/page.tsx`
+
+#### Import Order (recommended)
+1. React & Next.js imports
+2. Third-party libraries
+3. Local components
+4. Local utilities/hooks
+5. Styles
+6. Types
+
+#### Git Workflow
+- Don't modify `.gitignore` without permission
+- Test all changes before committing
+- Ensure build succeeds
+- Keep commits focused and atomic
+
+---
+
+## For Optimal AI Assistance
+
+When asking for help:
+1. **Specify the task clearly** - "Add a contact section" vs "Make it better"
+2. **Mention relevant files** - Help the AI focus on the right areas
+3. **Provide context** - What are you trying to achieve?
+4. **Ask about tradeoffs** - "What's the best way to..." invites discussion
+
+When reviewing AI-generated code:
+1. **Check TypeScript types** - Ensure proper typing
+2. **Verify imports** - Correct paths and packages
+3. **Test build** - Run `npm run build`
+4. **Review patterns** - Match existing code style
+
+---
+
+**Last Updated:** 2026-07-30  
+**Primary Reference:** `AGENTS.md`  
+**Purpose:** AI assistant quick reference and context document

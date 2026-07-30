@@ -1,0 +1,21 @@
+.scrollFloat {
+    overflow: hidden;
+}
+
+.scrollFloatText {
+    display: inline-block;
+    line-height: 1.08;
+}
+
+.char {
+    display: inline-block;
+    will-change: opacity, transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .char {
+        opacity: 1;
+        transform: none;
+        will-change: auto;
+    }
+}

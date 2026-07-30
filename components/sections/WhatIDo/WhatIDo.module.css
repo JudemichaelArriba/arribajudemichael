@@ -1,0 +1,40 @@
+.section {
+    min-height: min(90svh, 760px);
+    background: #000000;
+    color: var(--signal);
+}
+
+.inner {
+    width: min(100%, 1180px);
+}
+
+.eyebrow {
+    margin-bottom: clamp(1.5rem, 4vw, 3rem);
+    color: color-mix(in srgb, var(--signal) 78%, #ffffff 22%);
+    font-size: clamp(0.78rem, 1.6vw, 0.95rem);
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    line-height: 1.2;
+    text-transform: uppercase;
+}
+
+.statement {
+    margin: 0 auto;
+    max-width: 11ch;
+    color: var(--signal);
+    /* Reduced slightly from clamp(2.25rem, 7vw, 6.4rem) */
+    font-size: clamp(1.85rem, 5.5vw, 5rem);
+    font-weight: 900;
+    letter-spacing: 0;
+    text-wrap: balance;
+}
+
+.statementText {
+    text-shadow: 0 0 28px rgba(195, 109, 252, 0.28);
+}
+
+@media (min-width: 768px) {
+    .statement {
+        max-width: 12ch;
+    }
+}
