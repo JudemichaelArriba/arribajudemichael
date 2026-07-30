@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Menu, X } from 'lucide-react';
 import { useActiveSection } from '@/lib/useActiveSection';
+import RollingText from '@/components/ui/RollingText';
 
 const NAV_ITEMS = [
     { id: 'home', label: 'Home' },
@@ -29,8 +30,6 @@ export default function Navbar() {
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
-    // Measure only the persistent nav surface so mobile menu height does not
-    // change scroll offsets or hero spacing when it opens.
     useEffect(() => {
         const el = navRef.current;
         if (!el) return;
@@ -55,15 +54,14 @@ export default function Navbar() {
     };
 
     return (
-        <header
-            className="pointer-events-none fixed inset-x-0 top-0 z-50 isolate px-4 pt-[calc(env(safe-area-inset-top)+1rem)] md:px-6 md:pt-[calc(env(safe-area-inset-top)+1.5rem)]"
-        >
+        <header className="pointer-events-none fixed inset-x-0 top-0 z-50 isolate px-4 pt-[calc(env(safe-area-inset-top)+1rem)] md:px-6 md:pt-[calc(env(safe-area-inset-top)+1.5rem)]">
             <nav
                 ref={navRef}
-                className={`pointer-events-auto mx-auto flex max-w-5xl items-center justify-between rounded-full px-6 py-3 transition-all duration-500 ${scrolled
+                className={`pointer-events-auto mx-auto flex max-w-5xl items-center justify-between rounded-full px-6 py-3 transition-all duration-500 ${
+                    scrolled
                         ? 'border border-white/10 bg-[var(--bg)]/70 shadow-lg shadow-black/20 backdrop-blur-xl'
                         : 'border border-white/10 bg-white/[0.03] backdrop-blur-md'
-                    }`}
+                }`}
             >
                 <button
                     onClick={() => scrollTo('home')}
@@ -73,22 +71,21 @@ export default function Navbar() {
                     <span className="absolute -inset-2 rounded-full bg-[var(--signal)]/20 blur-md opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                 </button>
 
-                <ul className="hidden items-center gap-1 md:flex">
+                {/* Desktop Nav Items */}
+                <ul className="hidden items-center gap-1 lg:gap-2 md:flex">
                     {NAV_ITEMS.map((item) => {
                         const isActive = active === item.id;
                         return (
                             <li key={item.id}>
                                 <button
                                     onClick={() => scrollTo(item.id)}
-                                    className={`relative rounded-full px-4 py-2 font-mono text-xs uppercase tracking-widest transition-all duration-300 ${isActive
+                                    className={`px-3 py-2 font-mono text-sm uppercase tracking-wider transition-colors duration-300 ${
+                                        isActive
                                             ? 'font-bold text-[var(--signal)]'
-                                            : 'text-[var(--muted)] hover:bg-white/5 hover:text-[var(--text)]'
-                                        }`}
+                                            : 'text-[var(--muted)] hover:text-[var(--text)]'
+                                    }`}
                                 >
-                                    {isActive && (
-                                        <span className="absolute inset-0 -z-10 rounded-full border border-[var(--signal)]/30 bg-[var(--signal)]/10 transition-all duration-300" />
-                                    )}
-                                    {item.label}
+                                    <RollingText>{item.label}</RollingText>
                                 </button>
                             </li>
                         );
@@ -106,6 +103,7 @@ export default function Navbar() {
                 </button>
             </nav>
 
+            {/* Mobile Nav Menu */}
             {mobileOpen && (
                 <div
                     id="mobile-navigation"
@@ -118,10 +116,11 @@ export default function Navbar() {
                                 <li key={item.id}>
                                     <button
                                         onClick={() => scrollTo(item.id)}
-                                        className={`block w-full rounded-xl px-4 py-3 text-left font-mono text-xs uppercase tracking-widest transition-all duration-200 ${isActive
-                                                ? 'border border-[var(--signal)]/20 bg-[var(--signal)]/10 font-bold text-[var(--signal)]'
-                                                : 'text-[var(--muted)] hover:bg-white/5 hover:text-[var(--text)]'
-                                            }`}
+                                        className={`block w-full rounded-xl px-4 py-3 text-left font-mono text-base uppercase tracking-wider transition-colors duration-200 ${
+                                            isActive
+                                                ? 'font-bold text-[var(--signal)]'
+                                                : 'text-[var(--muted)] hover:text-[var(--text)]'
+                                        }`}
                                     >
                                         {item.label}
                                     </button>

@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import type { MouseEventHandler, ReactNode } from 'react';
 import SpecularButton from '@/components/effects/SpecularButton/SpecularButton';
 import Magnet from '@/components/effects/Magnet/Magnet';
+import RollingText from '@/components/ui/RollingText';
 
 type Size = 'sm' | 'md' | 'lg';
 type Variant = 'primary' | 'outline' | 'specular';
@@ -21,6 +22,8 @@ interface ButtonProps {
     onClick?: MouseEventHandler<HTMLButtonElement>;
     type?: 'button' | 'submit';
     className?: string;
+    /** Only works when children is a plain string label */
+    rolling?: boolean;
 }
 
 const SOLID_STYLES: Record<'primary' | 'outline', string> = {
@@ -47,6 +50,7 @@ export default function Button({
     onClick,
     type = 'button',
     className = '',
+    rolling = false,
 }: ButtonProps) {
     const router = useRouter();
 
@@ -54,6 +58,8 @@ export default function Button({
         onClick?.(e);
         if (href) router.push(href);
     };
+
+    const label = rolling && typeof children === 'string' ? <RollingText>{children}</RollingText> : children;
 
     const content =
         variant === 'specular' ? (
@@ -76,7 +82,7 @@ export default function Button({
                 type={type}
                 className={className}
             >
-                {children}
+                {label}
             </SpecularButton>
         ) : (
             <button
@@ -85,7 +91,7 @@ export default function Button({
                 style={{ borderRadius: `${radius}px` }}
                 className={`font-mono inline-flex items-center gap-2 font-semibold transition-opacity ${SOLID_STYLES[variant]} ${SIZE_STYLES[size]} ${className}`}
             >
-                {children}
+                {label}
             </button>
         );
 
