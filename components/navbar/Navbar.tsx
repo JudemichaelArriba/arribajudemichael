@@ -162,10 +162,12 @@ export default function Navbar() {
                     aria-label="Compact navigation"
                     aria-hidden={!showCompact}
                 >
-                    <button onClick={() => scrollTo('home')} className={styles.compactLogo} type="button">
-                        <span>J</span>
-                        <span className={styles.logoAccent}>M</span>
-                    </button>
+                    <div className={styles.compactLogoPill}>
+                        <button onClick={() => scrollTo('home')} className={styles.compactLogo} type="button">
+                            <span>J</span>
+                            <span className={styles.logoAccent}>M</span>
+                        </button>
+                    </div>
 
                     <button
                         onClick={() => setMenuOpen((prev) => !prev)}
@@ -175,9 +177,14 @@ export default function Navbar() {
                         aria-expanded={menuOpen}
                         aria-controls="portfolio-navigation-overlay"
                     >
-                        <span aria-hidden="true" />
-                        <span aria-hidden="true" />
-                        <span aria-hidden="true" />
+                        <span className={styles.menuIcon} aria-hidden="true">
+                            <span aria-hidden="true" />
+                            <span aria-hidden="true" />
+                            <span aria-hidden="true" />
+                        </span>
+                        <span className={styles.menuLabel}>
+                            <RollingText>Menu</RollingText>
+                        </span>
                     </button>
                 </nav>
             </header>
