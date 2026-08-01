@@ -1,0 +1,19 @@
+.panel {
+    position: relative;
+    min-height: 100svh;
+    overflow: hidden;
+    background: var(--bg);
+}
+
+.bridge {
+    position: absolute;
+    inset: 0 0 auto;
+    height: clamp(3rem, 12vh, 8rem);
+    pointer-events: none;
+    background: linear-gradient(180deg, rgba(10, 14, 20, 0.18), var(--bg));
+}
+
+.content {
+    position: relative;
+    z-index: 1;
+}

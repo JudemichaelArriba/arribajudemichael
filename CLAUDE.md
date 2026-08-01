@@ -18,28 +18,36 @@ This is Jude Michael Arriba's personal portfolio website built with Next.js 16.2
 #### File Organization
 ```
 app/
-  (public)/          → Public pages (wrapped with Preloader + Navbar)
-    layout.tsx       → Public layout
-    page.tsx         → Home page
-  layout.tsx         → Root layout (fonts, metadata)
-  globals.css        → Global styles, scrollbar, Tailwind directives
+  (public)/              -> Public pages (wrapped with Preloader + Navbar)
+    layout.tsx           -> Public layout
+    page.tsx             -> Home page composition
+  layout.tsx             -> Root layout (fonts, metadata)
+  globals.css            -> Global styles, scrollbar, Tailwind directives
 
 components/
-  sections/          → Page sections (Home, WhatIDo, etc.)
-    home/            → Home.tsx (Tailwind CSS only)
-    WhatIDo/         → WhatIDo.tsx + WhatIDo.module.css (complex gradients)
-  ui/                → Reusable UI (Button, RollingText, ScrollFloat)
-    ScrollFloat/     → ScrollFloat.tsx (Tailwind CSS only)
-    PurpleScrollbar/ → PurpleScrollbar.tsx (styles in globals.css)
-    LineSidebar/     → LineSidebar.tsx + .module.css (CSS variables)
-  navbar/            → Navbar.tsx + .module.css (complex transitions)
-  loader/            → Preloader components
-  effects/           → Visual effects (Magnet, SpecularButton, LightPillar)
+  sections/              -> Page sections and page-level section scenes
+    home/                -> Home.tsx (Tailwind CSS only)
+    HomeRevealScene/     -> HomeRevealScene.tsx + .module.css (home pull reveal)
+    HomeContinuation/    -> HomeContinuation.tsx + .module.css (below-home wrapper)
+    WhatIDo/             -> WhatIDo.tsx + WhatIDo.module.css (complex gradients)
+    AboutMe/             -> AboutMe.tsx, AboutBento.tsx, CSS for compact bento/profile layout
+  ui/                    -> Reusable UI (Button, RollingText, ScrollFloat)
+    ScrollFloat/         -> ScrollFloat.tsx (Tailwind CSS only)
+    PurpleScrollbar/     -> PurpleScrollbar.tsx (styles in globals.css)
+    LineSidebar/         -> LineSidebar.tsx + .module.css (CSS variables)
+    TiltedCard/          -> TiltedCard.tsx + TiltedCard.css (interactive card tilt)
+  navbar/                -> Navbar.tsx + .module.css (complex transitions)
+  loader/                -> Preloader components
+  effects/               -> Visual effects (Magnet, SpecularButton, LightPillar)
 
 lib/
-  fonts.ts           → Font configurations
-  useActiveSection.ts → Scroll detection hook
-  animations/        → Animation logic (useRoleCycle, preloader)
+  fonts.ts               -> Font configurations
+  useActiveSection.ts    -> Scroll detection hook
+  animations/            -> Animation logic (useRoleCycle, preloader)
+
+public/
+  profile.jpeg           -> About/profile image
+  *.svg                  -> SVG icons
 ```
 
 #### Key Technical Decisions

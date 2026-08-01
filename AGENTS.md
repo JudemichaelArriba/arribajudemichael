@@ -22,60 +22,75 @@ This project uses **Next.js 16.2.12** with the App Router. This version may have
 ```
 arribajudemichael/
 ├── app/                          # Next.js App Router directory
-│   ├── (public)/                # Route group for public pages
-│   │   ├── layout.tsx          # Public layout with Preloader + Navbar
-│   │   └── page.tsx            # Home page (renders Home section)
-│   ├── layout.tsx              # Root layout with fonts and metadata
-│   ├── globals.css             # Global styles, Tailwind directives, scrollbar styles
-│   └── favicon.ico             # Site favicon
+│   ├── (public)/                 # Route group for public pages
+│   │   ├── layout.tsx            # Public layout with Preloader + Navbar
+│   │   └── page.tsx              # Home page composition
+│   ├── layout.tsx                # Root layout with fonts and metadata
+│   ├── globals.css               # Global styles, Tailwind directives, scrollbar styles
+│   └── favicon.ico               # Site favicon
 ├── components/
-│   ├── sections/               # Page sections
-│   │   ├── home/              # Hero section with LightPillar effect
-│   │   │   └── Home.tsx       # Uses Tailwind CSS (no CSS module)
-│   │   └── WhatIDo/           # What I Do section
-│   │       ├── WhatIDo.tsx
-│   │       └── WhatIDo.module.css  # Complex gradients (keep native CSS)
-│   ├── ui/                    # Reusable UI components
-│   │   ├── Button.tsx        # Custom button with specular/magnetic variants
-│   │   ├── RollingText.tsx   # Animated text roller component
-│   │   ├── ScrollFloat/      # Scroll-triggered float animation
-│   │   │   └── ScrollFloat.tsx  # Uses Tailwind CSS (no CSS module)
-│   │   ├── PurpleScrollbar/  # Global scrollbar styles
+│   ├── sections/                 # Page sections and page-level section scenes
+│   │   ├── home/                 # Hero section with LightPillar effect
+│   │   │   └── Home.tsx          # Uses Tailwind CSS (no CSS module)
+│   │   ├── HomeRevealScene/      # Pinned home-to-continuation reveal scene
+│   │   │   ├── HomeRevealScene.tsx
+│   │   │   └── HomeRevealScene.module.css  # Scroll reveal layering (keep native CSS)
+│   │   ├── HomeContinuation/     # Wrapper for below-home content on the / route
+│   │   │   ├── HomeContinuation.tsx
+│   │   │   └── HomeContinuation.module.css  # Continuation bridge/layer styles
+│   │   ├── WhatIDo/              # What I Do section
+│   │   │   ├── WhatIDo.tsx
+│   │   │   └── WhatIDo.module.css  # Complex gradients (keep native CSS)
+│   │   └── AboutMe/              # About section with compact bento/profile layout
+│   │       ├── AboutMe.tsx
+│   │       ├── AboutMe.module.css
+│   │       ├── AboutBento.tsx
+│   │       └── AboutBento.css    # Bento hover effects (keep native CSS)
+│   ├── ui/                       # Reusable UI components
+│   │   ├── Button.tsx            # Custom button with specular/magnetic variants
+│   │   ├── RollingText.tsx       # Animated text roller component
+│   │   ├── ScrollFloat/          # Scroll-triggered float animation
+│   │   │   └── ScrollFloat.tsx   # Uses Tailwind CSS (no CSS module)
+│   │   ├── PurpleScrollbar/      # Global scrollbar styles
 │   │   │   └── PurpleScrollbar.tsx  # Empty component (styles in globals.css)
-│   │   └── LineSidebar/      # Proximity-based sidebar navigation
-│   │       ├── LineSidebar.tsx
-│   │       └── LineSidebar.module.css  # Custom CSS variables (keep native CSS)
-│   ├── navbar/               # Navigation
-│   │   ├── Navbar.tsx       # Main navigation bar
-│   │   └── Navbar.module.css  # Complex transitions (keep native CSS)
-│   ├── loader/              # Loading components
-│   │   ├── Preloader.tsx   # Page preloader wrapper
+│   │   ├── LineSidebar/          # Proximity-based sidebar navigation
+│   │   │   ├── LineSidebar.tsx
+│   │   │   └── LineSidebar.module.css  # Custom CSS variables (keep native CSS)
+│   │   └── TiltedCard/           # Interactive profile/card tilt effect
+│   │       ├── TiltedCard.tsx
+│   │       └── TiltedCard.css    # 3D tilt/overlay styles (keep native CSS)
+│   ├── navbar/                   # Navigation
+│   │   ├── Navbar.tsx            # Main navigation bar
+│   │   └── Navbar.module.css     # Complex transitions (keep native CSS)
+│   ├── loader/                   # Loading components
+│   │   ├── Preloader.tsx         # Page preloader wrapper
 │   │   └── PreloaderLogo.tsx
-│   └── effects/             # Visual effects
-│       ├── Magnet/         # Magnetic hover effect
+│   └── effects/                  # Visual effects
+│       ├── Magnet/               # Magnetic hover effect
 │       │   └── Magnet.tsx
-│       ├── SpecularButton/ # Specular light button effect
+│       ├── SpecularButton/       # Specular light button effect
 │       │   ├── SpecularButton.tsx
 │       │   └── SpecularButton.css  # Canvas effects (keep native CSS)
-│       └── LightPillar/    # WebGL light pillar effect (Three.js)
+│       └── LightPillar/          # WebGL light pillar effect (Three.js)
 │           ├── LightPillar.jsx
-│           └── LightPillar.css  # WebGL container (keep native CSS)
+│           └── LightPillar.css   # WebGL container (keep native CSS)
 ├── lib/
-│   ├── fonts.ts              # Font configurations (Bricolage Grotesque)
-│   ├── useActiveSection.ts   # Hook for active section detection
+│   ├── fonts.ts                  # Font configurations (Bricolage Grotesque)
+│   ├── useActiveSection.ts       # Hook for active section detection
 │   └── animations/
-│       ├── useRoleCycle.ts   # Text role cycling animation
-│       └── preloader.ts      # Preloader animation logic
-├── public/                   # Static assets
-│   ├── *.svg                # SVG icons
+│       ├── useRoleCycle.ts       # Text role cycling animation
+│       └── preloader.ts          # Preloader animation logic
+├── public/                       # Static assets
+│   ├── profile.jpeg              # About/profile image
+│   ├── *.svg                     # SVG icons
 │   └── [fonts if any]
 └── Configuration files:
-    ├── next.config.ts       # Next.js configuration
-    ├── tsconfig.json        # TypeScript config
-    ├── eslint.config.mjs    # ESLint setup
-    ├── postcss.config.mjs   # PostCSS config
-    ├── .env                 # Environment variables (DO NOT READ/EXPOSE)
-    └── .env.example         # Environment template
+    ├── next.config.ts            # Next.js configuration
+    ├── tsconfig.json             # TypeScript config
+    ├── eslint.config.mjs         # ESLint setup
+    ├── postcss.config.mjs        # PostCSS config
+    ├── .env                      # Environment variables (DO NOT READ/EXPOSE)
+    └── .env.example              # Environment template
 ```
 
 ## Key Technical Patterns

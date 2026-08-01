@@ -1,11 +1,15 @@
-import Home from '@/components/sections/home/Home';
+import HomeRevealScene from '@/components/sections/HomeRevealScene/HomeRevealScene';
+import HomeContinuation from '@/components/sections/HomeContinuation/HomeContinuation';
 import WhatIDo from '@/components/sections/WhatIDo/WhatIDo';
+import AboutMe from '@/components/sections/AboutMe/AboutMe';
 
 export default function HomePage() {
     return (
-        <>
-            <Home />
-            <WhatIDo />
-        </>
+        <HomeRevealScene>
+            <HomeContinuation>
+                <WhatIDo />
+                <AboutMe />
+            </HomeContinuation>
+        </HomeRevealScene>
     );
 }
