@@ -29,6 +29,7 @@ export default function Home() {
                     pillarRotation={25}
                     interactive={false}
                     mixBlendMode="normal"
+                    quality="medium"
                 />
             </div>
 
@@ -63,3 +64,5 @@ export default function Home() {
         </section>
     );
 }
+
+

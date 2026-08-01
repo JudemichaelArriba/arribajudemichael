@@ -34,8 +34,8 @@ export default function HomeRevealScene({ children }: HomeRevealSceneProps) {
                     scrollTrigger: {
                         trigger: scene,
                         start: 'top top',
-                        end: '+=100%',
-                        scrub: 0.72,
+                        end: '+=150%',
+                        scrub: 0.5,
                         invalidateOnRefresh: true,
                     },
                 }
@@ -60,3 +60,4 @@ export default function HomeRevealScene({ children }: HomeRevealSceneProps) {
         </div>
     );
 }
+

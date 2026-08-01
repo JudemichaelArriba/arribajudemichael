@@ -25,8 +25,8 @@
     gap: 0.72em;
     overflow: hidden;
     border: 1px solid rgba(255, 255, 255, 0.07);
-    border-radius: 10px;
-    background: rgba(255, 255, 255, 0.035);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.04);
     padding: 1.2em 1.25em;
     transition:
         transform 0.22s ease,
@@ -37,7 +37,7 @@
 .about-bento-card:hover {
     transform: translateY(-2px);
     border-color: rgba(195, 109, 252, 0.18);
-    background: rgba(255, 255, 255, 0.052);
+    background: rgba(255, 255, 255, 0.055);
 }
 
 .about-bento-card__meta {
@@ -134,3 +134,4 @@
         transform: none;
     }
 }
+

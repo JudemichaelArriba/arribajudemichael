@@ -1,48 +1,22 @@
 .section {
     position: relative;
-    min-height: min(96svh, 860px);
+    min-height: 100svh;
+    scroll-margin-top: calc(var(--nav-height, 80px) + 2rem);
     overflow: hidden;
-    background:
-        linear-gradient(180deg, rgba(10, 14, 20, 0) 0%, var(--bg) 18%, var(--bg) 100%),
-        radial-gradient(circle at 50% 8%, rgba(82, 39, 255, 0.24), transparent 38rem),
-        radial-gradient(circle at 18% 72%, rgba(255, 159, 252, 0.08), transparent 28rem),
-        radial-gradient(circle at 82% 68%, rgba(195, 109, 252, 0.12), transparent 30rem),
-        var(--bg);
-    color: var(--signal);
-}
-
-.section::before {
-    content: '';
-    position: absolute;
-    inset: -18vh 0 auto;
-    height: 34vh;
-    pointer-events: none;
-    background: linear-gradient(180deg, rgba(82, 39, 255, 0), rgba(10, 14, 20, 0.86) 72%, var(--bg));
-}
-
-.section::after {
-    content: '';
-    position: absolute;
-    inset: auto 8% 8%;
-    height: 42%;
-    pointer-events: none;
-    border-radius: 999px;
-    background: rgba(82, 39, 255, 0.12);
-    filter: blur(90px);
+    color: var(--text);
 }
 
 .inner {
     position: relative;
     z-index: 1;
-    width: min(100%, 1280px);
-    transform: translateY(clamp(-3rem, -5vh, -1rem));
+    width: min(100%, 1120px);
     text-align: center;
 }
 
 .eyebrow {
-    margin-bottom: clamp(1.5rem, 4vw, 3rem);
+    margin-bottom: clamp(1.25rem, 3vw, 2rem);
     color: color-mix(in srgb, var(--signal) 78%, #ffffff 22%);
-    font-size: clamp(0.78rem, 1.6vw, 0.95rem);
+    font-size: 0.75rem;
     font-weight: 800;
     letter-spacing: 0.14em;
     line-height: 1.2;
@@ -52,29 +26,27 @@
 
 .statement {
     margin: 0 auto;
-    width: min(100%, 1080px);
-    color: var(--signal);
-    /* Reduced from clamp(2.65rem, 8.4vw, 8.6rem) */
-    font-size: clamp(1.75rem, 4.5vw, 4.25rem);
-    font-weight: 900;
-    letter-spacing: -0.02em;
-    line-height: 1.15;
+    width: min(100%, 980px);
+    color: var(--text);
+    font-size: clamp(1.9rem, 4.8vw, 4.15rem);
+    font-weight: 800;
+    letter-spacing: 0;
+    line-height: 1.08;
     text-align: center;
     text-wrap: balance;
 }
 
 .statementText {
     text-align: center;
-    text-shadow: 0 0 30px rgba(195, 109, 252, 0.3);
+    text-shadow: 0 0 22px rgba(195, 109, 252, 0.22);
 }
 
 @media (max-width: 640px) {
     .section {
-        min-height: 88svh;
+        min-height: 92svh;
     }
 
     .statement {
-        /* Reduced from clamp(2.35rem, 13vw, 4.6rem) */
-        font-size: clamp(1.6rem, 7.5vw, 2.5rem);
+        font-size: clamp(1.65rem, 8vw, 2.45rem);
     }
 }
