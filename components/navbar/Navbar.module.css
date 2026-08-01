@@ -10,14 +10,14 @@
 .pillNav {
     pointer-events: auto;
     display: flex;
-    width: min(100%, 64rem);
+    width: min(100%, 72rem);
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
     margin: 0 auto;
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 999px;
-    padding: 0.75rem 1.5rem;
+    padding: 0.75rem 2rem;
     background: rgba(255, 255, 255, 0.03);
     backdrop-filter: blur(14px);
     transition:
@@ -169,3 +169,4 @@
         transition: none;
     }
 }
+

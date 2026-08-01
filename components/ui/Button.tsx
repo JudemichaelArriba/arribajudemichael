@@ -7,7 +7,7 @@ import Magnet from '@/components/effects/Magnet/Magnet';
 import RollingText from '@/components/ui/RollingText';
 
 type Size = 'sm' | 'md' | 'lg';
-type Variant = 'primary' | 'outline' | 'specular';
+type Variant = 'primary' | 'brand' | 'outline' | 'specular';
 
 interface ButtonProps {
     children: ReactNode;
@@ -24,10 +24,15 @@ interface ButtonProps {
     className?: string;
     /** Only works when children is a plain string label */
     rolling?: boolean;
+    /** Only used when variant="specular" */
+    baseColor?: string;
+    lineColor?: string;
+    tint?: string;
 }
 
-const SOLID_STYLES: Record<'primary' | 'outline', string> = {
+const SOLID_STYLES: Record<'primary' | 'brand' | 'outline', string> = {
     primary: 'bg-white text-black hover:opacity-90',
+    brand: 'bg-[var(--signal)] text-white shadow-[0_0_28px_rgba(82,39,255,0.28)] hover:opacity-90',
     outline: 'border border-white/20 text-[var(--text)] hover:border-white/40',
 };
 
@@ -51,12 +56,21 @@ export default function Button({
     type = 'button',
     className = '',
     rolling = false,
+    baseColor = '#37035a',
+    lineColor = '#c300ff',
+    tint = '#000000',
 }: ButtonProps) {
     const router = useRouter();
+    const isExternalHref = href?.startsWith('http://') || href?.startsWith('https://');
 
     const handleClick: MouseEventHandler<HTMLButtonElement> = (e) => {
         onClick?.(e);
-        if (href) router.push(href);
+        if (!href) return;
+        if (isExternalHref) {
+            window.open(href, '_blank', 'noopener,noreferrer');
+            return;
+        }
+        router.push(href);
     };
 
     const label = rolling && typeof children === 'string' ? <RollingText>{children}</RollingText> : children;
@@ -66,10 +80,10 @@ export default function Button({
             <SpecularButton
                 size={size}
                 radius={radius}
-                tint="#000000"
+                tint={tint}
                 tintOpacity={0.50}
-                baseColor="#37035a"
-                lineColor="#c300ff"
+                baseColor={baseColor}
+                lineColor={lineColor}
                 textColor="#ffffff"
                 intensity={3}
                 shineSize={12}
@@ -84,6 +98,16 @@ export default function Button({
             >
                 {label}
             </SpecularButton>
+        ) : isExternalHref ? (
+            <a
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ borderRadius: `${radius}px` }}
+                className={`font-mono inline-flex items-center gap-2 font-semibold transition-opacity ${SOLID_STYLES[variant]} ${SIZE_STYLES[size]} ${className}`}
+            >
+                {label}
+            </a>
         ) : (
             <button
                 type={type}

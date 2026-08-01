@@ -4,6 +4,7 @@ import { useRef } from 'react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import ScrollFloat from '@/components/ui/ScrollFloat/ScrollFloat';
 import TiltedCard from '@/components/ui/TiltedCard/TiltedCard';
 import AboutBento, { type AboutCardData } from './AboutBento';
 
@@ -12,7 +13,7 @@ gsap.registerPlugin(ScrollTrigger);
 const aboutCards: AboutCardData[] = [
     { code: 'A.01', label: 'Location', value: 'Tagum City, Philippines' },
     { code: 'A.02', label: 'Status', value: 'Open to opportunities' },
-    { code: 'A.03', label: 'Focus', value: 'Backend APIs, IoT systems, and polished web clients' },
+    { code: 'A.03', label: 'Focus', value: 'Focused on end-to-end web architecture from secure RESTful APIs to refined, responsive client experiences.' },
     { code: 'A.04', label: 'Quality', value: 'Clean architecture, performance, and long-term maintainability' },
 ];
 
@@ -25,8 +26,6 @@ const proofPoints = [
 export default function AboutMe() {
     const sectionRef = useRef<HTMLElement>(null);
     const eyebrowRef = useRef<HTMLParagraphElement>(null);
-    const headingRef = useRef<HTMLHeadingElement>(null);
-    const introRef = useRef<HTMLParagraphElement>(null);
     const chipsRef = useRef<HTMLDivElement>(null);
     const frameRef = useRef<HTMLDivElement>(null);
     const bentoWrapRef = useRef<HTMLDivElement>(null);
@@ -39,7 +38,7 @@ export default function AboutMe() {
 
             if (!section || prefersReducedMotion) return;
 
-            const copyTargets = [eyebrowRef.current, headingRef.current, introRef.current].filter(Boolean) as HTMLElement[];
+            const copyTargets = [eyebrowRef.current].filter(Boolean) as HTMLElement[];
             const chipTargets = gsap.utils.toArray<HTMLElement>('[data-about-chip]', chipsRef.current ?? undefined);
             const cardTargets = gsap.utils.toArray<HTMLElement>('.about-bento-card', bentoWrapRef.current ?? undefined);
             const refreshFrame = window.requestAnimationFrame(() => ScrollTrigger.refresh());
@@ -106,8 +105,8 @@ export default function AboutMe() {
         <section id="about" ref={sectionRef} className="relative w-full scroll-mt-[calc(var(--nav-height,80px)+2rem)] px-5 py-24 md:px-8 lg:py-28">
             <div className="pointer-events-none absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-[var(--signal)]/20 to-transparent md:inset-x-8" />
 
-            <div className="mx-auto grid max-w-6xl grid-cols-1 gap-9 lg:grid-cols-[340px_1fr] lg:items-start lg:gap-12">
-                <div ref={frameRef} className="mx-auto w-full max-w-[340px] lg:mx-0 lg:pt-10">
+            <div className="mx-auto grid max-w-6xl grid-cols-1 gap-9 lg:grid-cols-[360px_1fr] lg:items-start lg:gap-12">
+                <div ref={frameRef} className="mx-auto w-full max-w-[360px] lg:mx-0 lg:pt-10">
                     <div className="relative rounded-lg border border-white/10 bg-white/[0.04] p-2 shadow-2xl shadow-black/20 backdrop-blur-md">
                         <span
                             aria-hidden="true"
@@ -122,9 +121,9 @@ export default function AboutMe() {
                             imageSrc="/profile.jpeg"
                             altText="Jude Michael Arriba"
                             captionText="Jude Michael Arriba"
-                            containerHeight="390px"
+                            containerHeight="430px"
                             containerWidth="100%"
-                            imageHeight="390px"
+                            imageHeight="430px"
                             imageWidth="100%"
                             rotateAmplitude={4}
                             scaleOnHover={1.01}
@@ -155,12 +154,36 @@ export default function AboutMe() {
                 <div className="min-w-0">
                     <div className="max-w-2xl">
                         <p ref={eyebrowRef} className="font-mono text-xs font-extrabold uppercase tracking-[0.14em] text-[var(--signal)]">{'// about'}</p>
-                        <h2 ref={headingRef} className="font-display mt-4 text-4xl font-extrabold leading-[1.06] tracking-normal text-[var(--text)] sm:text-5xl">
+                        <ScrollFloat
+                            as="h2"
+                            containerClassName="font-display mt-4 text-left text-4xl font-extrabold tracking-normal text-[var(--text)] sm:text-5xl"
+                            textClassName="text-left leading-[1.06]"
+                            animationDuration={0.56}
+                            ease="power3.out"
+                            settleEase="power2.out"
+                            scrollStart="top 90%"
+                            scrollEnd="bottom top"
+                            charStagger={0.018}
+                            wordStagger={0.045}
+                            playOnce
+                        >
                             I build reliable systems with a clean product feel.
-                        </h2>
-                        <p ref={introRef} className="mt-5 max-w-xl text-base leading-relaxed text-[var(--muted)]/76">
+                        </ScrollFloat>
+                        <ScrollFloat
+                            as="p"
+                            containerClassName="mt-5 max-w-xl text-left text-base leading-relaxed text-[var(--muted)]/76"
+                            textClassName="text-left leading-relaxed"
+                            animationDuration={0.48}
+                            ease="power3.out"
+                            settleEase="power2.out"
+                            scrollStart="top 90%"
+                            scrollEnd="bottom top"
+                            charStagger={0.012}
+                            wordStagger={0.035}
+                            playOnce
+                        >
                             Full-stack engineer focused on backend APIs, IoT workflows, and fast web interfaces that stay easy to maintain.
-                        </p>
+                        </ScrollFloat>
 
                         <div ref={chipsRef} className="mt-7 flex flex-wrap gap-2">
                             {proofPoints.map((point) => (
@@ -192,4 +215,7 @@ export default function AboutMe() {
         </section>
     );
 }
+
+
+
 

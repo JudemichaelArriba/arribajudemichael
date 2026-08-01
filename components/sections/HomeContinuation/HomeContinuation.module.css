@@ -3,10 +3,9 @@
     min-height: 100svh;
     overflow: hidden;
     background:
-        linear-gradient(180deg, rgba(10, 14, 20, 0.2) 0%, var(--bg) 9rem),
+        linear-gradient(180deg, var(--bg) 0%, rgba(10, 14, 20, 0.99) 10rem, rgba(13, 17, 24, 0.98) 56%, var(--bg) 100%),
         linear-gradient(135deg, rgba(82, 39, 255, 0.13) 0%, rgba(10, 14, 20, 0) 34%),
-        linear-gradient(225deg, rgba(255, 159, 252, 0.08) 0%, rgba(10, 14, 20, 0) 32%),
-        linear-gradient(180deg, #0a0e14 0%, #0d1118 54%, #0a0e14 100%);
+        linear-gradient(225deg, rgba(255, 159, 252, 0.08) 0%, rgba(10, 14, 20, 0) 32%);
     color: var(--text);
     isolation: isolate;
 }
@@ -21,7 +20,7 @@
         linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
         linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
     background-size: 72px 72px;
-    mask-image: linear-gradient(180deg, transparent 0%, #000 18%, #000 78%, transparent 100%);
+    mask-image: linear-gradient(180deg, transparent 0%, transparent 8%, #000 24%, #000 78%, transparent 100%);
     opacity: 0.34;
 }
 
@@ -29,12 +28,13 @@
     position: absolute;
     z-index: 1;
     inset: 0 0 auto;
-    height: clamp(4rem, 14vh, 9rem);
+    height: clamp(4rem, 12vh, 8rem);
     pointer-events: none;
-    background: linear-gradient(180deg, rgba(10, 14, 20, 0.1), rgba(10, 14, 20, 0.84) 70%, transparent);
+    background: linear-gradient(180deg, var(--bg) 0%, rgba(10, 14, 20, 0.72) 52%, rgba(10, 14, 20, 0) 100%);
 }
 
 .content {
     position: relative;
     z-index: 2;
 }
+

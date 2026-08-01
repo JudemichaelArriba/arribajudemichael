@@ -1,7 +1,7 @@
 'use client';
 
-import { useMemo, useRef } from 'react';
-import type { ReactNode, RefObject } from 'react';
+import { createElement, useMemo, useRef } from 'react';
+import type { ElementType, ReactNode, RefObject } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useGSAP } from '@gsap/react';
@@ -9,6 +9,7 @@ import { useGSAP } from '@gsap/react';
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
 interface ScrollFloatProps {
+    as?: ElementType;
     children: ReactNode;
     scrollContainerRef?: RefObject<HTMLElement | null>;
     containerClassName?: string;
@@ -24,6 +25,7 @@ interface ScrollFloatProps {
 }
 
 export default function ScrollFloat({
+    as: Component = 'h2',
     children,
     scrollContainerRef,
     containerClassName = '',
@@ -37,7 +39,7 @@ export default function ScrollFloat({
     wordStagger = 0.09,
     playOnce = true,
 }: ScrollFloatProps) {
-    const containerRef = useRef<HTMLHeadingElement>(null);
+    const containerRef = useRef<HTMLElement>(null);
     const hasPlayedRef = useRef(false);
 
     const words = useMemo(() => {
@@ -148,23 +150,23 @@ export default function ScrollFloat({
         }
     );
 
-    return (
-        <h2 ref={containerRef} className={`overflow-hidden text-center ${containerClassName}`}>
-            <span className={`inline-block max-w-full text-center leading-[1.08] ${textClassName}`}>
-                {words.map((word, wordIndex) => (
-                    <span className="scroll-float-word inline-block" key={`word-${wordIndex}`}>
-                        {Array.from(word).map((char, charIndex) => (
-                            <span
-                                className="scroll-float-char inline-block translate-z-0"
-                                key={`${char}-${wordIndex}-${charIndex}`}
-                            >
-                                {char}
-                            </span>
-                        ))}
-                        {wordIndex < words.length - 1 ? '\u00A0' : ''}
-                    </span>
-                ))}
-            </span>
-        </h2>
+    return createElement(
+        Component,
+        { ref: containerRef, className: `overflow-hidden text-center ${containerClassName}` },
+        <span className={`inline-block max-w-full text-center leading-[1.08] ${textClassName}`}>
+            {words.map((word, wordIndex) => (
+                <span className="scroll-float-word inline-block" key={`word-${wordIndex}`}>
+                    {Array.from(word).map((char, charIndex) => (
+                        <span
+                            className="scroll-float-char inline-block translate-z-0"
+                            key={`${char}-${wordIndex}-${charIndex}`}
+                        >
+                            {char}
+                        </span>
+                    ))}
+                    {wordIndex < words.length - 1 ? '\u00A0' : ''}
+                </span>
+            ))}
+        </span>
     );
 }
