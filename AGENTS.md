@@ -39,13 +39,11 @@ arribajudemichael/
 │   │   │   ├── HomeContinuation.tsx
 │   │   │   └── HomeContinuation.module.css  # Continuation bridge/layer styles
 │   │   ├── WhatIDo/              # What I Do section
-│   │   │   ├── WhatIDo.tsx
-│   │   │   └── WhatIDo.module.css  # Complex gradients (keep native CSS)
+    WhatIDo.tsx                 # Tailwind CSS only
 │   │   └── AboutMe/              # About section with compact bento/profile layout
-│   │       ├── AboutMe.tsx
-│   │       ├── AboutMe.module.css
-│   │       ├── AboutBento.tsx
-│   │       └── AboutBento.css    # Bento hover effects (keep native CSS)
+    AboutMe.tsx                 # Tailwind CSS only
+    AboutBento.tsx
+    AboutBento.css              # Bento glow/effect CSS only
 │   ├── ui/                       # Reusable UI components
 │   │   ├── Button.tsx            # Custom button with specular/magnetic variants
 │   │   ├── RollingText.tsx       # Animated text roller component
@@ -108,16 +106,19 @@ arribajudemichael/
 - Component co-location: styles next to component files
 
 ### 3. Styling Approach
-- **Tailwind CSS 4 FIRST** - Use Tailwind utility classes for all standard styling
-- **Use native CSS ONLY when necessary** for:
-  - Complex radial/multi-layer gradients (e.g., WhatIDo section)
-  - Complex state transitions and backdrop filters (e.g., Navbar)
-  - Dynamic CSS custom properties (e.g., LineSidebar proximity effects)
-  - WebGL/Canvas effects (e.g., LightPillar, SpecularButton)
-- CSS Modules (`.module.css`) for component-specific complex styles
-- Global styles in `app/globals.css` for scrollbar, reduced-motion, and utility classes
-- Tailwind arbitrary values (`className="text-[#5227FF]"`) for one-off custom values
-
+- **Tailwind CSS 4 is mandatory for standard styling** - Use utility classes for layout, spacing, sizing, typography, colors, borders, shadows, responsive states, and simple hover/focus states.
+- **Use Tailwind even when a CSS file already exists** - Keep or add native CSS only for rules that Tailwind would make fragile, unreadable, or less correct.
+- **Native CSS is protected only when necessary** for:
+  - Pseudo-elements, masks, `color-mix`, complex layered backgrounds, or browser-specific selectors
+  - Complex state transitions and backdrop layering (e.g., `Navbar.module.css`)
+  - Dynamic CSS custom properties and proximity effects (e.g., `LineSidebar.module.css`)
+  - WebGL/Canvas containers and generated DOM effects (e.g., `LightPillar.css`, `SpecularButton.css`)
+  - Effect-only rules in `AboutBento.css` such as glow variables and border-glow pseudo-elements
+- **Protected native CSS files:** `LightPillar.css`, `SpecularButton.css`, `Navbar.module.css`, `LineSidebar.module.css`, and effect-only pieces of `AboutBento.css`.
+- CSS Modules (`.module.css`) are for component-specific complex effects only, not ordinary layout or typography.
+- Global styles in `app/globals.css` are for Tailwind directives, CSS variables, scrollbar, reduced-motion, and true global utilities.
+- Tailwind arbitrary values (`className="text-[#5227FF]"`) are preferred for one-off exact design values.
+- Empty or unused CSS files must be removed after conversion.
 ### 4. Animation & Effects
 - **GSAP 3.15** for complex animations (@gsap/react)
 - **Three.js/OGL** for WebGL effects (LightPillar)
@@ -249,7 +250,7 @@ export default function Component({ title, onAction }: ComponentProps) {
 ### Adding a New UI Component
 1. Create in `components/ui/[ComponentName].tsx`
 2. Define TypeScript interface for props
-3. Use Tailwind utilities + CSS Module if needed for complex styles
+3. Use Tailwind utilities for all standard styling; add CSS only for protected complex effects
 4. Export and document usage patterns
 5. Consider reusability and composition
 
@@ -334,6 +335,7 @@ See `.github/workflows/test.yml` for the complete workflow configuration.
 4. Test in browser (dev mode)
 5. Check console for warnings/errors
 6. Verify responsive design
+7. For CSS-to-Tailwind conversions, verify no design changes, preserved reduced-motion behavior, preserved GSAP/query selector hooks, and no stale CSS imports
 
 ## Notes for AI Agents
 
@@ -352,6 +354,7 @@ See `.github/workflows/test.yml` for the complete workflow configuration.
 - Don't modify `.env` or expose secrets
 - Don't break existing component APIs
 - Don't use deprecated Next.js APIs
+- Don't create CSS files or CSS Modules for simple styling; use Tailwind instead
 
 ### When in Doubt
 1. Read the relevant section in this file

@@ -29,8 +29,8 @@ components/
     home/                -> Home.tsx (Tailwind CSS only)
     HomeRevealScene/     -> HomeRevealScene.tsx + .module.css (home pull reveal)
     HomeContinuation/    -> HomeContinuation.tsx + .module.css (below-home wrapper)
-    WhatIDo/             -> WhatIDo.tsx + WhatIDo.module.css (complex gradients)
-    AboutMe/             -> AboutMe.tsx, AboutBento.tsx, CSS for compact bento/profile layout
+    WhatIDo/             -> WhatIDo.tsx (Tailwind CSS only)
+    AboutMe/             -> AboutMe.tsx, AboutBento.tsx + AboutBento.css (effect CSS only)
   ui/                    -> Reusable UI (Button, RollingText, ScrollFloat)
     ScrollFloat/         -> ScrollFloat.tsx (Tailwind CSS only)
     PurpleScrollbar/     -> PurpleScrollbar.tsx (styles in globals.css)
@@ -152,18 +152,20 @@ export default function Page({ params }: PageProps) {
 ### Styling Guidelines
 
 #### Tailwind CSS 4 Usage (ALWAYS USE FIRST)
-- **Default choice for all styling** - Use utility classes for layout, spacing, colors, typography
+- **Mandatory for all standard styling** - Use utility classes for layout, spacing, sizing, colors, typography, borders, shadows, responsive states, and simple hover/focus states
+- **Use Tailwind even when a CSS file exists** - Move safe static CSS into `className`; keep native CSS only when Tailwind would be fragile or unclear
 - **Responsive design** - Use `md:`, `lg:`, `xl:` breakpoints
 - **Arbitrary values** - Use `text-[#5227FF]`, `p-[clamp(1rem,2vw,3rem)]` for custom values
 - **Combine with CSS variables** - `text-[var(--signal)]`, `bg-[var(--surface)]`
 
 #### CSS Modules (USE ONLY WHEN NECESSARY)
-- **When Tailwind can't handle it:**
-  - Complex multi-layer radial gradients
+- **When Tailwind would reduce safety, readability, or effect correctness:**
+  - Pseudo-elements, masks, `color-mix`, generated DOM effects, or complex multi-layer backgrounds
   - Complex state transitions with multiple properties
   - Dynamic CSS custom properties
   - Backdrop filters with complex layering
   - WebGL/Canvas container styles
+- **Protected native CSS files:** `LightPillar.css`, `SpecularButton.css`, `Navbar.module.css`, `LineSidebar.module.css`, and effect-only pieces of `AboutBento.css`
 - **Naming:** `Component.module.css` co-located with component
 - **BEM-like naming inside modules:** `.container`, `.button`, `.button__icon`
 
@@ -239,6 +241,7 @@ npm run dev         # Test in development
 - [ ] Tests pass (npm test)
 - [ ] No console warnings/errors
 - [ ] Responsive design works (mobile, tablet, desktop)
+- [ ] CSS-to-Tailwind conversions preserve the exact design, reduced-motion behavior, GSAP/query selector hooks, and remove stale CSS imports
 - [ ] Animations run smoothly
 - [ ] Accessibility maintained (keyboard nav, screen readers)
 
@@ -333,14 +336,15 @@ The following components have been converted from CSS Modules to pure Tailwind C
 - **Home.tsx** - Hero section (removed `Home.module.css`)
 - **ScrollFloat.tsx** - Scroll animation component (removed `ScrollFloat.module.css`)
 - **PurpleScrollbar.tsx** - Scrollbar styles moved to `app/globals.css`
+- **WhatIDo.tsx** - What I Do section (removed `WhatIDo.module.css`)
 
 #### Components That MUST Keep Native CSS
 The following components require CSS Modules for complex effects:
-- **WhatIDo.module.css** - Multi-layer radial gradients with complex layering
 - **Navbar.module.css** - Complex state transitions, backdrop filters, overlay animations
 - **LineSidebar.module.css** - Dynamic CSS custom properties for proximity effects
 - **LightPillar.css** - WebGL container styles
 - **SpecularButton.css** - Canvas effect styling
+- **AboutBento.css** - Border-glow pseudo-element, glow CSS variables, and generated spotlight effect only
 
 #### What to Do
 ✅ Read `AGENTS.md` for comprehensive information  

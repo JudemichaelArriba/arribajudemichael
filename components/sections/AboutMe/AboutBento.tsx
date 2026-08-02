@@ -25,6 +25,13 @@ interface AboutBentoProps {
 const DEFAULT_PARTICLE_COUNT = 12;
 const DEFAULT_SPOTLIGHT_RADIUS = 320;
 const DEFAULT_GLOW_COLOR = '195, 109, 252';
+const BENTO_GRID_CLASS = 'about-bento-section grid w-full grid-cols-1 gap-3 sm:grid-cols-2';
+const BENTO_CARD_CLASS =
+    'about-bento-card relative flex min-h-[104px] flex-col justify-center gap-[0.72em] overflow-hidden rounded-lg border border-white/[0.07] bg-white/[0.04] px-[1.25em] py-[1.2em] transition-[transform,border-color,background] duration-[220ms] ease-[ease] hover:-translate-y-0.5 hover:border-[rgba(195,109,252,0.18)] hover:bg-white/[0.055] max-sm:min-h-0 max-sm:p-[1.05em] motion-reduce:transition-none motion-reduce:hover:translate-y-0 [@media(hover:none)]:hover:translate-y-0';
+const BENTO_META_CLASS = 'flex items-baseline gap-[0.6em]';
+const BENTO_CODE_CLASS = 'font-mono text-[10px] text-[var(--signal)] opacity-65';
+const BENTO_LABEL_CLASS = 'font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--muted)] opacity-50';
+const BENTO_VALUE_CLASS = 'text-[clamp(0.95rem,1.45vw,1.06rem)] font-[550] leading-[1.38] text-[var(--text)]';
 
 const useInteractiveMotion = () => {
     const [canUseMotion, setCanUseMotion] = useState(false);
@@ -210,7 +217,7 @@ const AboutParticleCard: React.FC<{
     }, [animateParticles, clearAllParticles, disableAnimations, clickEffect, glowColor]);
 
     return (
-        <div ref={cardRef} className={`${className} about-particle-container`} style={{ position: 'relative', overflow: 'hidden' }}>
+        <div ref={cardRef} className={`${className} relative overflow-hidden`}>
             {children}
         </div>
     );
@@ -348,17 +355,17 @@ export default function AboutBento({
                 />
             )}
 
-            <div className="about-bento-grid about-bento-section" ref={gridRef}>
+            <div className={BENTO_GRID_CLASS} ref={gridRef}>
                 {cards.map((card) => {
-                    const baseClassName = `about-bento-card ${enableBorderGlow ? 'about-bento-card--border-glow' : ''}`;
+                    const baseClassName = [BENTO_CARD_CLASS, enableBorderGlow ? 'about-bento-card--border-glow' : ''].filter(Boolean).join(' ');
 
                     const content = (
                         <>
-                            <div className="about-bento-card__meta">
-                                <span className="about-bento-card__code">{card.code}</span>
-                                <span className="about-bento-card__label">{card.label}</span>
+                            <div className={BENTO_META_CLASS}>
+                                <span className={BENTO_CODE_CLASS}>{card.code}</span>
+                                <span className={BENTO_LABEL_CLASS}>{card.label}</span>
                             </div>
-                            <div className="about-bento-card__value">{card.value}</div>
+                            <div className={BENTO_VALUE_CLASS}>{card.value}</div>
                         </>
                     );
 
