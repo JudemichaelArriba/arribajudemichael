@@ -28,7 +28,7 @@ export default function WhatIDo({ sentence = DEFAULT_SENTENCE }: WhatIDoProps) {
                     scrollEnd="bottom top"
                     charStagger={0.018}
                     wordStagger={0.045}
-                    playOnce
+                    playOnce={false}
                 >
                     {sentence}
                 </ScrollFloat>

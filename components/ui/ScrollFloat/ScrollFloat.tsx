@@ -52,67 +52,104 @@ export default function ScrollFloat({
             const el = containerRef.current;
             const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-            if (!el || prefersReducedMotion) return;
+            if (!el) return;
 
             const scroller = scrollContainerRef?.current ?? window;
             const wordElements = gsap.utils.toArray<HTMLElement>('.scroll-float-word', el);
             const allChars = gsap.utils.toArray<HTMLElement>('.scroll-float-char', el);
 
-            gsap.set(allChars, {
-                autoAlpha: 0,
-                yPercent: 78,
-                scaleY: 0.92,
-                scaleX: 0.98,
-                transformOrigin: '50% 100%',
-            });
+            if (prefersReducedMotion) {
+                gsap.set(allChars, {
+                    autoAlpha: 1,
+                    yPercent: 0,
+                    scaleX: 1,
+                    scaleY: 1,
+                    clearProps: 'transform,opacity,visibility',
+                });
+                return;
+            }
+
+            const setInitialState = () => {
+                gsap.set(allChars, {
+                    autoAlpha: 0,
+                    yPercent: 78,
+                    scaleY: 0.92,
+                    scaleX: 0.98,
+                    transformOrigin: '50% 100%',
+                });
+            };
+
+            setInitialState();
 
             const riseDuration = animationDuration * 0.48;
             const settleDuration = animationDuration * 0.52;
             const settleOverlap = riseDuration * 0.4;
 
+            const timeline = gsap.timeline({
+                paused: true,
+                defaults: { force3D: true, overwrite: 'auto' },
+                onStart: () => el.classList.add('scroll-float-animating'),
+                onComplete: () => el.classList.remove('scroll-float-animating'),
+            });
+
+            wordElements.forEach((wordEl, wordIndex) => {
+                const chars = gsap.utils.toArray<HTMLElement>('.scroll-float-char', wordEl);
+                const startTime = wordIndex * wordStagger;
+
+                timeline.fromTo(
+                    chars,
+                    {
+                        autoAlpha: 0,
+                        yPercent: 78,
+                        scaleY: 0.92,
+                        scaleX: 0.98,
+                        transformOrigin: '50% 100%',
+                    },
+                    {
+                        autoAlpha: 1,
+                        yPercent: -20,
+                        scaleY: 1.06,
+                        scaleX: 0.98,
+                        duration: riseDuration,
+                        ease,
+                        immediateRender: false,
+                        stagger: { amount: charStagger, from: 'start' },
+                    },
+                    startTime
+                ).to(
+                    chars,
+                    {
+                        yPercent: 0,
+                        scaleY: 1,
+                        scaleX: 1,
+                        duration: settleDuration,
+                        ease: settleEase,
+                        stagger: { amount: charStagger * 0.45, from: 'start' },
+                    },
+                    startTime + riseDuration - settleOverlap
+                );
+            });
+
             const playBounce = (trigger?: ScrollTrigger) => {
                 if (playOnce && hasPlayedRef.current) return;
 
                 hasPlayedRef.current = true;
-                el.classList.add('scroll-float-animating');
+                if (!playOnce) setInitialState();
+                timeline.invalidate().restart(true);
 
-                const tl = gsap.timeline({
-                    defaults: { force3D: true, overwrite: 'auto' },
-                    onComplete: () => {
+                if (playOnce) {
+                    timeline.eventCallback('onComplete', () => {
                         el.classList.remove('scroll-float-animating');
-                        if (playOnce) trigger?.kill(false);
-                    },
-                });
+                        trigger?.kill(false);
+                    });
+                }
+            };
 
-                wordElements.forEach((wordEl, wordIndex) => {
-                    const chars = gsap.utils.toArray<HTMLElement>('.scroll-float-char', wordEl);
-                    const startTime = wordIndex * wordStagger;
-
-                    tl.to(
-                        chars,
-                        {
-                            autoAlpha: 1,
-                            yPercent: -20,
-                            scaleY: 1.06,
-                            scaleX: 0.98,
-                            duration: riseDuration,
-                            ease,
-                            stagger: { amount: charStagger, from: 'start' },
-                        },
-                        startTime
-                    ).to(
-                        chars,
-                        {
-                            yPercent: 0,
-                            scaleY: 1,
-                            scaleX: 1,
-                            duration: settleDuration,
-                            ease: settleEase,
-                            stagger: { amount: charStagger * 0.45, from: 'start' },
-                        },
-                        startTime + riseDuration - settleOverlap
-                    );
-                });
+            const resetBounce = () => {
+                if (playOnce) return;
+                timeline.pause(0, true);
+                setInitialState();
+                el.classList.remove('scroll-float-animating');
             };
 
             const trigger = ScrollTrigger.create({
@@ -122,13 +159,12 @@ export default function ScrollFloat({
                 end: scrollEnd,
                 once: playOnce,
                 onEnter: (self) => playBounce(self),
-                onEnterBack: (self) => {
-                    if (!playOnce) playBounce(self);
-                },
+                onLeaveBack: resetBounce,
             });
 
             return () => {
                 trigger.kill(false);
+                timeline.kill();
                 gsap.killTweensOf(allChars);
                 el.classList.remove('scroll-float-animating');
             };

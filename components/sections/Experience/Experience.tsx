@@ -65,11 +65,12 @@ export default function Experience() {
       const nodes = gsap.utils.toArray<HTMLElement>('.experience-node', section);
       const cards = gsap.utils.toArray<HTMLElement>('.experience-card', section);
       const cardInternals = gsap.utils.toArray<HTMLElement>(
-        '.experience-card-meta, .experience-card-title, .experience-card-description',
+        '.experience-card-date, .experience-card-meta, .experience-card-title, .experience-card-description',
         section
       );
       const lineFill = section.querySelector<HTMLElement>('.experience-line-fill');
       const triggers: ScrollTrigger[] = [];
+      const timelines: gsap.core.Timeline[] = [];
 
       if (prefersReducedMotion) {
         gsap.set([...nodes, ...cards, ...cardInternals], {
@@ -100,11 +101,8 @@ export default function Experience() {
       });
       gsap.set(cardInternals, {
         autoAlpha: 0,
-        yPercent: 70,
-        scaleY: 0.92,
-        scaleX: 0.98,
-        transformOrigin: '50% 100%',
-        willChange: 'transform, opacity',
+        clearProps: 'transform',
+        willChange: 'opacity',
       });
 
       items.forEach((item, index) => {
@@ -113,37 +111,83 @@ export default function Experience() {
         if (!node || !card) return;
 
         const internals = gsap.utils.toArray<HTMLElement>(
-          '.experience-card-meta, .experience-card-title, .experience-card-description',
+          '.experience-card-date, .experience-card-meta, .experience-card-title, .experience-card-description',
           card
         );
 
-        const timeline = gsap.timeline({
-          defaults: { overwrite: 'auto', force3D: true },
-          scrollTrigger: {
-            trigger: item,
-            start: 'top 96%',
-            once: true,
-            invalidateOnRefresh: true,
-          },
-        });
+        const setItemInitialState = () => {
+          timeline.pause(0, true);
+          gsap.set(node, {
+            autoAlpha: 0,
+            scale: 0.35,
+            transformOrigin: '50% 50%',
+            willChange: 'transform, opacity',
+          });
+          gsap.set(card, {
+            autoAlpha: 0,
+            yPercent: 38,
+            scaleY: 0.94,
+            scaleX: 0.98,
+            transformOrigin: '50% 100%',
+            willChange: 'transform, opacity',
+          });
+          gsap.set(internals, {
+            autoAlpha: 0,
+            clearProps: 'transform',
+            willChange: 'opacity',
+          });
+        };
 
-        if (timeline.scrollTrigger) triggers.push(timeline.scrollTrigger);
+        const timeline = gsap.timeline({
+          paused: true,
+          defaults: { overwrite: 'auto', force3D: true },
+        });
+        timelines.push(timeline);
+
+        const trigger = ScrollTrigger.create({
+          trigger: item,
+          start: 'top 96%',
+          end: 'bottom top',
+          invalidateOnRefresh: true,
+          onEnter: () => {
+            setItemInitialState();
+            timeline.invalidate().restart(true);
+          },
+          onLeaveBack: setItemInitialState,
+        });
+        triggers.push(trigger);
 
         timeline
-          .to(node, {
-            autoAlpha: 1,
-            scale: 1.18,
-            duration: 0.18,
-            ease: 'power3.out',
-          })
+          .fromTo(
+            node,
+            {
+              autoAlpha: 0,
+              scale: 0.35,
+              transformOrigin: '50% 50%',
+            },
+            {
+              autoAlpha: 1,
+              scale: 1.18,
+              duration: 0.18,
+              ease: 'power3.out',
+              immediateRender: false,
+            }
+          )
           .to(node, {
             scale: 1,
             duration: 0.28,
             ease: 'back.out(2.2)',
             clearProps: 'transform,willChange',
           })
-          .to(
+          .fromTo(
             card,
+            {
+              autoAlpha: 0,
+              yPercent: 38,
+              scaleY: 0.94,
+              scaleX: 0.98,
+              transformOrigin: '50% 100%',
+            },
             {
               autoAlpha: 1,
               yPercent: -8,
@@ -151,6 +195,7 @@ export default function Experience() {
               scaleX: 0.98,
               duration: 0.22,
               ease: 'power3.out',
+              immediateRender: false,
             },
             '-=0.34'
           )
@@ -166,29 +211,18 @@ export default function Experience() {
             },
             '-=0.08'
           )
-          .to(
+          .fromTo(
             internals,
+            {
+              autoAlpha: 0,
+            },
             {
               autoAlpha: 1,
-              yPercent: -18,
-              scaleY: 1.06,
-              scaleX: 0.98,
-              duration: 0.2,
-              ease: 'power3.out',
-              stagger: 0.07,
-            },
-            '-=0.34'
-          )
-          .to(
-            internals,
-            {
-              yPercent: 0,
-              scaleY: 1,
-              scaleX: 1,
-              duration: 0.3,
-              ease: 'back.out(1.7)',
-              stagger: 0.045,
-              clearProps: 'transform,willChange',
+              duration: 0.22,
+              ease: 'power2.out',
+              immediateRender: false,
+              stagger: 0.055,
+              clearProps: 'willChange',
             },
             '-=0.12'
           );
@@ -213,6 +247,7 @@ export default function Experience() {
 
       return () => {
         triggers.forEach((trigger) => trigger.kill(false));
+        timelines.forEach((timeline) => timeline.kill());
       };
     },
     { scope: sectionRef, dependencies: [] }
@@ -231,6 +266,7 @@ export default function Experience() {
         as="p"
         containerClassName="mb-[clamp(1.25rem,3vw,2rem)] text-center"
         textClassName="font-mono text-xs font-extrabold uppercase leading-[1.2] tracking-[0.14em] text-[color-mix(in_srgb,var(--signal)_78%,#ffffff_22%)]"
+        playOnce={false}
       >
         {'// Experience'}
       </ScrollFloat>
@@ -287,7 +323,7 @@ export default function Experience() {
                     {item.title}
                   </h3>
 
-                  <span className="shrink-0 font-mono text-[0.65rem] font-bold uppercase tracking-[0.14em] text-[var(--signal)] pt-1">
+                  <span className="experience-card-date shrink-0 font-mono text-[0.65rem] font-bold uppercase tracking-[0.14em] text-[var(--signal)] pt-1">
                     {item.date}
                   </span>
                 </div>

@@ -43,19 +43,18 @@ export default function AboutMe() {
             const cardTargets = gsap.utils.toArray<HTMLElement>('.about-bento-card', bentoWrapRef.current ?? undefined);
             const refreshFrame = window.requestAnimationFrame(() => ScrollTrigger.refresh());
 
-            if (frame) gsap.set(frame, { autoAlpha: 0, y: 20, scale: 0.97, transformOrigin: '50% 24%' });
-            gsap.set(copyTargets, { autoAlpha: 0, y: 16 });
-            gsap.set(chipTargets, { autoAlpha: 0, y: 12 });
-            gsap.set(cardTargets, { autoAlpha: 0, y: 16, scale: 0.985, transformOrigin: '50% 0%' });
+            const setInitialState = () => {
+                if (frame) gsap.set(frame, { autoAlpha: 0, y: 20, scale: 0.97, transformOrigin: '50% 24%' });
+                gsap.set(copyTargets, { autoAlpha: 0, y: 16 });
+                gsap.set(chipTargets, { autoAlpha: 0, y: 12 });
+                gsap.set(cardTargets, { autoAlpha: 0, y: 16, scale: 0.985, transformOrigin: '50% 0%' });
+            };
+
+            setInitialState();
 
             const timeline = gsap.timeline({
+                paused: true,
                 defaults: { overwrite: 'auto', force3D: true },
-                scrollTrigger: {
-                    trigger: section,
-                    start: 'top 88%',
-                    once: true,
-                    invalidateOnRefresh: true,
-                },
             });
 
             if (frame) {
@@ -92,9 +91,26 @@ export default function AboutMe() {
                     stagger: 0.045,
                 }, 0.36);
 
+            const resetReveal = () => {
+                timeline.pause(0, true);
+                setInitialState();
+            };
+
+            const trigger = ScrollTrigger.create({
+                trigger: section,
+                start: 'top 88%',
+                end: 'bottom top',
+                invalidateOnRefresh: true,
+                onEnter: () => {
+                    setInitialState();
+                    timeline.restart(true);
+                },
+                onLeaveBack: resetReveal,
+            });
+
             return () => {
                 window.cancelAnimationFrame(refreshFrame);
-                timeline.scrollTrigger?.kill();
+                trigger.kill(false);
                 timeline.kill();
             };
         },
@@ -165,7 +181,7 @@ export default function AboutMe() {
                             scrollEnd="bottom top"
                             charStagger={0.018}
                             wordStagger={0.045}
-                            playOnce
+                            playOnce={false}
                         >
                             I build reliable systems with a clean product feel.
                         </ScrollFloat>
@@ -180,7 +196,7 @@ export default function AboutMe() {
                             scrollEnd="bottom top"
                             charStagger={0.012}
                             wordStagger={0.035}
-                            playOnce
+                            playOnce={false}
                         >
                             Full-stack engineer focused on backend APIs, IoT workflows, and fast web interfaces that stay easy to maintain.
                         </ScrollFloat>
