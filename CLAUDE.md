@@ -28,7 +28,6 @@ components/
   sections/              -> Page sections and page-level section scenes
     home/                -> Home.tsx (Tailwind CSS only)
     HomeRevealScene/     -> HomeRevealScene.tsx + .module.css (home pull reveal)
-    HomeContinuation/    -> HomeContinuation.tsx + .module.css (below-home wrapper)
     WhatIDo/             -> WhatIDo.tsx (Tailwind CSS only)
     AboutMe/             -> AboutMe.tsx, AboutBento.tsx + AboutBento.css (effect CSS only)
   ui/                    -> Reusable UI (Button, RollingText, ScrollFloat)

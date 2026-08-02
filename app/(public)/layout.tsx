@@ -7,7 +7,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
         <Preloader>
             <PurpleScrollbar />
             <Navbar />
-            <main>{children}</main>
+            <main className="min-h-svh bg-[var(--site-bg)] text-[var(--text)]">{children}</main>
         </Preloader>
     );
 }

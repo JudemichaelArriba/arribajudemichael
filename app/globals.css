@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 :root {
+  --site-bg: #000000;
   --bg: #0a0e14;
   --surface: #131a24;
   --text: #e7e9ec;
@@ -18,8 +19,12 @@ html {
 }
 
 body {
-  background: var(--bg);
+  background: var(--site-bg);
   color: var(--text);
+}
+
+.site-background {
+  background: var(--site-bg);
 }
 
 .font-display {

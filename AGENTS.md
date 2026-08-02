@@ -35,9 +35,6 @@ arribajudemichael/
 │   │   ├── HomeRevealScene/      # Pinned home-to-continuation reveal scene
 │   │   │   ├── HomeRevealScene.tsx
 │   │   │   └── HomeRevealScene.module.css  # Scroll reveal layering (keep native CSS)
-│   │   ├── HomeContinuation/     # Wrapper for below-home content on the / route
-│   │   │   ├── HomeContinuation.tsx
-│   │   │   └── HomeContinuation.module.css  # Continuation bridge/layer styles
 │   │   ├── WhatIDo/              # What I Do section
     WhatIDo.tsx                 # Tailwind CSS only
 │   │   └── AboutMe/              # About section with compact bento/profile layout

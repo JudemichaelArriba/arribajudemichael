@@ -35,7 +35,7 @@ export default function Home() {
             </div>
 
             <div
-                className="pointer-events-none absolute inset-x-0 bottom-0 z-0 h-56 bg-gradient-to-b from-transparent via-[var(--bg)]/64 to-[var(--bg)] md:h-72"
+                className="pointer-events-none absolute inset-x-0 bottom-0 z-0 h-56 bg-gradient-to-b from-transparent via-[var(--site-bg)]/64 to-[var(--site-bg)] md:h-72"
                 aria-hidden="true"
             />
 
@@ -92,4 +92,3 @@ export default function Home() {
         </section>
     );
 }
-
