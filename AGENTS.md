@@ -39,8 +39,7 @@ arribajudemichael/
     WhatIDo.tsx                 # Tailwind CSS only
 │   │   └── AboutMe/              # About section with compact bento/profile layout
     AboutMe.tsx                 # Tailwind CSS only
-    AboutBento.tsx
-    AboutBento.css              # Bento glow/effect CSS only
+    AboutBento.tsx              # Thin wrapper around shared Bento UI
 │   ├── ui/                       # Reusable UI components
 │   │   ├── Button.tsx            # Custom button with specular/magnetic variants
 │   │   ├── RollingText.tsx       # Animated text roller component
@@ -110,8 +109,8 @@ arribajudemichael/
   - Complex state transitions and backdrop layering (e.g., `Navbar.module.css`)
   - Dynamic CSS custom properties and proximity effects (e.g., `LineSidebar.module.css`)
   - WebGL/Canvas containers and generated DOM effects (e.g., `LightPillar.css`, `SpecularButton.css`)
-  - Effect-only rules in `AboutBento.css` such as glow variables and border-glow pseudo-elements
-- **Protected native CSS files:** `LightPillar.css`, `SpecularButton.css`, `Navbar.module.css`, `LineSidebar.module.css`, and effect-only pieces of `AboutBento.css`.
+  - Effect-only rules in `components/ui/Bento/Bento.css` such as glow variables and border-glow pseudo-elements
+- **Protected native CSS files:** `LightPillar.css`, `SpecularButton.css`, `Navbar.module.css`, `LineSidebar.module.css`, and effect-only pieces of `components/ui/Bento/Bento.css`.
 - CSS Modules (`.module.css`) are for component-specific complex effects only, not ordinary layout or typography.
 - Global styles in `app/globals.css` are for Tailwind directives, CSS variables, scrollbar, reduced-motion, and true global utilities.
 - Tailwind arbitrary values (`className="text-[#5227FF]"`) are preferred for one-off exact design values.

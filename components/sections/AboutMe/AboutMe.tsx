@@ -18,8 +18,8 @@ const aboutCards: AboutCardData[] = [
 ];
 
 const proofPoints = [
-    'Full-stack systems',
-    'Backend + IoT',
+    'Web interfaces And Mobile apps',
+    'Backend APIs',
     'Maintainable code',
 ];
 

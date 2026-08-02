@@ -29,8 +29,8 @@ components/
     home/                -> Home.tsx (Tailwind CSS only)
     HomeRevealScene/     -> HomeRevealScene.tsx + .module.css (home pull reveal)
     WhatIDo/             -> WhatIDo.tsx (Tailwind CSS only)
-    AboutMe/             -> AboutMe.tsx, AboutBento.tsx + AboutBento.css (effect CSS only)
-  ui/                    -> Reusable UI (Button, RollingText, ScrollFloat)
+    AboutMe/             -> AboutMe.tsx + AboutBento.tsx wrapper
+  ui/                    -> Reusable UI (Button, RollingText, ScrollFloat, Bento)
     ScrollFloat/         -> ScrollFloat.tsx (Tailwind CSS only)
     PurpleScrollbar/     -> PurpleScrollbar.tsx (styles in globals.css)
     LineSidebar/         -> LineSidebar.tsx + .module.css (CSS variables)
@@ -164,7 +164,7 @@ export default function Page({ params }: PageProps) {
   - Dynamic CSS custom properties
   - Backdrop filters with complex layering
   - WebGL/Canvas container styles
-- **Protected native CSS files:** `LightPillar.css`, `SpecularButton.css`, `Navbar.module.css`, `LineSidebar.module.css`, and effect-only pieces of `AboutBento.css`
+- **Protected native CSS files:** `LightPillar.css`, `SpecularButton.css`, `Navbar.module.css`, `LineSidebar.module.css`, and effect-only pieces of `components/ui/Bento/Bento.css`
 - **Naming:** `Component.module.css` co-located with component
 - **BEM-like naming inside modules:** `.container`, `.button`, `.button__icon`
 
@@ -343,7 +343,7 @@ The following components require CSS Modules for complex effects:
 - **LineSidebar.module.css** - Dynamic CSS custom properties for proximity effects
 - **LightPillar.css** - WebGL container styles
 - **SpecularButton.css** - Canvas effect styling
-- **AboutBento.css** - Border-glow pseudo-element, glow CSS variables, and generated spotlight effect only
+- **components/ui/Bento/Bento.css** - Border-glow pseudo-element, glow CSS variables, and generated spotlight effect only
 
 #### What to Do
 ✅ Read `AGENTS.md` for comprehensive information  
