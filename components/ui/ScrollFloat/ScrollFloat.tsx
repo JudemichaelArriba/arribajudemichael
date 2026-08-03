@@ -22,6 +22,12 @@ interface ScrollFloatProps {
     charStagger?: number;
     wordStagger?: number;
     playOnce?: boolean;
+    highlightOnScroll?: boolean;
+    highlightStart?: string;
+    highlightEnd?: string;
+    highlightScrub?: number;
+    highlightFromColor?: string;
+    highlightToColor?: string;
 }
 
 export default function ScrollFloat({
@@ -38,6 +44,12 @@ export default function ScrollFloat({
     charStagger = 0.05,
     wordStagger = 0.09,
     playOnce = true,
+    highlightOnScroll = false,
+    highlightStart = 'top 70%',
+    highlightEnd = 'bottom 35%',
+    highlightScrub = 0.65,
+    highlightFromColor = '#626873',
+    highlightToColor = 'var(--text)',
 }: ScrollFloatProps) {
     const containerRef = useRef<HTMLElement>(null);
     const hasPlayedRef = useRef(false);
@@ -58,6 +70,41 @@ export default function ScrollFloat({
             const wordElements = gsap.utils.toArray<HTMLElement>('.scroll-float-word', el);
             const allChars = gsap.utils.toArray<HTMLElement>('.scroll-float-char', el);
 
+            const createHighlightTimeline = () => {
+                if (!highlightOnScroll) return null;
+
+                const highlightTimeline = gsap.timeline({
+                    scrollTrigger: {
+                        trigger: el,
+                        scroller,
+                        start: highlightStart,
+                        end: highlightEnd,
+                        scrub: highlightScrub,
+                        invalidateOnRefresh: true,
+                    },
+                });
+
+                wordElements.forEach((wordEl, wordIndex) => {
+                    const chars = gsap.utils.toArray<HTMLElement>('.scroll-float-char', wordEl);
+                    highlightTimeline.to(
+                        chars,
+                        {
+                            color: highlightToColor,
+                            duration: 0.12,
+                            ease: 'none',
+                        },
+                        wordIndex * 0.14
+                    );
+                });
+
+                return highlightTimeline;
+            };
+
+            if (highlightOnScroll) {
+                gsap.set(wordElements, { clearProps: 'color' });
+                gsap.set(allChars, { color: highlightFromColor });
+            }
+
             if (prefersReducedMotion) {
                 gsap.set(allChars, {
                     autoAlpha: 1,
@@ -66,7 +113,15 @@ export default function ScrollFloat({
                     scaleY: 1,
                     clearProps: 'transform,opacity,visibility',
                 });
-                return;
+                const highlightTimeline = createHighlightTimeline();
+
+                return () => {
+                    highlightTimeline?.scrollTrigger?.kill(false);
+                    highlightTimeline?.kill();
+                    if (highlightOnScroll) {
+                        gsap.set(allChars, { color: highlightFromColor });
+                    }
+                };
             }
 
             const setInitialState = () => {
@@ -162,8 +217,15 @@ export default function ScrollFloat({
                 onLeaveBack: resetBounce,
             });
 
+            const highlightTimeline = createHighlightTimeline();
+
             return () => {
                 trigger.kill(false);
+                highlightTimeline?.scrollTrigger?.kill(false);
+                highlightTimeline?.kill();
+                if (highlightOnScroll) {
+                    gsap.set(allChars, { color: highlightFromColor });
+                }
                 timeline.kill();
                 gsap.killTweensOf(allChars);
                 el.classList.remove('scroll-float-animating');
@@ -182,6 +244,12 @@ export default function ScrollFloat({
                 charStagger,
                 wordStagger,
                 words,
+                highlightOnScroll,
+                highlightStart,
+                highlightEnd,
+                highlightScrub,
+                highlightFromColor,
+                highlightToColor,
             ],
         }
     );
@@ -191,11 +259,15 @@ export default function ScrollFloat({
         { ref: containerRef, className: `overflow-hidden text-center ${containerClassName}` },
         <span className={`inline-block max-w-full text-center leading-[1.08] ${textClassName}`}>
             {words.map((word, wordIndex) => (
-                <span className="scroll-float-word inline-block" key={`word-${wordIndex}`}>
+                <span
+                    className="scroll-float-word inline-block"
+                    key={`word-${wordIndex}`}
+                >
                     {Array.from(word).map((char, charIndex) => (
                         <span
                             className="scroll-float-char inline-block translate-z-0"
                             key={`${char}-${wordIndex}-${charIndex}`}
+                            style={highlightOnScroll ? { color: highlightFromColor } : undefined}
                         >
                             {char}
                         </span>

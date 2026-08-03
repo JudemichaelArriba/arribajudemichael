@@ -75,10 +75,8 @@ export default function Experience() {
       if (prefersReducedMotion) {
         gsap.set([...nodes, ...cards, ...cardInternals], {
           autoAlpha: 1,
-          yPercent: 0,
+          y: 0,
           scale: 1,
-          scaleX: 1,
-          scaleY: 1,
           clearProps: 'transform,opacity,visibility,willChange',
         });
         if (lineFill) gsap.set(lineFill, { scaleY: 1, clearProps: 'transform' });
@@ -87,15 +85,14 @@ export default function Experience() {
 
       gsap.set(nodes, {
         autoAlpha: 0,
-        scale: 0.35,
+        scale: 0.55,
         transformOrigin: '50% 50%',
         willChange: 'transform, opacity',
       });
       gsap.set(cards, {
         autoAlpha: 0,
-        yPercent: 38,
-        scaleY: 0.94,
-        scaleX: 0.98,
+        y: 36,
+        scale: 0.97,
         transformOrigin: '50% 100%',
         willChange: 'transform, opacity',
       });
@@ -119,15 +116,14 @@ export default function Experience() {
           timeline.pause(0, true);
           gsap.set(node, {
             autoAlpha: 0,
-            scale: 0.35,
+            scale: 0.55,
             transformOrigin: '50% 50%',
             willChange: 'transform, opacity',
           });
           gsap.set(card, {
             autoAlpha: 0,
-            yPercent: 38,
-            scaleY: 0.94,
-            scaleX: 0.98,
+            y: 36,
+            scale: 0.97,
             transformOrigin: '50% 100%',
             willChange: 'transform, opacity',
           });
@@ -151,7 +147,7 @@ export default function Experience() {
           invalidateOnRefresh: true,
           onEnter: () => {
             setItemInitialState();
-            timeline.invalidate().restart(true);
+            timeline.restart(true);
           },
           onLeaveBack: setItemInitialState,
         });
@@ -162,54 +158,37 @@ export default function Experience() {
             node,
             {
               autoAlpha: 0,
-              scale: 0.35,
+              scale: 0.55,
               transformOrigin: '50% 50%',
             },
             {
               autoAlpha: 1,
-              scale: 1.18,
-              duration: 0.18,
-              ease: 'power3.out',
+              scale: 1,
+              duration: 0.46,
+              ease: 'back.out(2.4)',
               immediateRender: false,
-            }
+              clearProps: 'transform,willChange',
+            },
+            0
           )
-          .to(node, {
-            scale: 1,
-            duration: 0.28,
-            ease: 'back.out(2.2)',
-            clearProps: 'transform,willChange',
-          })
           .fromTo(
             card,
             {
               autoAlpha: 0,
-              yPercent: 38,
-              scaleY: 0.94,
-              scaleX: 0.98,
+              y: 36,
+              scale: 0.97,
               transformOrigin: '50% 100%',
             },
             {
               autoAlpha: 1,
-              yPercent: -8,
-              scaleY: 1.04,
-              scaleX: 0.98,
-              duration: 0.22,
-              ease: 'power3.out',
+              y: 0,
+              scale: 1,
+              duration: 0.82,
+              ease: 'elastic.out(1, 0.55)',
               immediateRender: false,
-            },
-            '-=0.34'
-          )
-          .to(
-            card,
-            {
-              yPercent: 0,
-              scaleY: 1,
-              scaleX: 1,
-              duration: 0.32,
-              ease: 'back.out(1.7)',
               clearProps: 'transform,willChange',
             },
-            '-=0.08'
+            0.04
           )
           .fromTo(
             internals,
@@ -218,13 +197,13 @@ export default function Experience() {
             },
             {
               autoAlpha: 1,
-              duration: 0.22,
+              duration: 0.3,
               ease: 'power2.out',
               immediateRender: false,
-              stagger: 0.055,
+              stagger: 0.05,
               clearProps: 'willChange',
             },
-            '-=0.12'
+            0.24
           );
       });
 

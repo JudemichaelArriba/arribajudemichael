@@ -183,19 +183,22 @@ export default function Navbar() {
                         aria-expanded={menuOpen}
                         aria-controls="mobile-nav-panel"
                         aria-label={menuOpen ? 'Close menu' : 'Open menu'}
-                        className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full md:hidden"
+                        className={`relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full border transition-[transform,border-color,background-color,box-shadow] duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--signal)]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black active:scale-95 motion-reduce:transition-none md:hidden ${menuOpen
+                            ? 'border-[var(--signal)]/35 bg-white/[0.07] shadow-[0_0_24px_rgba(195,109,252,0.14)]'
+                            : 'border-white/10 bg-white/[0.025] hover:border-white/20 hover:bg-white/[0.055]'
+                            }`}
                     >
                         <span aria-hidden="true" className="relative flex h-[14px] w-[18px] flex-col justify-between">
                             <span
-                                className={`h-[1.5px] w-full origin-center rounded-full bg-[var(--text)] transition-transform duration-300 ease-out motion-reduce:transition-none ${menuOpen ? 'translate-y-[6.25px] rotate-45' : ''
+                                className={`h-[1.5px] w-full origin-center rounded-full bg-[var(--text)] transition-[transform,background-color] duration-300 ease-out motion-reduce:transition-none ${menuOpen ? 'translate-y-[6.25px] rotate-45 bg-[var(--signal)]' : ''
                                     }`}
                             />
                             <span
-                                className={`h-[1.5px] w-full rounded-full bg-[var(--text)] transition-opacity duration-200 ease-out motion-reduce:transition-none ${menuOpen ? 'opacity-0' : 'opacity-100'
+                                className={`h-[1.5px] w-full rounded-full bg-[var(--text)] transition-[transform,opacity] duration-200 ease-out motion-reduce:transition-none ${menuOpen ? 'scale-x-0 opacity-0' : 'scale-x-100 opacity-100'
                                     }`}
                             />
                             <span
-                                className={`h-[1.5px] w-full origin-center rounded-full bg-[var(--text)] transition-transform duration-300 ease-out motion-reduce:transition-none ${menuOpen ? '-translate-y-[6.25px] -rotate-45' : ''
+                                className={`h-[1.5px] w-full origin-center rounded-full bg-[var(--text)] transition-[transform,background-color] duration-300 ease-out motion-reduce:transition-none ${menuOpen ? '-translate-y-[6.25px] -rotate-45 bg-[var(--signal)]' : ''
                                     }`}
                             />
                         </span>
@@ -206,28 +209,42 @@ export default function Navbar() {
                     id="mobile-nav-panel"
                     ref={menuPanelRef}
                     inert={!menuOpen ? true : undefined}
-                    className={`absolute inset-x-0 top-full z-10 mt-3 origin-top overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] shadow-2xl shadow-black/40 backdrop-blur-[14px] transition-[opacity,transform] duration-300 ease-out motion-reduce:transition-none md:hidden ${menuOpen
+                    className={`absolute inset-x-0 top-full z-10 mt-3 origin-top overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] shadow-[0_24px_64px_rgba(0,0,0,0.46)] backdrop-blur-[14px] transition-[opacity,transform,border-color] duration-300 ease-out motion-reduce:transition-none md:hidden ${menuOpen
                         ? 'pointer-events-auto translate-y-0 scale-100 opacity-100'
                         : 'pointer-events-none -translate-y-2 scale-[0.97] opacity-0'
                         }`}
                 >
-                    <ul className="flex flex-col gap-1 p-3">
-                        {NAV_ITEMS.map((item) => {
+                    <ul className="flex flex-col p-2.5">
+                        {NAV_ITEMS.map((item, index) => {
                             const isActive = active === item.id || (active === 'what-i-do' && item.id === 'home');
 
                             return (
-                                <li key={item.id}>
+                                <li
+                                    key={item.id}
+                                    style={{ transitionDelay: menuOpen ? `${45 + index * 35}ms` : '0ms' }}
+                                    className={`relative transition-[opacity,transform] duration-300 ease-out motion-reduce:translate-y-0 motion-reduce:opacity-100 motion-reduce:transition-none ${menuOpen ? 'translate-y-0 opacity-100' : '-translate-y-1.5 opacity-0'
+                                        } ${index < NAV_ITEMS.length - 1 ? 'after:absolute after:inset-x-3 after:bottom-0 after:h-px after:bg-white/[0.055]' : ''}`}
+                                >
                                     <button
                                         onClick={() => scrollTo(item.id)}
                                         type="button"
                                         aria-current={isActive ? 'page' : undefined}
-                                        className={`relative flex w-full items-center justify-between rounded-2xl px-4 py-3.5 text-left font-[family-name:var(--font-jetbrains-mono)] text-sm uppercase tracking-[0.08em] transition-colors duration-300 ease-out ${isActive ? 'font-extrabold text-[var(--signal)]' : 'text-[var(--muted)] hover:text-[var(--signal)]'
+                                        className={`group relative flex min-h-12 w-full items-center justify-between overflow-hidden rounded-xl px-4 py-3 text-left font-[family-name:var(--font-jetbrains-mono)] text-sm uppercase tracking-[0.08em] transition-[color,background-color,transform] duration-300 ease-out focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--signal)]/60 active:scale-[0.985] motion-reduce:transition-none ${isActive
+                                            ? 'bg-[rgba(195,109,252,0.08)] font-extrabold text-[var(--signal)]'
+                                            : 'text-[var(--muted)] hover:bg-white/[0.045] hover:text-[var(--signal)]'
                                             }`}
                                     >
-                                        <RollingText>{item.label}</RollingText>
                                         <span
                                             aria-hidden="true"
-                                            className={`h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--signal)] transition-transform duration-300 ease-out ${isActive ? 'scale-100' : 'scale-0'
+                                            className={`absolute left-1.5 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-[var(--signal)] transition-[opacity,transform] duration-300 ease-out motion-reduce:transition-none ${isActive ? 'scale-y-100 opacity-100' : 'scale-y-50 opacity-0'
+                                                }`}
+                                        />
+                                        <span className="relative z-[1]">
+                                            <RollingText>{item.label}</RollingText>
+                                        </span>
+                                        <span
+                                            aria-hidden="true"
+                                            className={`relative z-[1] h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--signal)] shadow-[0_0_10px_rgba(195,109,252,0.7)] transition-[opacity,transform] duration-300 ease-out motion-reduce:transition-none ${isActive ? 'scale-100 opacity-100' : 'scale-0 opacity-0'
                                                 }`}
                                         />
                                     </button>
