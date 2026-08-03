@@ -26,6 +26,8 @@ interface ScrollFloatProps {
     highlightStart?: string;
     highlightEnd?: string;
     highlightScrub?: number;
+    highlightDuration?: number;
+    highlightCharStagger?: number;
     highlightFromColor?: string;
     highlightToColor?: string;
 }
@@ -48,6 +50,8 @@ export default function ScrollFloat({
     highlightStart = 'top 70%',
     highlightEnd = 'bottom 35%',
     highlightScrub = 0.65,
+    highlightDuration = 0.18,
+    highlightCharStagger = 0.025,
     highlightFromColor = '#626873',
     highlightToColor = 'var(--text)',
 }: ScrollFloatProps) {
@@ -84,16 +88,30 @@ export default function ScrollFloat({
                     },
                 });
 
-                wordElements.forEach((wordEl, wordIndex) => {
+                let nextWordStart = 0;
+
+                wordElements.forEach((wordEl) => {
                     const chars = gsap.utils.toArray<HTMLElement>('.scroll-float-char', wordEl);
+                    const wordDuration = highlightDuration
+                        + Math.max(0, chars.length - 1) * highlightCharStagger;
+
                     highlightTimeline.to(
                         chars,
                         {
                             color: highlightToColor,
-                            duration: 0.12,
-                            ease: 'none',
+                            duration: highlightDuration,
+                            ease: 'power1.out',
+                            stagger: {
+                                each: highlightCharStagger,
+                                from: 'start',
+                            },
                         },
-                        wordIndex * 0.14
+                        nextWordStart
+                    );
+
+                    nextWordStart += Math.max(
+                        highlightDuration * 0.7,
+                        wordDuration * 0.72
                     );
                 });
 
@@ -108,16 +126,14 @@ export default function ScrollFloat({
             if (prefersReducedMotion) {
                 gsap.set(allChars, {
                     autoAlpha: 1,
+                    color: highlightOnScroll ? highlightToColor : undefined,
                     yPercent: 0,
                     scaleX: 1,
                     scaleY: 1,
                     clearProps: 'transform,opacity,visibility',
                 });
-                const highlightTimeline = createHighlightTimeline();
 
                 return () => {
-                    highlightTimeline?.scrollTrigger?.kill(false);
-                    highlightTimeline?.kill();
                     if (highlightOnScroll) {
                         gsap.set(allChars, { color: highlightFromColor });
                     }
@@ -248,6 +264,8 @@ export default function ScrollFloat({
                 highlightStart,
                 highlightEnd,
                 highlightScrub,
+                highlightDuration,
+                highlightCharStagger,
                 highlightFromColor,
                 highlightToColor,
             ],

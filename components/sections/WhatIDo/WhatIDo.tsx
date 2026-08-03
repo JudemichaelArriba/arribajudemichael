@@ -41,6 +41,8 @@ export default function WhatIDo({ sentence = DEFAULT_SENTENCE }: WhatIDoProps) {
                     highlightStart="top 105%"
                     highlightEnd="bottom 70%"
                     highlightScrub={0.1}
+                    highlightDuration={0.18}
+                    highlightCharStagger={0.025}
                     highlightFromColor="#2e2e2e"
                     highlightToColor="var(--text)"
                 >
