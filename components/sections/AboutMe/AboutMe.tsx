@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef } from 'react';
+import Image from 'next/image';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -21,6 +22,25 @@ const proofPoints = [
     'Web interfaces And Mobile apps',
     'Backend APIs',
     'Maintainable code',
+];
+
+interface AiBadge {
+    src: string;
+    alt: string;
+    href: string;
+}
+
+const aiBadges: AiBadge[] = [
+    {
+        src: '/ai-fundamentals-foundations-for-understanding-ai.png',
+        alt: 'AI Fundamentals: Foundations for Understanding AI badge',
+        href: 'https://www.credly.com/badges/a2b7fa9d-7e20-4236-b44d-85b20d351fe0/public_url',
+    },
+    {
+        src: '/ai-fundamentals-language-and-vision-in-ai.png',
+        alt: 'AI Fundamentals: Language and Vision in AI badge',
+        href: 'https://www.credly.com/badges/d214e4d8-71dd-400b-bf20-34d3c2619621/public_url',
+    },
 ];
 
 export default function AboutMe() {
@@ -122,8 +142,8 @@ export default function AboutMe() {
             <div className="pointer-events-none absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-[var(--signal)]/20 to-transparent md:inset-x-8" />
 
             <div className="mx-auto grid max-w-6xl grid-cols-1 gap-9 lg:grid-cols-[360px_1fr] lg:items-start lg:gap-12">
-                <div ref={frameRef} className="mx-auto w-full max-w-[360px] lg:mx-0 lg:pt-10">
-                    <div className="relative rounded-lg border border-white/10 bg-white/[0.04] p-2 shadow-2xl shadow-black/20 backdrop-blur-md">
+                <div className="mx-auto w-full max-w-[360px] lg:mx-0 lg:pt-10">
+                    <div ref={frameRef} className="relative rounded-lg border border-white/10 bg-white/[0.04] p-2 shadow-2xl shadow-black/20 backdrop-blur-md">
                         <span
                             aria-hidden="true"
                             className="pointer-events-none absolute -left-2 -top-2 h-6 w-6 border-l-2 border-t-2 border-[var(--signal)]/35"
@@ -164,6 +184,33 @@ export default function AboutMe() {
                                 </div>
                             }
                         />
+                    </div>
+
+                    <div className="mt-3 flex flex-wrap items-center justify-start gap-2 sm:mt-4 sm:gap-2.5">
+                        {aiBadges.map((badge) => (
+                            <a
+                                key={badge.href}
+                                href={badge.href}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                aria-label={`View ${badge.alt} on Credly`}
+                                className="group relative block size-14 shrink-0 touch-manipulation overflow-hidden rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--signal)]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:size-16"
+                            >
+                                <Image
+                                    src={badge.src}
+                                    alt={badge.alt}
+                                    width={600}
+                                    height={600}
+                                    sizes="(min-width: 640px) 64px, 56px"
+                                    unoptimized
+                                    className="size-full object-cover"
+                                />
+                                <span
+                                    aria-hidden="true"
+                                    className="pointer-events-none absolute inset-0 bg-[var(--signal)] opacity-0 mix-blend-color [@media(hover:hover)_and_(pointer:fine)]:opacity-100 [@media(hover:hover)_and_(pointer:fine)]:transition-opacity [@media(hover:hover)_and_(pointer:fine)]:duration-300 [@media(hover:hover)_and_(pointer:fine)]:ease-out [@media(hover:hover)_and_(pointer:fine)]:group-hover:opacity-0 [@media(hover:hover)_and_(pointer:fine)]:group-focus-visible:opacity-0 motion-reduce:transition-none"
+                                />
+                            </a>
+                        ))}
                     </div>
                 </div>
 
