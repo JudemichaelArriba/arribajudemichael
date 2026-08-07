@@ -147,7 +147,7 @@ export default function AboutMe() {
                         className="h-px min-w-8 flex-1 bg-gradient-to-r from-[var(--signal)]/50 via-white/10 to-transparent"
                     />
                     <span className="hidden shrink-0 font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--muted)]/42 sm:inline">
-                        02 / Profile
+                        03 / Profile
                     </span>
                 </div>
 

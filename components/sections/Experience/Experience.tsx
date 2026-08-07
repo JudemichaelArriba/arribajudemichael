@@ -4,7 +4,6 @@ import { useRef } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useGSAP } from '@gsap/react';
-import ScrollFloat from '@/components/ui/ScrollFloat/ScrollFloat';
 import { BentoCard, BentoSpotlight } from '@/components/ui/Bento/Bento';
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
@@ -20,34 +19,34 @@ interface ExperienceItem {
 const EXPERIENCE_ITEMS: ExperienceItem[] = [
   {
     title: 'Capstone Project Deployment',
-    subtitle: 'Production Release',
-    date: '2025 — Present',
+    subtitle: 'Production release',
+    date: '2025 - Present',
     description:
-      'Deployment of full-stack capstone and facility intelligence platforms.',
+      'Deployed full-stack capstone and facility intelligence platforms into production-ready environments.',
     status: 'active',
   },
   {
     title: 'First Tagum City Hackathon',
-    subtitle: 'Participant & Pitch',
+    subtitle: 'Participant and pitch',
     date: '2026',
     description:
-      'Participated and pitched an innovative tech solution as a competitor in Tagum City’s inaugural hackathon event.',
+      "Competed in Tagum City's inaugural hackathon, shaping and pitching a practical technology solution.",
     status: 'complete',
   },
   {
     title: 'Started Building',
-    subtitle: 'Self-Taught Foundations',
+    subtitle: 'Self-taught foundations',
     date: '2023',
     description:
-      'First lines of code, first bugs, first sites where the engineering habit began.',
+      'The first lines of code, bugs, and shipped sites that formed a lasting engineering practice.',
     status: 'complete',
   },
   {
     title: 'Bachelor of Science in Information Technology',
-    subtitle: 'Aces Tagum Collage, Inc.',
+    subtitle: 'Aces Tagum College, Inc.',
     date: '2023',
     description:
-      'Focused coursework in software engineering, systems design, and database architecture.',
+      'Focused study in software engineering, systems design, and database architecture.',
     status: 'complete',
   },
 ];
@@ -64,28 +63,51 @@ export default function Experience() {
       const prefersReducedMotion = window.matchMedia(
         '(prefers-reduced-motion: reduce)'
       ).matches;
+      const headingTargets = gsap.utils.toArray<HTMLElement>(
+        '.experience-heading-copy, .experience-intro, .experience-summary',
+        section
+      );
+      const headingLines = gsap.utils.toArray<HTMLElement>(
+        '[data-experience-line]',
+        section
+      );
       const items = gsap.utils.toArray<HTMLLIElement>('.experience-item', section);
       const nodes = gsap.utils.toArray<HTMLElement>('.experience-node', section);
       const cards = gsap.utils.toArray<HTMLElement>('.experience-card', section);
       const cardInternals = gsap.utils.toArray<HTMLElement>(
-        '.experience-card-date, .experience-card-meta, .experience-card-title, .experience-card-description, .experience-gutter',
+        '.experience-card-meta, .experience-card-title, .experience-card-description, .experience-card-status',
         section
       );
       const lineFill = section.querySelector<HTMLElement>('.experience-line-fill');
       const triggers: ScrollTrigger[] = [];
       const timelines: gsap.core.Timeline[] = [];
+      const resetItems: Array<() => void> = [];
+      let isSectionArmed = true;
 
       if (prefersReducedMotion) {
-        gsap.set([...nodes, ...cards, ...cardInternals], {
+        gsap.set([...headingTargets, ...nodes, ...cards, ...cardInternals], {
           autoAlpha: 1,
+          x: 0,
           y: 0,
           scale: 1,
           clearProps: 'transform,opacity,visibility,willChange',
         });
+        gsap.set(headingLines, { scaleX: 1, clearProps: 'transform' });
         if (lineFill) gsap.set(lineFill, { scaleY: 1, clearProps: 'transform' });
         return;
       }
 
+      const setHeadingInitialState = () => {
+        gsap.set(headingTargets, { autoAlpha: 0, y: 14 });
+        headingLines.forEach((line, index) => {
+          gsap.set(line, {
+            scaleX: 0,
+            transformOrigin: index === 0 ? 'right center' : 'left center',
+          });
+        });
+      };
+
+      setHeadingInitialState();
       gsap.set(nodes, {
         autoAlpha: 0,
         scale: 0.55,
@@ -105,18 +127,47 @@ export default function Experience() {
         willChange: 'opacity',
       });
 
+      const headingTimeline = gsap.timeline({
+        paused: true,
+        defaults: { overwrite: 'auto', force3D: true },
+      });
+      timelines.push(headingTimeline);
+
+      headingTimeline
+        .to(headingTargets, {
+          autoAlpha: 1,
+          y: 0,
+          duration: 0.58,
+          ease: 'power3.out',
+          stagger: 0.08,
+        }, 0)
+        .to(headingLines, {
+          scaleX: 1,
+          duration: 0.72,
+          ease: 'power3.out',
+          stagger: 0.04,
+        }, 0.08);
+
       items.forEach((item, index) => {
         const node = nodes[index];
         const card = cards[index];
         if (!node || !card) return;
 
         const internals = gsap.utils.toArray<HTMLElement>(
-          '.experience-card-date, .experience-card-meta, .experience-card-title, .experience-card-description, .experience-gutter',
+          '.experience-card-meta, .experience-card-title, .experience-card-description, .experience-card-status',
           item
         );
+        const timeline = gsap.timeline({
+          paused: true,
+          defaults: { overwrite: 'auto', force3D: true },
+        });
+        let isArmed = true;
+
+        timelines.push(timeline);
 
         const setItemInitialState = () => {
           timeline.pause(0, true);
+          isArmed = true;
           gsap.set(node, {
             autoAlpha: 0,
             scale: 0.55,
@@ -137,22 +188,17 @@ export default function Experience() {
           });
         };
 
-        const timeline = gsap.timeline({
-          paused: true,
-          defaults: { overwrite: 'auto', force3D: true },
-        });
-        timelines.push(timeline);
+        resetItems.push(setItemInitialState);
 
         const trigger = ScrollTrigger.create({
           trigger: item,
-          start: 'top 96%',
+          start: 'top 94%',
           end: 'bottom top',
-          invalidateOnRefresh: true,
           onEnter: () => {
-            setItemInitialState();
+            if (!isArmed) return;
+            isArmed = false;
             timeline.restart(true);
           },
-          onLeaveBack: setItemInitialState,
         });
         triggers.push(trigger);
 
@@ -195,9 +241,7 @@ export default function Experience() {
           )
           .fromTo(
             internals,
-            {
-              autoAlpha: 0,
-            },
+            { autoAlpha: 0 },
             {
               autoAlpha: 1,
               duration: 0.3,
@@ -209,6 +253,36 @@ export default function Experience() {
             0.24
           );
       });
+
+      const resetSection = () => {
+        headingTimeline.pause(0, true);
+        isSectionArmed = true;
+        setHeadingInitialState();
+        resetItems.forEach((resetItem) => resetItem());
+      };
+
+      const sectionTrigger = ScrollTrigger.create({
+        trigger: section,
+        start: 'top 88%',
+        end: 'bottom top',
+        onEnter: () => {
+          if (!isSectionArmed) return;
+          isSectionArmed = false;
+          setHeadingInitialState();
+          headingTimeline.restart(true);
+        },
+      });
+      triggers.push(sectionTrigger);
+
+      const resetObserver = new IntersectionObserver(
+        ([entry]) => {
+          if (!entry.isIntersecting && entry.boundingClientRect.top >= window.innerHeight - 1) {
+            resetSection();
+          }
+        },
+        { rootMargin: '0px 0px -1px 0px', threshold: 0 }
+      );
+      resetObserver.observe(section);
 
       if (lineFill) {
         gsap.set(lineFill, { scaleY: 0, transformOrigin: '50% 0%' });
@@ -228,6 +302,8 @@ export default function Experience() {
       }
 
       return () => {
+        resetObserver.disconnect();
+        gsap.set([...nodes, ...cards, ...cardInternals], { clearProps: 'willChange' });
         triggers.forEach((trigger) => trigger.kill(false));
         timelines.forEach((timeline) => timeline.kill());
       };
@@ -239,111 +315,126 @@ export default function Experience() {
     <section
       ref={sectionRef}
       id="experience"
-      className="relative mx-auto w-full max-w-7xl scroll-mt-[var(--nav-height)] px-4 py-24 md:py-32"
+      className="relative w-full scroll-mt-[calc(var(--nav-height,80px)+2rem)] px-5 py-24 md:px-8 md:py-32"
     >
-      <div className="pointer-events-none absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-[var(--signal)]/20 to-transparent md:inset-x-8" aria-hidden="true" />
-      <p className="eyebrow mx-auto mb-[clamp(1.25rem,3vw,2rem)] flex w-full max-w-sm items-center justify-center gap-3 text-center font-mono text-xs font-extrabold uppercase leading-[1.2] tracking-[0.14em] text-[color-mix(in_srgb,var(--signal)_78%,#ffffff_22%)]">
-        <span
-          aria-hidden="true"
-          className="h-px min-w-8 flex-1 bg-gradient-to-r from-transparent to-[var(--signal)]/55"
-        />
-        Experience
-        <span
-          aria-hidden="true"
-          className="h-px min-w-8 flex-1 bg-gradient-to-l from-transparent to-[var(--signal)]/55"
-        />
-      </p>
-
-      <BentoSpotlight
-        gridRef={timelineRef}
-        spotlightRadius={260}
-        glowColor="195, 109, 252"
-        activateOnCardOnly
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-[var(--signal)]/20 to-transparent md:inset-x-8"
       />
 
-      <ol ref={timelineRef} className="relative flex max-w-6xl flex-col gap-10 md:gap-14">
-        {/* editor-gutter rail: ticked track behind the commit-node column */}
-        <div
-          aria-hidden="true"
-          className="absolute inset-y-2 left-[4.25rem] w-px bg-white/10 [background-image:repeating-linear-gradient(to_bottom,transparent_0,transparent_6px,rgba(255,255,255,0.35)_6px,rgba(255,255,255,0.35)_7px)] sm:left-20"
-        >
-          <div className="experience-line-fill absolute inset-0 bg-gradient-to-b from-[#5227FF] via-[var(--signal)] to-[#FF9FFC] shadow-[0_0_15px_rgba(195,109,252,0.35)]" />
+      <div className="mx-auto max-w-7xl">
+        <div className="experience-heading-copy flex w-full items-center gap-4">
+          <span
+            data-experience-line
+            aria-hidden="true"
+            className="h-px w-8 shrink-0 bg-gradient-to-r from-transparent to-[var(--signal)]/55 sm:w-12"
+          />
+          <p className="shrink-0 font-mono text-xs font-extrabold uppercase leading-none tracking-[0.14em] text-[color-mix(in_srgb,var(--signal)_82%,#ffffff_18%)]">
+            Experience
+          </p>
+          <span
+            data-experience-line
+            aria-hidden="true"
+            className="h-px min-w-8 flex-1 bg-gradient-to-r from-[var(--signal)]/45 via-white/10 to-transparent"
+          />
+          <span className="hidden shrink-0 font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--muted)]/48 sm:inline">
+            04 / Milestones
+          </span>
         </div>
 
-        {EXPERIENCE_ITEMS.map((item, index) => (
-          <li
-            key={item.title}
-            className="experience-item group relative grid grid-cols-[2.5rem_2rem_1fr] items-start gap-x-3 sm:grid-cols-[3rem_2rem_1fr] sm:gap-x-4"
-          >
-            {/* line-number gutter */}
-            <span
-              aria-hidden="true"
-              className="experience-gutter select-none pt-2 text-right font-mono text-[0.7rem] font-medium tabular-nums text-white/20 sm:pt-2.5"
-            >
-              {String(index + 1).padStart(2, '0')}
-            </span>
+        <div className="mt-12 grid grid-cols-1 gap-12 lg:mt-16 lg:grid-cols-[minmax(260px,0.62fr)_minmax(0,1.38fr)] lg:items-start lg:gap-16 xl:gap-20">
+          <header className="experience-intro lg:sticky lg:top-[calc(var(--nav-height,80px)+2rem)]">
+            <h2 className="max-w-[12ch] font-display text-4xl font-extrabold leading-[1.04] tracking-normal text-[var(--text)] sm:text-5xl lg:text-[3.35rem]">
+              A record of building, shipping, and learning.
+            </h2>
+            <p className="mt-6 max-w-md text-base leading-[1.7] text-[var(--muted)]/68">
+              Selected milestones across production work, collaborative challenges, and formal study.
+            </p>
 
-            {/* commit node — diamond marker, pulses while active */}
-            <div className="experience-node relative z-10 mt-1 flex h-8 w-8 items-center justify-center sm:mt-1.5">
-              <span
-                aria-hidden="true"
-                className="absolute inset-0 rotate-45 rounded-[7px] border border-white/15 bg-[#0a0e14] shadow-[0_0_20px_rgba(82,39,255,0.25)] transition-colors duration-300 group-hover:border-white/35"
-              />
-              <span
-                className={`relative h-2 w-2 rounded-full ${item.status === 'active'
-                  ? 'bg-[var(--signal)] shadow-[0_0_10px_var(--signal)]'
-                  : 'bg-gradient-to-br from-[#5227FF] to-[#FF9FFC]'
-                  }`}
-              >
-                {item.status === 'active' && (
-                  <span
-                    aria-hidden="true"
-                    className="motion-safe:animate-ping absolute inset-0 rounded-full bg-[var(--signal)]"
-                  />
-                )}
-              </span>
+            <div className="experience-summary mt-8 grid grid-cols-2 border-y border-white/[0.08] py-5">
+              <div>
+                <span className="block font-mono text-lg font-bold tabular-nums text-[var(--text)]">04</span>
+                <span className="mt-1 block font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--muted)]/52">
+                  Milestones
+                </span>
+              </div>
+              <div className="border-l border-white/[0.08] pl-5">
+                <span className="block font-mono text-lg font-bold tabular-nums text-[var(--text)]">2023</span>
+                <span className="mt-1 block font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--muted)]/52">
+                  Starting point
+                </span>
+              </div>
             </div>
+          </header>
 
-            <BentoCard className="experience-card col-start-3 h-54 text-left">
-              <div className="flex items-start justify-between gap-4">
-                <h3 className="experience-card-title text-lg font-extrabold tracking-tight text-[var(--text)] md:text-xl">
-                  {item.title}
-                  <span
-                    aria-hidden="true"
-                    className="ml-0.5 inline-block h-[0.9em] w-[2px] translate-y-[0.1em] bg-[var(--signal)] opacity-0 transition-opacity duration-300 group-hover:opacity-100 motion-safe:group-hover:animate-pulse"
-                  />
-                </h3>
+          <div className="relative min-w-0">
+            <BentoSpotlight
+              gridRef={timelineRef}
+              spotlightRadius={260}
+              glowColor="195, 109, 252"
+              activateOnCardOnly
+            />
 
-                <span className="experience-card-date flex shrink-0 items-center gap-1.5 pt-1">
-                  <span
-                    aria-hidden="true"
-                    className={`h-1.5 w-1.5 rounded-full ${item.status === 'active'
-                      ? 'bg-[var(--signal)] shadow-[0_0_8px_var(--signal)]'
-                      : 'bg-white/25'
-                      }`}
-                  />
-                  <span className="font-mono text-[0.65rem] font-bold uppercase tracking-[0.14em] text-[var(--signal)]">
-                    {item.date}
-                  </span>
-                </span>
+            <ol ref={timelineRef} className="relative flex flex-col gap-6 sm:gap-7">
+              <div aria-hidden="true" className="absolute bottom-7 left-[0.6875rem] top-7 w-px bg-white/[0.09]">
+                <div className="experience-line-fill absolute inset-0 bg-gradient-to-b from-[#5227FF] via-[var(--signal)] to-[#FF9FFC] shadow-[0_0_12px_rgba(195,109,252,0.22)]" />
               </div>
 
-              <p className="experience-card-description mt-2 text-sm leading-relaxed text-[var(--muted)] md:text-base">
-                {item.description}
-              </p>
+              {EXPERIENCE_ITEMS.map((item, index) => (
+                <li
+                  key={item.title}
+                  className="experience-item group relative grid grid-cols-[1.375rem_minmax(0,1fr)] items-start gap-x-4 sm:gap-x-5"
+                >
+                  <div className="experience-node relative z-10 mt-7 flex size-[1.375rem] items-center justify-center rounded-full border border-white/15 bg-black transition-colors duration-300 group-hover:border-[var(--signal)]/45">
+                    <span
+                      aria-hidden="true"
+                      className={`size-1.5 rounded-full ${item.status === 'active'
+                        ? 'bg-[var(--signal)] shadow-[0_0_9px_rgba(195,109,252,0.8)]'
+                        : 'bg-white/40'
+                        }`}
+                    />
+                  </div>
 
-              <div className="experience-card-meta mt-3 flex items-center gap-2 border-t border-white/[0.06] pt-2.5">
-                <span aria-hidden="true" className="font-mono text-xs text-white/25">
-                  ›
-                </span>
-                <span className="font-mono text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
-                  {item.subtitle}
-                </span>
-              </div>
-            </BentoCard>
-          </li>
-        ))}
-      </ol>
+                  <BentoCard className="experience-card min-h-[178px] text-left sm:min-h-[184px]">
+                    <div className="experience-card-meta flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+                      <div className="flex min-w-0 items-center gap-2.5">
+                        <span className="font-mono text-[10px] font-bold tabular-nums tracking-[0.12em] text-[var(--signal)]/70">
+                          {String(index + 1).padStart(2, '0')}
+                        </span>
+                        <span aria-hidden="true" className="h-px w-4 shrink-0 bg-white/10" />
+                        <span className="truncate font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--muted)]/58">
+                          {item.subtitle}
+                        </span>
+                      </div>
+                      <time className="experience-card-date shrink-0 font-mono text-[10px] font-bold uppercase tracking-[0.13em] text-[var(--signal)]">
+                        {item.date}
+                      </time>
+                    </div>
+
+                    <h3 className="experience-card-title mt-2 text-xl font-extrabold leading-tight tracking-normal text-[var(--text)] sm:text-2xl">
+                      {item.title}
+                    </h3>
+
+                    <p className="experience-card-description mt-1.5 max-w-2xl text-sm leading-relaxed text-[var(--muted)]/68 sm:text-base">
+                      {item.description}
+                    </p>
+
+                    <div className="experience-card-status mt-3 flex items-center gap-2 border-t border-white/[0.06] pt-3">
+                      <span
+                        aria-hidden="true"
+                        className={`size-1.5 rounded-full ${item.status === 'active' ? 'bg-[var(--signal)]' : 'bg-white/25'}`}
+                      />
+                      <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.13em] text-[var(--muted)]/52">
+                        {item.status === 'active' ? 'Currently active' : 'Completed milestone'}
+                      </span>
+                    </div>
+                  </BentoCard>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </div>
+      </div>
     </section>
   );
 }

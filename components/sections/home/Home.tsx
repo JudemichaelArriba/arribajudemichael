@@ -37,7 +37,7 @@ export default function Home() {
             />
 
             <h1 className="font-name relative z-10 text-5xl font-extrabold leading-[1.05] tracking-tight md:text-7xl">
-                Jude Michael Arriba
+                Jude Michael T. Arriba
             </h1>
 
             <p className="font-display relative z-10 mt-5 max-w-2xl text-sm font-bold uppercase tracking-[0.15em] text-[var(--signal)] md:text-base">
