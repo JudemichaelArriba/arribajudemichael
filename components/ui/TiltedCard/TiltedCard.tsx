@@ -13,6 +13,7 @@ interface TiltedCardProps {
   containerWidth?: React.CSSProperties['width'];
   imageHeight?: React.CSSProperties['height'];
   imageWidth?: React.CSSProperties['width'];
+  imageObjectPosition?: React.CSSProperties['objectPosition'];
   scaleOnHover?: number;
   rotateAmplitude?: number;
   showMobileWarning?: boolean;
@@ -35,6 +36,7 @@ export default function TiltedCard({
   containerWidth = '100%',
   imageHeight = '300px',
   imageWidth = '300px',
+  imageObjectPosition = 'center',
   scaleOnHover = 1.1,
   rotateAmplitude = 14,
   showMobileWarning = true,
@@ -126,10 +128,13 @@ export default function TiltedCard({
         <motion.img
           src={imageSrc}
           alt={altText}
+          decoding="async"
+          draggable={false}
           className="tilted-card-img"
           style={{
             width: imageWidth,
             height: imageHeight,
+            objectPosition: imageObjectPosition,
           }}
         />
         {displayOverlayContent && overlayContent && (

@@ -38,7 +38,7 @@ export interface BentoSpotlightProps {
 export const DEFAULT_PARTICLE_COUNT = 12;
 export const DEFAULT_SPOTLIGHT_RADIUS = 320;
 export const DEFAULT_GLOW_COLOR = '195, 109, 252';
-export const BENTO_GRID_CLASS = 'about-bento-section grid w-full grid-cols-1 gap-3 sm:grid-cols-2';
+export const BENTO_GRID_CLASS = 'about-bento-section grid w-full grid-cols-1 gap-3';
 export const BENTO_CARD_CLASS =
   'about-bento-card relative flex min-h-[104px] flex-col justify-center gap-[0.72em] overflow-hidden rounded-lg border border-white/[0.07] bg-white/[0.04] px-[1.25em] py-[1.2em] transition-[transform,border-color,background] duration-[220ms] ease-[ease] hover:-translate-y-0.5 hover:border-[rgba(195,109,252,0.18)] hover:bg-white/[0.055] max-sm:min-h-0 max-sm:p-[1.05em] motion-reduce:transition-none motion-reduce:hover:translate-y-0 [@media(hover:none)]:hover:translate-y-0';
 export const BENTO_META_CLASS = 'flex items-baseline gap-[0.6em]';

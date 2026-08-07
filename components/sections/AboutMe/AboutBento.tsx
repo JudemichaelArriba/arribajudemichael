@@ -19,6 +19,8 @@ export type AboutCardData = BentoCardData;
 
 interface AboutBentoProps {
   cards: AboutCardData[];
+  gridClassName?: string;
+  cardClassNames?: readonly string[];
   enableStars?: boolean;
   enableSpotlight?: boolean;
   enableBorderGlow?: boolean;
@@ -31,6 +33,8 @@ interface AboutBentoProps {
 
 export default function AboutBento({
   cards,
+  gridClassName = 'sm:grid-cols-2',
+  cardClassNames,
   enableStars = true,
   enableSpotlight = true,
   enableBorderGlow = true,
@@ -52,10 +56,11 @@ export default function AboutBento({
         glowColor={glowColor}
       />
 
-      <BentoGrid ref={gridRef}>
-        {cards.map((card) => (
+      <BentoGrid ref={gridRef} className={gridClassName}>
+        {cards.map((card, index) => (
           <BentoCard
             key={card.label}
+            className={cardClassNames?.[index]}
             enableStars={enableStars}
             enableBorderGlow={enableBorderGlow}
             disableAnimations={disableAnimations}
