@@ -76,7 +76,7 @@ export default function Home() {
                     size="lg"
                     radius={999}
                     magnetic
-                    tint="#6D28D9"
+                    tint="#490058"
                     baseColor="#7C3AED"
                     lineColor="#E945F5"
                     magnetPadding={15}

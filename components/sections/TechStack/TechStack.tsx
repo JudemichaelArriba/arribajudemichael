@@ -253,14 +253,21 @@ export default function TechStack() {
             className="relative mx-auto w-full max-w-7xl scroll-mt-[calc(var(--nav-height,80px)+2rem)] px-5 py-24 md:px-8 md:py-32"
         >
             <div className="mb-14 md:mb-20">
-                <div className="tech-stack-heading-copy flex w-full max-w-sm items-center gap-3">
+                <div className="tech-stack-heading-copy flex w-full items-center gap-4">
+                    <span
+                        aria-hidden="true"
+                        className="h-px w-8 shrink-0 bg-gradient-to-r from-transparent to-[var(--signal)]/55 sm:w-12"
+                    />
                     <h2 className="shrink-0 font-mono text-xs font-extrabold uppercase leading-[1.2] tracking-[0.14em] text-[color-mix(in_srgb,var(--signal)_78%,#ffffff_22%)]">
-                        {'// tech.stack'}
+                        Tech Stack
                     </h2>
                     <span
                         aria-hidden="true"
-                        className="h-px min-w-8 flex-1 bg-gradient-to-l from-transparent to-[var(--signal)]/55"
+                        className="h-px min-w-8 flex-1 bg-gradient-to-r from-[var(--signal)]/45 via-white/10 to-transparent"
                     />
+                    <span className="hidden shrink-0 font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--muted)]/48 sm:inline">
+                        05 / Toolkit
+                    </span>
                 </div>
             </div>
 

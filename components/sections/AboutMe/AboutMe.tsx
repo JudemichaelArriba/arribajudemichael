@@ -33,7 +33,6 @@ const aboutCardClassNames = [
 export default function AboutMe() {
     const sectionRef = useRef<HTMLElement>(null);
     const sectionHeaderRef = useRef<HTMLDivElement>(null);
-    const headerLineRef = useRef<HTMLSpanElement>(null);
     const proofListRef = useRef<HTMLUListElement>(null);
     const frameRef = useRef<HTMLDivElement>(null);
     const bentoLabelRef = useRef<HTMLDivElement>(null);
@@ -48,6 +47,7 @@ export default function AboutMe() {
             if (!section || prefersReducedMotion) return;
 
             const copyTargets = [sectionHeaderRef.current, bentoLabelRef.current].filter(Boolean) as HTMLElement[];
+            const headerLines = gsap.utils.toArray<HTMLElement>('[data-about-line]', sectionHeaderRef.current ?? undefined);
             const proofTargets = gsap.utils.toArray<HTMLElement>('[data-about-proof]', proofListRef.current ?? undefined);
             const cardTargets = gsap.utils.toArray<HTMLElement>('.about-bento-card', bentoWrapRef.current ?? undefined);
             const refreshFrame = window.requestAnimationFrame(() => ScrollTrigger.refresh());
@@ -55,7 +55,12 @@ export default function AboutMe() {
             const setInitialState = () => {
                 if (frame) gsap.set(frame, { autoAlpha: 0, y: 24 });
                 gsap.set(copyTargets, { autoAlpha: 0, y: 12 });
-                gsap.set(headerLineRef.current, { scaleX: 0, transformOrigin: 'left center' });
+                headerLines.forEach((line, index) => {
+                    gsap.set(line, {
+                        scaleX: 0,
+                        transformOrigin: index === 0 ? 'right center' : 'left center',
+                    });
+                });
                 gsap.set(proofTargets, { autoAlpha: 0, y: 14 });
                 gsap.set(cardTargets, { autoAlpha: 0, y: 18 });
             };
@@ -84,10 +89,11 @@ export default function AboutMe() {
                     ease: 'power3.out',
                     stagger: 0.22,
                 }, 0)
-                .to(headerLineRef.current, {
+                .to(headerLines, {
                     scaleX: 1,
                     duration: 0.72,
                     ease: 'power3.out',
+                    stagger: 0.04,
                 }, 0.1)
                 .to(proofTargets, {
                     autoAlpha: 1,
@@ -140,11 +146,18 @@ export default function AboutMe() {
 
             <div className="mx-auto max-w-7xl">
                 <div ref={sectionHeaderRef} className="flex w-full items-center gap-4">
-                    <p className="shrink-0 font-mono text-xs font-extrabold uppercase leading-none tracking-[0.14em] text-[color-mix(in_srgb,var(--signal)_82%,#ffffff_18%)]">{'// about'}</p>
                     <span
-                        ref={headerLineRef}
+                        data-about-line
                         aria-hidden="true"
-                        className="h-px min-w-8 flex-1 bg-gradient-to-r from-[var(--signal)]/50 via-white/10 to-transparent"
+                        className="h-px w-8 shrink-0 bg-gradient-to-r from-transparent to-[var(--signal)]/55 sm:w-12"
+                    />
+                    <p className="shrink-0 font-mono text-xs font-extrabold uppercase leading-none tracking-[0.14em] text-[color-mix(in_srgb,var(--signal)_82%,#ffffff_18%)]">
+                        About Me
+                    </p>
+                    <span
+                        data-about-line
+                        aria-hidden="true"
+                        className="h-px min-w-8 flex-1 bg-gradient-to-r from-[var(--signal)]/45 via-white/10 to-transparent"
                     />
                     <span className="hidden shrink-0 font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--muted)]/42 sm:inline">
                         03 / Profile
@@ -265,7 +278,6 @@ export default function AboutMe() {
         </section>
     );
 }
-
 
 
 
