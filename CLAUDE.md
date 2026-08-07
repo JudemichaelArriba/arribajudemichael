@@ -30,6 +30,8 @@ components/
     HomeRevealScene/     -> HomeRevealScene.tsx + .module.css (home pull reveal)
     WhatIDo/             -> WhatIDo.tsx (Tailwind CSS only)
     AboutMe/             -> AboutMe.tsx + AboutBento.tsx wrapper
+    Experience/          -> Experience.tsx (timeline + replayable GSAP)
+    TechStack/           -> TechStack.tsx (unframed icon/name lists + reversible scrubbed GSAP)
   ui/                    -> Reusable UI (Button, RollingText, ScrollFloat, Bento)
     ScrollFloat/         -> ScrollFloat.tsx (Tailwind CSS only)
     PurpleScrollbar/     -> PurpleScrollbar.tsx (styles in globals.css)
@@ -46,6 +48,7 @@ lib/
 
 public/
   profile.jpeg           -> About/profile image
+  tech/                  -> Local original-color technology SVG assets
   *.svg                  -> SVG icons
 ```
 
@@ -56,6 +59,7 @@ public/
 - **CSS Modules** (`.module.css`) for component-specific complex styles that Tailwind can't handle
 - **Dynamic imports for heavy components** - e.g., `LightPillar` uses `dynamic(() => import(), { ssr: false })`
 - **GSAP for animations** - Complex timelines and interactions
+- **Homepage composition** - Home -> WhatIDo -> AboutMe -> Experience -> TechStack
 - **Three.js/OGL for WebGL** - Advanced visual effects
 
 ### Component Patterns to Follow
@@ -147,6 +151,7 @@ export default function Page({ params }: PageProps) {
 2. Use `useGSAP` hook from `@gsap/react` for React integration
 3. Create custom hooks in `lib/animations/` for reusable logic
 4. Always clean up animations in useEffect return
+5. For replayable reveals, reuse paused timelines, restart on `onEnter`, and reset only on `onLeaveBack`
 
 ### Styling Guidelines
 

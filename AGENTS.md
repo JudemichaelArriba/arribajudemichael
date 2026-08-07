@@ -37,9 +37,13 @@ arribajudemichael/
 │   │   │   └── HomeRevealScene.module.css  # Scroll reveal layering (keep native CSS)
 │   │   ├── WhatIDo/              # What I Do section
     WhatIDo.tsx                 # Tailwind CSS only
-│   │   └── AboutMe/              # About section with compact bento/profile layout
-    AboutMe.tsx                 # Tailwind CSS only
-    AboutBento.tsx              # Thin wrapper around shared Bento UI
+│   │   ├── AboutMe/              # About section with compact bento/profile layout
+│   │   │   ├── AboutMe.tsx       # Tailwind CSS only
+│   │   │   └── AboutBento.tsx    # Thin wrapper around shared Bento UI
+│   │   ├── Experience/           # Replayable timeline section
+│   │   │   └── Experience.tsx
+│   │   └── TechStack/            # Categorized technology grid
+│   │       └── TechStack.tsx     # Unframed icon/name lists + reversible scrubbed per-tech reveal
 │   ├── ui/                       # Reusable UI components
 │   │   ├── Button.tsx            # Custom button with specular/magnetic variants
 │   │   ├── RollingText.tsx       # Animated text roller component
@@ -76,6 +80,7 @@ arribajudemichael/
 │       └── preloader.ts          # Preloader animation logic
 ├── public/                       # Static assets
 │   ├── profile.jpeg              # About/profile image
+│   ├── tech/                     # Locally hosted original-color technology SVGs
 │   ├── *.svg                     # SVG icons
 │   └── [fonts if any]
 └── Configuration files:
@@ -93,6 +98,7 @@ arribajudemichael/
 - **App Router** with route groups: `(public)` group for public-facing pages
 - Root layout (`app/layout.tsx`): Sets up fonts, metadata, HTML structure
 - Public layout (`app/(public)/layout.tsx`): Wraps pages with Preloader and Navbar
+- Homepage order: `Home` -> `WhatIDo` -> `AboutMe` -> `Experience` -> `TechStack`
 - Client components marked with `'use client'` directive
 
 ### 2. Component Architecture
@@ -207,6 +213,7 @@ export default function Component({ title, onAction }: ComponentProps) {
 - Prefer CSS transforms over layout properties
 - Use `will-change` sparingly
 - Clean up animations in useEffect return
+- Replayable reveals restart on `onEnter` and reset only on `onLeaveBack`; reuse paused timelines and never recreate them during scroll
 - Test performance on lower-end devices
 
 ## Content & Brand
