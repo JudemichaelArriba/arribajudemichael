@@ -30,8 +30,8 @@ const TECH_CATEGORIES: TechCategory[] = [
             { name: 'CSS3', icon: '/tech/css3.svg' },
             { name: 'TypeScript', icon: '/tech/typescript.svg' },
             { name: 'React', icon: '/tech/react.svg' },
-            { name: 'Next.js', icon: '/tech/nextjs.svg', invertOnDark: true },
-            { name: 'GSAP', icon: '/tech/gsap.svg' },
+            { name: 'Next.js', icon: '/tech/nextjs.svg' },
+
             { name: 'Kotlin', icon: '/tech/kotlin.svg' },
         ],
     },

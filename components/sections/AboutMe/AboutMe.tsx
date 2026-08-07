@@ -4,7 +4,6 @@ import { useRef } from 'react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import ScrollFloat from '@/components/ui/ScrollFloat/ScrollFloat';
 import TiltedCard from '@/components/ui/TiltedCard/TiltedCard';
 import AboutBento, { type AboutCardData } from './AboutBento';
 
@@ -33,6 +32,8 @@ const aboutCardClassNames = [
 export default function AboutMe() {
     const sectionRef = useRef<HTMLElement>(null);
     const sectionHeaderRef = useRef<HTMLDivElement>(null);
+    const headingRef = useRef<HTMLHeadingElement>(null);
+    const introRef = useRef<HTMLParagraphElement>(null);
     const proofListRef = useRef<HTMLUListElement>(null);
     const frameRef = useRef<HTMLDivElement>(null);
     const bentoLabelRef = useRef<HTMLDivElement>(null);
@@ -46,7 +47,12 @@ export default function AboutMe() {
 
             if (!section || prefersReducedMotion) return;
 
-            const copyTargets = [sectionHeaderRef.current, bentoLabelRef.current].filter(Boolean) as HTMLElement[];
+            const copyTargets = [
+                sectionHeaderRef.current,
+                headingRef.current,
+                introRef.current,
+                bentoLabelRef.current,
+            ].filter(Boolean) as HTMLElement[];
             const headerLines = gsap.utils.toArray<HTMLElement>('[data-about-line]', sectionHeaderRef.current ?? undefined);
             const proofTargets = gsap.utils.toArray<HTMLElement>('[data-about-proof]', proofListRef.current ?? undefined);
             const cardTargets = gsap.utils.toArray<HTMLElement>('.about-bento-card', bentoWrapRef.current ?? undefined);
@@ -87,7 +93,7 @@ export default function AboutMe() {
                     y: 0,
                     duration: 0.56,
                     ease: 'power3.out',
-                    stagger: 0.22,
+                    stagger: 0.08,
                 }, 0)
                 .to(headerLines, {
                     scaleX: 1,
@@ -203,36 +209,18 @@ export default function AboutMe() {
 
                     <div className="min-w-0">
                         <div className="max-w-3xl">
-                            <ScrollFloat
-                                as="h2"
-                                containerClassName="font-display text-left text-4xl font-extrabold tracking-normal text-[var(--text)] sm:text-5xl lg:text-[3.5rem]"
-                                textClassName="text-left leading-[1.04]"
-                                animationDuration={0.56}
-                                ease="power3.out"
-                                settleEase="power2.out"
-                                scrollStart="top 90%"
-                                scrollEnd="bottom top"
-                                charStagger={0.018}
-                                wordStagger={0.045}
-                                playOnce={false}
+                            <h2
+                                ref={headingRef}
+                                className="font-display text-left text-4xl font-extrabold leading-[1.04] tracking-normal text-[var(--text)] sm:text-5xl lg:text-[3.5rem]"
                             >
                                 I build reliable systems with a clean product feel.
-                            </ScrollFloat>
-                            <ScrollFloat
-                                as="p"
-                                containerClassName="mt-6 max-w-2xl text-left text-base leading-relaxed text-[var(--muted)]/70 sm:text-lg"
-                                textClassName="text-left leading-[1.7]"
-                                animationDuration={0.48}
-                                ease="power3.out"
-                                settleEase="power2.out"
-                                scrollStart="top 90%"
-                                scrollEnd="bottom top"
-                                charStagger={0.012}
-                                wordStagger={0.035}
-                                playOnce={false}
+                            </h2>
+                            <p
+                                ref={introRef}
+                                className="mt-6 max-w-2xl text-left text-base leading-[1.7] text-[var(--muted)]/70 sm:text-lg"
                             >
                                 Full-stack engineer focused on backend APIs, IoT workflows, and responsive interfaces that remain fast, clear, and maintainable.
-                            </ScrollFloat>
+                            </p>
 
                             <ul ref={proofListRef} className="mt-9 grid gap-5 border-y border-white/[0.08] py-5 sm:grid-cols-3 sm:gap-0 sm:py-6">
                                 {proofPoints.map((point) => (
@@ -278,6 +266,5 @@ export default function AboutMe() {
         </section>
     );
 }
-
 
 
