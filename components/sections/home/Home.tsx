@@ -4,12 +4,13 @@ import dynamic from 'next/dynamic';
 import Button from '@/components/ui/Button';
 import { Download, GitFork } from 'lucide-react';
 
-const LightPillar = dynamic(() => import('@/components/effects/LightPillar/LightPillar'), {
+const FloatingLines = dynamic(() => import('@/components/effects/FloatingLines/FloatingLines'), {
     ssr: false,
 });
 
 const ROLE_LINE = 'Full-Stack Software Engineer Robust Backend APIs & Fluid Mobile/Web Clients';
 const GITHUB_REPO_URL = 'https://github.com/JudemichaelArriba';
+const FLOATING_LINES_GRADIENT = ['#e945f5', '#7C3AED', '#760068'] as const;
 
 export default function Home() {
     return (
@@ -18,19 +19,15 @@ export default function Home() {
             className="isolate relative flex min-h-svh flex-col items-center justify-center overflow-hidden px-8 pb-12 pt-[calc(var(--nav-height,80px)+env(safe-area-inset-top)+clamp(1.5rem,4vh,3rem))] text-center md:px-16 md:pb-24"
         >
             <div className="pointer-events-none absolute inset-0 -z-10" aria-hidden="true">
-                <LightPillar
-                    topColor="#5227FF"
-                    bottomColor="#FF9FFC"
-                    intensity={0.6}
-                    rotationSpeed={0.3}
-                    glowAmount={0.002}
-                    pillarWidth={3}
-                    pillarHeight={0.4}
-                    noiseIntensity={0.5}
-                    pillarRotation={25}
+                <FloatingLines
+                    linesGradient={FLOATING_LINES_GRADIENT}
+                    lineCount={4}
+                    bendRadius={8}
+                    animationSpeed={1}
+                    bendStrength={-2}
+                    lineDistance={8}
                     interactive={false}
-                    mixBlendMode="normal"
-                    quality="medium"
+                    parallax={false}
                 />
             </div>
 
@@ -79,7 +76,9 @@ export default function Home() {
                     size="lg"
                     radius={999}
                     magnetic
-                    tint="#9826bb"
+                    tint="#6D28D9"
+                    baseColor="#7C3AED"
+                    lineColor="#E945F5"
                     magnetPadding={15}
                     glowProximity={60}
                 >
