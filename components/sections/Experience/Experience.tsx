@@ -14,6 +14,7 @@ interface ExperienceItem {
   subtitle: string;
   date: string;
   description: string;
+  status: 'active' | 'complete';
 }
 
 const EXPERIENCE_ITEMS: ExperienceItem[] = [
@@ -23,6 +24,7 @@ const EXPERIENCE_ITEMS: ExperienceItem[] = [
     date: '2025 — Present',
     description:
       'Deployment of full-stack capstone and facility intelligence platforms.',
+    status: 'active',
   },
   {
     title: 'First Tagum City Hackathon',
@@ -30,14 +32,15 @@ const EXPERIENCE_ITEMS: ExperienceItem[] = [
     date: '2026',
     description:
       'Participated and pitched an innovative tech solution as a competitor in Tagum City’s inaugural hackathon event.',
+    status: 'complete',
   },
-
   {
     title: 'Started Building',
     subtitle: 'Self-Taught Foundations',
     date: '2023',
     description:
       'First lines of code, first bugs, first sites where the engineering habit began.',
+    status: 'complete',
   },
   {
     title: 'Bachelor of Science in Information Technology',
@@ -45,8 +48,8 @@ const EXPERIENCE_ITEMS: ExperienceItem[] = [
     date: '2023',
     description:
       'Focused coursework in software engineering, systems design, and database architecture.',
+    status: 'complete',
   },
-
 ];
 
 export default function Experience() {
@@ -65,7 +68,7 @@ export default function Experience() {
       const nodes = gsap.utils.toArray<HTMLElement>('.experience-node', section);
       const cards = gsap.utils.toArray<HTMLElement>('.experience-card', section);
       const cardInternals = gsap.utils.toArray<HTMLElement>(
-        '.experience-card-date, .experience-card-meta, .experience-card-title, .experience-card-description',
+        '.experience-card-date, .experience-card-meta, .experience-card-title, .experience-card-description, .experience-gutter',
         section
       );
       const lineFill = section.querySelector<HTMLElement>('.experience-line-fill');
@@ -108,8 +111,8 @@ export default function Experience() {
         if (!node || !card) return;
 
         const internals = gsap.utils.toArray<HTMLElement>(
-          '.experience-card-date, .experience-card-meta, .experience-card-title, .experience-card-description',
-          card
+          '.experience-card-date, .experience-card-meta, .experience-card-title, .experience-card-description, .experience-gutter',
+          item
         );
 
         const setItemInitialState = () => {
@@ -239,16 +242,17 @@ export default function Experience() {
       className="relative mx-auto w-full max-w-7xl scroll-mt-[var(--nav-height)] px-4 py-24 md:py-32"
     >
       <div className="pointer-events-none absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-[var(--signal)]/20 to-transparent md:inset-x-8" aria-hidden="true" />
-
-
-      <ScrollFloat
-        as="p"
-        containerClassName="mb-[clamp(1.25rem,3vw,2rem)] text-center"
-        textClassName="font-mono text-xs font-extrabold uppercase leading-[1.2] tracking-[0.14em] text-[color-mix(in_srgb,var(--signal)_78%,#ffffff_22%)]"
-        playOnce={false}
-      >
-        {'// Experience'}
-      </ScrollFloat>
+      <p className="eyebrow mx-auto mb-[clamp(1.25rem,3vw,2rem)] flex w-full max-w-sm items-center justify-center gap-3 text-center font-mono text-xs font-extrabold uppercase leading-[1.2] tracking-[0.14em] text-[color-mix(in_srgb,var(--signal)_78%,#ffffff_22%)]">
+        <span
+          aria-hidden="true"
+          className="h-px min-w-8 flex-1 bg-gradient-to-r from-transparent to-[var(--signal)]/55"
+        />
+        Experience
+        <span
+          aria-hidden="true"
+          className="h-px min-w-8 flex-1 bg-gradient-to-l from-transparent to-[var(--signal)]/55"
+        />
+      </p>
 
       <BentoSpotlight
         gridRef={timelineRef}
@@ -257,71 +261,88 @@ export default function Experience() {
         activateOnCardOnly
       />
 
-
-      <ol ref={timelineRef} className="relative flex flex-col gap-12 md:gap-16">
-
+      <ol ref={timelineRef} className="relative flex max-w-6xl flex-col gap-10 md:gap-14">
+        {/* editor-gutter rail: ticked track behind the commit-node column */}
         <div
           aria-hidden="true"
-          className="absolute inset-y-2 left-5 w-[2px] bg-white/10 md:left-1/2 md:-translate-x-1/2"
+          className="absolute inset-y-2 left-[4.25rem] w-px bg-white/10 [background-image:repeating-linear-gradient(to_bottom,transparent_0,transparent_6px,rgba(255,255,255,0.35)_6px,rgba(255,255,255,0.35)_7px)] sm:left-20"
         >
           <div className="experience-line-fill absolute inset-0 bg-gradient-to-b from-[#5227FF] via-[var(--signal)] to-[#FF9FFC] shadow-[0_0_15px_rgba(195,109,252,0.35)]" />
         </div>
 
-        {EXPERIENCE_ITEMS.map((item, index) => {
-          const isRight = index % 2 === 1;
-
-          return (
-            <li
-              key={item.title}
-              className="experience-item relative grid grid-cols-[2.75rem_1fr] items-start gap-x-4 md:grid-cols-[1fr_2.75rem_1fr] md:items-center md:gap-x-8"
+        {EXPERIENCE_ITEMS.map((item, index) => (
+          <li
+            key={item.title}
+            className="experience-item group relative grid grid-cols-[2.5rem_2rem_1fr] items-start gap-x-3 sm:grid-cols-[3rem_2rem_1fr] sm:gap-x-4"
+          >
+            {/* line-number gutter */}
+            <span
+              aria-hidden="true"
+              className="experience-gutter select-none pt-2 text-right font-mono text-[0.7rem] font-medium tabular-nums text-white/20 sm:pt-2.5"
             >
+              {String(index + 1).padStart(2, '0')}
+            </span>
 
-              <div className="experience-node relative z-10 col-start-1 row-start-1 mt-1 flex h-9 w-9 items-center justify-center justify-self-center rounded-full border border-white/20 bg-[#0a0e14] shadow-[0_0_20px_rgba(82,39,255,0.25)] transition-transform duration-300 hover:scale-110 md:col-start-2 md:mt-0">
-                <span
-                  aria-hidden="true"
-                  className="h-3 w-3 rounded-full bg-gradient-to-r from-[var(--signal)] to-[#FF9FFC] shadow-[0_0_12px_var(--signal)]"
-                />
-              </div>
-
-
-              <BentoCard
-                className={`experience-card col-start-2 row-start-1 text-left ${isRight ? 'md:col-start-3' : 'md:col-start-1'}`}
+            {/* commit node — diamond marker, pulses while active */}
+            <div className="experience-node relative z-10 mt-1 flex h-8 w-8 items-center justify-center sm:mt-1.5">
+              <span
+                aria-hidden="true"
+                className="absolute inset-0 rotate-45 rounded-[7px] border border-white/15 bg-[#0a0e14] shadow-[0_0_20px_rgba(82,39,255,0.25)] transition-colors duration-300 group-hover:border-white/35"
+              />
+              <span
+                className={`relative h-2 w-2 rounded-full ${item.status === 'active'
+                  ? 'bg-[var(--signal)] shadow-[0_0_10px_var(--signal)]'
+                  : 'bg-gradient-to-br from-[#5227FF] to-[#FF9FFC]'
+                  }`}
               >
+                {item.status === 'active' && (
+                  <span
+                    aria-hidden="true"
+                    className="motion-safe:animate-ping absolute inset-0 rounded-full bg-[var(--signal)]"
+                  />
+                )}
+              </span>
+            </div>
 
-                <div
-                  aria-hidden="true"
-                  className={`pointer-events-none absolute top-6 hidden h-px w-5 bg-gradient-to-r from-white/25 to-transparent md:block ${isRight
-                    ? '-left-5 bg-gradient-to-l'
-                    : '-right-5 bg-gradient-to-r'
-                    }`}
-                />
+            <BentoCard className="experience-card col-start-3 h-54 text-left">
+              <div className="flex items-start justify-between gap-4">
+                <h3 className="experience-card-title text-lg font-extrabold tracking-tight text-[var(--text)] md:text-xl">
+                  {item.title}
+                  <span
+                    aria-hidden="true"
+                    className="ml-0.5 inline-block h-[0.9em] w-[2px] translate-y-[0.1em] bg-[var(--signal)] opacity-0 transition-opacity duration-300 group-hover:opacity-100 motion-safe:group-hover:animate-pulse"
+                  />
+                </h3>
 
-
-                <div className="flex items-start justify-between gap-4">
-                  <h3 className="experience-card-title text-lg font-extrabold tracking-tight text-[var(--text)] md:text-xl">
-                    {item.title}
-                  </h3>
-
-                  <span className="experience-card-date shrink-0 font-mono text-[0.65rem] font-bold uppercase tracking-[0.14em] text-[var(--signal)] pt-1">
+                <span className="experience-card-date flex shrink-0 items-center gap-1.5 pt-1">
+                  <span
+                    aria-hidden="true"
+                    className={`h-1.5 w-1.5 rounded-full ${item.status === 'active'
+                      ? 'bg-[var(--signal)] shadow-[0_0_8px_var(--signal)]'
+                      : 'bg-white/25'
+                      }`}
+                  />
+                  <span className="font-mono text-[0.65rem] font-bold uppercase tracking-[0.14em] text-[var(--signal)]">
                     {item.date}
                   </span>
-                </div>
+                </span>
+              </div>
 
+              <p className="experience-card-description mt-2 text-sm leading-relaxed text-[var(--muted)] md:text-base">
+                {item.description}
+              </p>
 
-                <p className="experience-card-description text-sm leading-relaxed text-[var(--muted)] md:text-base">
-                  {item.description}
-                </p>
-
-
-                <div className="experience-card-meta mt-1 pt-2 border-t border-white/[0.06]">
-                  <span className="font-mono text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
-                    {item.subtitle}
-                  </span>
-                </div>
-              </BentoCard>
-            </li>
-          );
-        })}
+              <div className="experience-card-meta mt-3 flex items-center gap-2 border-t border-white/[0.06] pt-2.5">
+                <span aria-hidden="true" className="font-mono text-xs text-white/25">
+                  ›
+                </span>
+                <span className="font-mono text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+                  {item.subtitle}
+                </span>
+              </div>
+            </BentoCard>
+          </li>
+        ))}
       </ol>
     </section>
   );
