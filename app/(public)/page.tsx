@@ -3,6 +3,7 @@ import WhatIDo from '@/components/sections/WhatIDo/WhatIDo';
 import AboutMe from '@/components/sections/AboutMe/AboutMe';
 import Experience from '@/components/sections/Experience/Experience';
 import TechStack from '@/components/sections/TechStack/TechStack';
+import Projects from '@/components/sections/Projects/Projects';
 
 export default function HomePage() {
     return (
@@ -12,6 +13,7 @@ export default function HomePage() {
             <AboutMe />
             <Experience />
             <TechStack />
+            <Projects />
         </>
     );
 }

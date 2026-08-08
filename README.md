@@ -81,7 +81,7 @@ npm run format
 arribajudemichael/
 ├── app/                 # Next.js App Router
 ├── components/          # React components
-│   ├── effects/        # Visual effects (Magnet, LightPillar, etc.)
+│   ├── effects/        # Visual effects (Magnet, SpecularButton, FloatingLines)
 │   ├── sections/       # Page sections (Home, WhatIDo, etc.)
 │   ├── ui/             # Reusable UI components
 │   ├── navbar/         # Navigation components

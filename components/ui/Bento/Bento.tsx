@@ -18,6 +18,7 @@ export interface BentoGridProps {
 export interface BentoCardProps {
   children: React.ReactNode;
   className?: string;
+  elevation?: 'default' | 'smooth';
   enableStars?: boolean;
   enableBorderGlow?: boolean;
   disableAnimations?: boolean;
@@ -39,8 +40,13 @@ export const DEFAULT_PARTICLE_COUNT = 12;
 export const DEFAULT_SPOTLIGHT_RADIUS = 320;
 export const DEFAULT_GLOW_COLOR = '195, 109, 252';
 export const BENTO_GRID_CLASS = 'about-bento-section grid w-full grid-cols-1 gap-3';
-export const BENTO_CARD_CLASS =
-  'about-bento-card relative flex min-h-[104px] flex-col justify-center gap-[0.72em] overflow-hidden rounded-lg border border-white/[0.07] bg-white/[0.04] px-[1.25em] py-[1.2em] transition-[transform,border-color,background] duration-[220ms] ease-[ease] hover:-translate-y-0.5 hover:border-[rgba(195,109,252,0.18)] hover:bg-white/[0.055] max-sm:min-h-0 max-sm:p-[1.05em] motion-reduce:transition-none motion-reduce:hover:translate-y-0 [@media(hover:none)]:hover:translate-y-0';
+export const BENTO_CARD_BASE_CLASS =
+  'about-bento-card relative flex min-h-[104px] flex-col justify-center gap-[0.72em] overflow-hidden rounded-lg border border-white/[0.07] bg-white/[0.04] px-[1.25em] py-[1.2em] max-sm:min-h-0 max-sm:p-[1.05em]';
+export const BENTO_DEFAULT_ELEVATION_CLASS =
+  'transition-[transform,border-color,background] duration-[220ms] ease-[ease] hover:-translate-y-0.5 hover:border-[rgba(195,109,252,0.18)] hover:bg-white/[0.055] motion-reduce:transition-none motion-reduce:hover:translate-y-0 [@media(hover:none)]:hover:translate-y-0';
+export const BENTO_SMOOTH_ELEVATION_CLASS =
+  'transform-gpu shadow-[0_8px_22px_rgba(0,0,0,0.14)] transition-[transform,border-color,background-color,box-shadow] duration-[420ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-1 hover:border-[rgba(195,109,252,0.2)] hover:bg-white/[0.055] hover:shadow-[0_24px_56px_rgba(0,0,0,0.38)] motion-reduce:transition-none motion-reduce:hover:translate-y-0 [@media(hover:none)]:hover:translate-y-0';
+export const BENTO_CARD_CLASS = `${BENTO_CARD_BASE_CLASS} ${BENTO_DEFAULT_ELEVATION_CLASS}`;
 export const BENTO_META_CLASS = 'flex items-baseline gap-[0.6em]';
 export const BENTO_CODE_CLASS = 'font-mono text-[10px] text-[var(--signal)] opacity-65';
 export const BENTO_LABEL_CLASS = 'font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--muted)] opacity-50';
@@ -144,19 +150,38 @@ export function BentoSpotlight({
       'mix-blend-mode: screen;';
     document.body.appendChild(spotlight);
     spotlightRef.current = spotlight;
+    const moveSpotlightX = gsap.quickTo(spotlight, 'left', { duration: 0.12, ease: 'power2.out' });
+    const moveSpotlightY = gsap.quickTo(spotlight, 'top', { duration: 0.12, ease: 'power2.out' });
+    const setSpotlightOpacity = gsap.quickTo(spotlight, 'opacity', { duration: 0.18, ease: 'power2.out' });
+    let activeCard: HTMLElement | null = null;
 
     const resetGlow = () => {
+      if (!pointerRef.current && !activeCard) return;
       pointerRef.current = null;
-      grid.querySelectorAll<HTMLElement>('.about-bento-card').forEach((card) => {
-        card.style.setProperty('--glow-intensity', '0');
-      });
-      gsap.to(spotlight, { opacity: 0, duration: 0.22, ease: 'power2.out' });
+      if (activateOnCardOnly) {
+        activeCard?.style.setProperty('--glow-intensity', '0');
+        activeCard = null;
+      } else {
+        grid.querySelectorAll<HTMLElement>('.about-bento-card').forEach((card) => {
+          card.style.setProperty('--glow-intensity', '0');
+        });
+      }
+      setSpotlightOpacity(0);
     };
 
     const updateGlow = () => {
       frameRef.current = null;
       const pointer = pointerRef.current;
       if (!pointer || !spotlightRef.current) return;
+
+      if (activateOnCardOnly) {
+        if (!activeCard) return;
+        updateCardGlowProperties(activeCard, pointer.x, pointer.y, 1, spotlightRadius);
+        moveSpotlightX(pointer.x);
+        moveSpotlightY(pointer.y);
+        setSpotlightOpacity(0.55);
+        return;
+      }
 
       const cards = grid.querySelectorAll<HTMLElement>('.about-bento-card');
       const { proximity, fadeDistance } = calculateSpotlightValues(spotlightRadius);
@@ -181,12 +206,9 @@ export function BentoSpotlight({
         updateCardGlowProperties(cardElement, pointer.x, pointer.y, glowIntensity, spotlightRadius);
       });
 
-      gsap.to(spotlightRef.current, { left: pointer.x, top: pointer.y, duration: 0.12, ease: 'power2.out' });
-      gsap.to(spotlightRef.current, {
-        opacity: minDistance <= fadeDistance ? 0.55 : 0,
-        duration: 0.18,
-        ease: 'power2.out',
-      });
+      moveSpotlightX(pointer.x);
+      moveSpotlightY(pointer.y);
+      setSpotlightOpacity(minDistance <= fadeDistance ? 0.55 : 0);
     };
 
     const requestGlowUpdate = () => {
@@ -199,10 +221,15 @@ export function BentoSpotlight({
         const target = event.target instanceof Element ? event.target : null;
         const hoveredCard = target?.closest('.about-bento-card');
 
-        if (!hoveredCard || !grid.contains(hoveredCard)) {
+        if (!(hoveredCard instanceof HTMLElement) || !grid.contains(hoveredCard)) {
           resetGlow();
           return;
         }
+
+        if (activeCard && activeCard !== hoveredCard) {
+          activeCard.style.setProperty('--glow-intensity', '0');
+        }
+        activeCard = hoveredCard;
       }
 
       pointerRef.current = { x: event.clientX, y: event.clientY };
@@ -220,6 +247,8 @@ export function BentoSpotlight({
       grid.removeEventListener('pointermove', handlePointerMove);
       grid.removeEventListener('pointerleave', handlePointerLeave);
       if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
+      activeCard?.style.setProperty('--glow-intensity', '0');
+      gsap.killTweensOf(spotlight);
       spotlight.parentNode?.removeChild(spotlight);
     };
   }, [activateOnCardOnly, enabled, glowColor, gridRef, shouldDisableAnimations, spotlightRadius]);
@@ -230,6 +259,7 @@ export function BentoSpotlight({
 export function BentoCard({
   children,
   className = '',
+  elevation = 'default',
   enableStars = false,
   enableBorderGlow = true,
   disableAnimations = false,
@@ -359,7 +389,15 @@ export function BentoCard({
   }, [animateParticles, clearAllParticles, clickEffect, enableStars, glowColor, shouldDisableAnimations]);
 
   return (
-    <div ref={cardRef} className={cx(BENTO_CARD_CLASS, enableBorderGlow && 'about-bento-card--border-glow', className)}>
+    <div
+      ref={cardRef}
+      className={cx(
+        BENTO_CARD_BASE_CLASS,
+        elevation === 'smooth' ? BENTO_SMOOTH_ELEVATION_CLASS : BENTO_DEFAULT_ELEVATION_CLASS,
+        enableBorderGlow && 'about-bento-card--border-glow',
+        className
+      )}
+    >
       {children}
     </div>
   );

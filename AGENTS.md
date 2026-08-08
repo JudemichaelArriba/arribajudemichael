@@ -1,4 +1,4 @@
-r# AI Agent Instructions for arribajudemichael Portfolio
+# AI Agent Instructions for arribajudemichael Portfolio
 
 ## Project Overview
 **Name:** arribajudemichael  
@@ -30,27 +30,25 @@ arribajudemichael/
 │   └── favicon.ico               # Site favicon
 ├── components/
 │   ├── sections/                 # Page sections and page-level section scenes
-│   │   ├── home/                 # Hero section with LightPillar effect
+│   │   ├── home/                 # Hero section with FloatingLines effect
 │   │   │   └── Home.tsx          # Uses Tailwind CSS (no CSS module)
-│   │   ├── HomeRevealScene/      # Pinned home-to-continuation reveal scene
-│   │   │   ├── HomeRevealScene.tsx
-│   │   │   └── HomeRevealScene.module.css  # Scroll reveal layering (keep native CSS)
 │   │   ├── WhatIDo/              # What I Do section
-    WhatIDo.tsx                 # Tailwind CSS only
+│   │   │   └── WhatIDo.tsx       # Tailwind CSS only
 │   │   ├── AboutMe/              # About section with compact bento/profile layout
 │   │   │   ├── AboutMe.tsx       # Tailwind CSS only
 │   │   │   └── AboutBento.tsx    # Thin wrapper around shared Bento UI
 │   │   ├── Experience/           # Replayable timeline section
 │   │   │   └── Experience.tsx
-│   │   └── TechStack/            # Categorized technology grid
-│   │       └── TechStack.tsx     # Unframed icon/name lists + reversible scrubbed per-tech reveal
+│   │   ├── TechStack/            # Categorized technology grid
+│   │   │   └── TechStack.tsx     # Unframed icon/name lists + reversible scrubbed per-tech reveal
+│   │   └── Projects/             # Static projects and certificates showcase
+│   │       ├── Projects.tsx      # Segmented views + replayable GSAP reveal
+│   │       └── projects.data.ts  # Typed static data boundary for future database integration
 │   ├── ui/                       # Reusable UI components
 │   │   ├── Button.tsx            # Custom button with specular/magnetic variants
 │   │   ├── RollingText.tsx       # Animated text roller component
 │   │   ├── ScrollFloat/          # Scroll-triggered float animation
 │   │   │   └── ScrollFloat.tsx   # Uses Tailwind CSS (no CSS module)
-│   │   ├── PurpleScrollbar/      # Global scrollbar styles
-│   │   │   └── PurpleScrollbar.tsx  # Empty component (styles in globals.css)
 │   │   ├── LineSidebar/          # Proximity-based sidebar navigation
 │   │   │   ├── LineSidebar.tsx
 │   │   │   └── LineSidebar.module.css  # Custom CSS variables (keep native CSS)
@@ -69,9 +67,9 @@ arribajudemichael/
 │       ├── SpecularButton/       # Specular light button effect
 │       │   ├── SpecularButton.tsx
 │       │   └── SpecularButton.css  # Canvas effects (keep native CSS)
-│       └── LightPillar/          # WebGL light pillar effect (Three.js)
-│           ├── LightPillar.jsx
-│           └── LightPillar.css   # WebGL container (keep native CSS)
+│       └── FloatingLines/        # WebGL hero background (Three.js)
+│           ├── FloatingLines.tsx
+│           └── three.d.ts        # Local Three.js declarations used by the effect
 ├── lib/
 │   ├── fonts.ts                  # Font configurations (Bricolage Grotesque)
 │   ├── useActiveSection.ts       # Hook for active section detection
@@ -81,6 +79,8 @@ arribajudemichael/
 ├── public/                       # Static assets
 │   ├── profile.jpeg              # About/profile image
 │   ├── tech/                     # Locally hosted original-color technology SVGs
+│   ├── projectsTemporary/        # Temporary static project screenshots
+│   ├── certsTemporary/           # Certificate PDFs + generated first-page previews
 │   ├── *.svg                     # SVG icons
 │   └── [fonts if any]
 └── Configuration files:
@@ -98,14 +98,15 @@ arribajudemichael/
 - **App Router** with route groups: `(public)` group for public-facing pages
 - Root layout (`app/layout.tsx`): Sets up fonts, metadata, HTML structure
 - Public layout (`app/(public)/layout.tsx`): Wraps pages with Preloader and Navbar
-- Homepage order: `Home` -> `WhatIDo` -> `AboutMe` -> `Experience` -> `TechStack`
+- Homepage order: `Home` -> `WhatIDo` -> `AboutMe` -> `Experience` -> `TechStack` -> `Projects`
 - Client components marked with `'use client'` directive
 
 ### 2. Component Architecture
 - **Server Components by default** (Next.js 16 App Router)
 - Client components explicitly marked with `'use client'`
-- Dynamic imports for heavy components (e.g., LightPillar with `ssr: false`)
+- Dynamic imports for heavy components (e.g., FloatingLines with `ssr: false`)
 - Component co-location: styles next to component files
+- Projects and certificates currently use typed static arrays in `projects.data.ts`; keep this data boundary replaceable for later database integration.
 
 ### 3. Styling Approach
 - **Tailwind CSS 4 is mandatory for standard styling** - Use utility classes for layout, spacing, sizing, typography, colors, borders, shadows, responsive states, and simple hover/focus states.
@@ -114,16 +115,16 @@ arribajudemichael/
   - Pseudo-elements, masks, `color-mix`, complex layered backgrounds, or browser-specific selectors
   - Complex state transitions and backdrop layering (e.g., `Navbar.module.css`)
   - Dynamic CSS custom properties and proximity effects (e.g., `LineSidebar.module.css`)
-  - WebGL/Canvas containers and generated DOM effects (e.g., `LightPillar.css`, `SpecularButton.css`)
+  - WebGL/Canvas containers and generated DOM effects (e.g., `SpecularButton.css`)
   - Effect-only rules in `components/ui/Bento/Bento.css` such as glow variables and border-glow pseudo-elements
-- **Protected native CSS files:** `LightPillar.css`, `SpecularButton.css`, `Navbar.module.css`, `LineSidebar.module.css`, and effect-only pieces of `components/ui/Bento/Bento.css`.
+- **Protected native CSS files:** `SpecularButton.css`, `Navbar.module.css`, `LineSidebar.module.css`, and effect-only pieces of `components/ui/Bento/Bento.css`.
 - CSS Modules (`.module.css`) are for component-specific complex effects only, not ordinary layout or typography.
 - Global styles in `app/globals.css` are for Tailwind directives, CSS variables, scrollbar, reduced-motion, and true global utilities.
 - Tailwind arbitrary values (`className="text-[#5227FF]"`) are preferred for one-off exact design values.
 - Empty or unused CSS files must be removed after conversion.
 ### 4. Animation & Effects
 - **GSAP 3.15** for complex animations (@gsap/react)
-- **Three.js/OGL** for WebGL effects (LightPillar)
+- **Three.js/OGL** for WebGL effects such as FloatingLines
 - Custom hooks for animation logic (`useRoleCycle`, etc.)
 - Performance-focused: animations isolated, lazy-loaded when heavy
 
@@ -368,5 +369,5 @@ See `.github/workflows/test.yml` for the complete workflow configuration.
 
 ---
 
-**Last Updated:** 2026-07-31  
+**Last Updated:** 2026-08-08
 **Maintained by:** AI Agents working on this project

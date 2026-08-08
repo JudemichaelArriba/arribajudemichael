@@ -23,7 +23,7 @@ const TOP_THRESHOLD = 24;
 const SCROLL_DELTA = 6;
 const DESKTOP_BREAKPOINT = 768;
 const NAV_UNDERLINE_CLASS =
-    'pointer-events-none absolute inset-x-0 bottom-0 h-0.5 origin-left transform-gpu bg-gradient-to-r from-[#e945f5] via-[var(--signal)] to-[#7c3aed] transition-transform duration-[420ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none';
+    'pointer-events-none absolute inset-x-0 -bottom-1.5 h-0.5 origin-left transform-gpu bg-gradient-to-r from-[#e945f5] via-[var(--signal)] to-[#7c3aed] transition-transform duration-[420ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none';
 
 type NavMode = 'top' | 'hidden' | 'visible';
 
@@ -141,7 +141,7 @@ export default function Navbar() {
                 <nav
                     ref={navRef}
                     aria-label="Primary navigation"
-                    className={`pointer-events-auto relative isolate flex items-center justify-between gap-3 rounded-full border px-2 py-1.5 pl-4 backdrop-blur-[20px] transition-[opacity,transform,filter,border-color,background-color,box-shadow] duration-[360ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none md:gap-5 md:px-4 md:py-2 md:pl-5 ${menuOpen
+                    className={`pointer-events-auto relative isolate flex h-14 items-center justify-between gap-3 rounded-full border px-2.5 backdrop-blur-[20px] transition-[opacity,transform,filter,border-color,background-color,box-shadow] duration-[360ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none md:gap-4 md:px-3 ${menuOpen
                         ? 'border-[rgba(195,109,252,0.28)] bg-black/[0.58] shadow-[0_18px_56px_rgba(0,0,0,0.5),0_0_24px_rgba(195,109,252,0.08)]'
                         : 'border-white/[0.11] bg-black/[0.34] shadow-[0_12px_42px_rgba(0,0,0,0.32),inset_0_1px_0_rgba(255,255,255,0.025)]'
                         } ${isNavVisible
@@ -162,9 +162,9 @@ export default function Navbar() {
                         onClick={() => scrollTo('home')}
                         type="button"
                         aria-label="Go to home"
-                        className="group relative z-[1] flex h-11 shrink-0 items-center justify-center px-1.5 font-[family-name:var(--font-name)] text-[1.35rem] font-extrabold tracking-normal text-[var(--text)] transition-[color,transform] duration-300 ease-out hover:scale-[1.025] hover:text-white focus-visible:text-white focus-visible:outline-none active:scale-[0.98] motion-reduce:transition-none md:h-10 md:min-w-12 md:px-2 md:text-2xl"
+                        className="group relative z-[1] flex h-11 w-11 shrink-0 items-center justify-center font-[family-name:var(--font-name)] text-[1.35rem] font-extrabold tracking-normal text-[var(--text)] transition-[color,transform] duration-300 ease-out hover:scale-[1.025] hover:text-white focus-visible:text-white focus-visible:outline-none active:scale-[0.98] motion-reduce:transition-none md:h-10 md:w-12 md:text-2xl"
                     >
-                        <span className="relative z-[1] inline-block pb-1.5 leading-none">
+                        <span className="relative z-[1] inline-flex items-center leading-none">
                             J<span className="text-[var(--signal)] transition-colors duration-300 group-hover:text-[#e945f5]">M</span>
                             <span
                                 aria-hidden="true"
@@ -173,22 +173,22 @@ export default function Navbar() {
                         </span>
                     </button>
 
-                    <ul className="relative z-[1] hidden min-w-0 items-center gap-1 md:flex lg:gap-2">
+                    <ul className="relative z-[1] hidden h-10 min-w-0 items-center gap-1 md:flex lg:gap-2">
                         {NAV_ITEMS.map((item) => {
                             const isActive = active === item.id || (active === 'what-i-do' && item.id === 'home');
 
                             return (
-                                <li key={item.id} className="shrink-0">
+                                <li key={item.id} className="flex h-full shrink-0 items-center">
                                     <button
                                         onClick={() => scrollTo(item.id)}
                                         type="button"
                                         aria-current={isActive ? 'page' : undefined}
-                                        className={`group relative flex min-h-10 items-center px-2.5 font-[family-name:var(--font-jetbrains-mono)] text-[11px] font-semibold uppercase tracking-normal transition-colors duration-300 ease-out focus-visible:text-[var(--signal)] focus-visible:outline-none motion-reduce:transition-none lg:px-3 lg:text-xs ${isActive
+                                        className={`group relative flex h-10 items-center justify-center px-2.5 font-[family-name:var(--font-jetbrains-mono)] text-[11px] font-semibold uppercase tracking-normal transition-colors duration-300 ease-out focus-visible:text-[var(--signal)] focus-visible:outline-none motion-reduce:transition-none lg:px-3 lg:text-xs ${isActive
                                             ? 'font-bold text-[var(--signal)]'
                                             : 'text-[var(--muted)]/65 hover:text-[var(--text)]'
                                             }`}
                                     >
-                                        <span className="relative z-[1] inline-block pb-1.5 leading-none">
+                                        <span className="relative z-[1] inline-flex items-center leading-none">
                                             {item.label}
                                             <span
                                                 aria-hidden="true"

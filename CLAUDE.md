@@ -27,19 +27,18 @@ app/
 components/
   sections/              -> Page sections and page-level section scenes
     home/                -> Home.tsx (Tailwind CSS only)
-    HomeRevealScene/     -> HomeRevealScene.tsx + .module.css (home pull reveal)
     WhatIDo/             -> WhatIDo.tsx (Tailwind CSS only)
     AboutMe/             -> AboutMe.tsx + AboutBento.tsx wrapper
     Experience/          -> Experience.tsx (timeline + replayable GSAP)
     TechStack/           -> TechStack.tsx (unframed icon/name lists + reversible scrubbed GSAP)
+    Projects/            -> Projects.tsx + projects.data.ts (static projects/certificates showcase)
   ui/                    -> Reusable UI (Button, RollingText, ScrollFloat, Bento)
     ScrollFloat/         -> ScrollFloat.tsx (Tailwind CSS only)
-    PurpleScrollbar/     -> PurpleScrollbar.tsx (styles in globals.css)
     LineSidebar/         -> LineSidebar.tsx + .module.css (CSS variables)
     TiltedCard/          -> TiltedCard.tsx + TiltedCard.css (interactive card tilt)
   navbar/                -> Navbar.tsx + .module.css (complex transitions)
   loader/                -> Preloader components
-  effects/               -> Visual effects (Magnet, SpecularButton, LightPillar)
+  effects/               -> Visual effects (Magnet, SpecularButton, FloatingLines)
 
 lib/
   fonts.ts               -> Font configurations
@@ -49,6 +48,8 @@ lib/
 public/
   profile.jpeg           -> About/profile image
   tech/                  -> Local original-color technology SVG assets
+  projectsTemporary/     -> Temporary project screenshots
+  certsTemporary/        -> Certificate PDFs + generated first-page previews
   *.svg                  -> SVG icons
 ```
 
@@ -57,10 +58,11 @@ public/
 - **Tailwind CSS 4 FIRST** - Use utility classes for all standard styling
 - **Native CSS only when necessary** - Complex gradients, transitions, CSS variables, WebGL effects
 - **CSS Modules** (`.module.css`) for component-specific complex styles that Tailwind can't handle
-- **Dynamic imports for heavy components** - e.g., `LightPillar` uses `dynamic(() => import(), { ssr: false })`
+- **Dynamic imports for heavy components** - e.g., `FloatingLines` uses `dynamic(() => import(), { ssr: false })`
 - **GSAP for animations** - Complex timelines and interactions
-- **Homepage composition** - Home -> WhatIDo -> AboutMe -> Experience -> TechStack
+- **Homepage composition** - Home -> WhatIDo -> AboutMe -> Experience -> TechStack -> Projects
 - **Three.js/OGL for WebGL** - Advanced visual effects
+- **Static showcase boundary** - `projects.data.ts` owns typed temporary content and should remain replaceable by later database data.
 
 ### Component Patterns to Follow
 
@@ -169,7 +171,7 @@ export default function Page({ params }: PageProps) {
   - Dynamic CSS custom properties
   - Backdrop filters with complex layering
   - WebGL/Canvas container styles
-- **Protected native CSS files:** `LightPillar.css`, `SpecularButton.css`, `Navbar.module.css`, `LineSidebar.module.css`, and effect-only pieces of `components/ui/Bento/Bento.css`
+- **Protected native CSS files:** `SpecularButton.css`, `Navbar.module.css`, `LineSidebar.module.css`, and effect-only pieces of `components/ui/Bento/Bento.css`
 - **Naming:** `Component.module.css` co-located with component
 - **BEM-like naming inside modules:** `.container`, `.button`, `.button__icon`
 
@@ -209,8 +211,8 @@ import * as THREE from 'three';
 #### Code Splitting
 ```typescript
 // Heavy components (WebGL, large libraries)
-const LightPillar = dynamic(
-  () => import('@/components/effects/LightPillar/LightPillar'),
+const FloatingLines = dynamic(
+  () => import('@/components/effects/FloatingLines/FloatingLines'),
   { ssr: false }
 );
 ```
@@ -309,20 +311,17 @@ See `.github/workflows/test.yml` for workflow configuration.
 </Button>
 ```
 
-#### LightPillar Effect
+#### FloatingLines Effect
 ```typescript
-<LightPillar
-  topColor="#5227FF"
-  bottomColor="#FF9FFC"
-  intensity={0.6}
-  rotationSpeed={0.3}
-  glowAmount={0.002}
-  pillarWidth={3}
-  pillarHeight={0.4}
-  noiseIntensity={0.5}
-  pillarRotation={25}
+<FloatingLines
+  linesGradient={['#e945f5', '#7C3AED', '#760068']}
+  lineCount={4}
+  bendRadius={8}
+  animationSpeed={1}
+  bendStrength={-2}
+  lineDistance={8}
   interactive={false}
-  mixBlendMode="normal"
+  parallax={false}
 />
 ```
 
@@ -339,14 +338,12 @@ See `.github/workflows/test.yml` for workflow configuration.
 The following components have been converted from CSS Modules to pure Tailwind CSS:
 - **Home.tsx** - Hero section (removed `Home.module.css`)
 - **ScrollFloat.tsx** - Scroll animation component (removed `ScrollFloat.module.css`)
-- **PurpleScrollbar.tsx** - Scrollbar styles moved to `app/globals.css`
 - **WhatIDo.tsx** - What I Do section (removed `WhatIDo.module.css`)
 
 #### Components That MUST Keep Native CSS
 The following components require CSS Modules for complex effects:
 - **Navbar.module.css** - Complex state transitions, backdrop filters, overlay animations
 - **LineSidebar.module.css** - Dynamic CSS custom properties for proximity effects
-- **LightPillar.css** - WebGL container styles
 - **SpecularButton.css** - Canvas effect styling
 - **components/ui/Bento/Bento.css** - Border-glow pseudo-element, glow CSS variables, and generated spotlight effect only
 
@@ -370,7 +367,7 @@ The following components require CSS Modules for complex effects:
 ❌ Don't ignore TypeScript/ESLint errors  
 ❌ Don't use deprecated Next.js APIs  
 ❌ **Don't create CSS Modules for simple styling - use Tailwind instead**  
-❌ **Don't convert complex CSS Modules (Navbar, LineSidebar, WhatIDo) to Tailwind**  
+❌ **Don't convert protected effect CSS (Navbar, LineSidebar, Bento, TiltedCard, SpecularButton) without proving parity**
 
 ### Quick Reference
 
