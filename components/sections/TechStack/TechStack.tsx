@@ -252,6 +252,11 @@ export default function TechStack() {
             id="techstack"
             className="relative mx-auto w-full max-w-7xl scroll-mt-[calc(var(--nav-height,80px)+2rem)] px-5 py-24 md:px-8 md:py-32"
         >
+            <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-[var(--signal)]/20 to-transparent md:inset-x-8"
+            />
+
             <div className="mb-14 md:mb-20">
                 <div className="tech-stack-heading-copy flex w-full items-center gap-4">
                     <span

@@ -49,9 +49,9 @@ body {
   filter: drop-shadow(0 0 10px var(--preloader-glow));
 }
 
-/* Pill-style scrollbar — exact values copied from .compactMenuButton:hover / .compactLogoPill:hover */
+/* Global scrollbar: restrained at rest, brighter and fuller on interaction. */
 html {
-  scrollbar-color: rgba(195, 109, 252, 0.14) rgba(255, 255, 255, 0.03);
+  scrollbar-color: color-mix(in srgb, var(--signal) 72%, #7c3aed 28%) rgba(255, 255, 255, 0.025);
   scrollbar-width: thin;
 }
 
@@ -61,16 +61,33 @@ html {
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--site-bg);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.035);
 }
 
 ::-webkit-scrollbar-thumb {
-  min-height: 48px;
+  min-height: 56px;
+  border: 3px solid transparent;
   border-radius: 999px;
-  background-color: rgba(195, 109, 252, 0.14);
-  border: 1px solid rgba(195, 109, 252, 0.35);
-  box-shadow: 0 0 28px rgba(195, 109, 252, 0.18);
+  background: linear-gradient(180deg, #e945f5 0%, var(--signal) 34%, #7c3aed 68%, #760068 100%) padding-box;
+  box-shadow: 0 0 0 1px rgba(195, 109, 252, 0.12), 0 0 14px rgba(124, 58, 237, 0.12);
+  transition: border-width 180ms ease, filter 180ms ease, box-shadow 180ms ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  border-width: 2px;
+  filter: brightness(1.16) saturate(1.08);
+  box-shadow: 0 0 0 1px rgba(233, 69, 245, 0.2), 0 0 18px rgba(195, 109, 252, 0.24);
+}
+
+::-webkit-scrollbar-thumb:active {
+  border-width: 2px;
+  filter: brightness(0.94) saturate(1.12);
+  box-shadow: 0 0 0 1px rgba(195, 109, 252, 0.22), 0 0 12px rgba(124, 58, 237, 0.2);
+}
+
+::-webkit-scrollbar-corner {
+  background: var(--site-bg);
 }
 
 .scrollbar-hide::-webkit-scrollbar {
@@ -86,6 +103,10 @@ html {
   * {
     animation: none !important;
     transition: none !important;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    transition: none;
   }
 
   .scroll-float-char {
