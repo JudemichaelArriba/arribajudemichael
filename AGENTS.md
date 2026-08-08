@@ -23,7 +23,7 @@ This project uses **Next.js 16.2.12** with the App Router. This version may have
 arribajudemichael/
 ├── app/                          # Next.js App Router directory
 │   ├── (public)/                 # Route group for public pages
-│   │   ├── layout.tsx            # Public layout with Preloader + Navbar
+│   │   ├── layout.tsx            # Public layout with Preloader + Navbar + Footer
 │   │   └── page.tsx              # Home page composition
 │   ├── layout.tsx                # Root layout with fonts and metadata
 │   ├── globals.css               # Global styles, Tailwind directives, scrollbar styles
@@ -41,11 +41,14 @@ arribajudemichael/
 │   │   │   └── Experience.tsx
 │   │   ├── TechStack/            # Categorized technology grid
 │   │   │   └── TechStack.tsx     # Unframed icon/name lists + reversible scrubbed per-tech reveal
-│   │   └── Projects/             # Static projects and certificates showcase
-│   │       ├── Projects.tsx      # Segmented views + replayable GSAP reveal
-│   │       └── projects.data.ts  # Typed static data boundary for future database integration
+│   │   ├── Projects/             # Static projects and certificates showcase
+│   │   │   ├── Projects.tsx      # Segmented views + replayable GSAP reveal
+│   │   │   └── projects.data.ts  # Typed static data boundary for future database integration
+│   │   └── Contact/              # Static contact form + contact channel presentation
+│   │       └── Contact.tsx       # Tailwind UI + replayable GSAP reveal
 │   ├── ui/                       # Reusable UI components
 │   │   ├── Button.tsx            # Custom button with specular/magnetic variants
+│   │   ├── navigationStyles.ts   # Shared Navbar/Footer link underline animation
 │   │   ├── RollingText.tsx       # Animated text roller component
 │   │   ├── ScrollFloat/          # Scroll-triggered float animation
 │   │   │   └── ScrollFloat.tsx   # Uses Tailwind CSS (no CSS module)
@@ -61,6 +64,8 @@ arribajudemichael/
 │   ├── loader/                   # Loading components
 │   │   ├── Preloader.tsx         # Page preloader wrapper
 │   │   └── PreloaderLogo.tsx
+│   ├── footer/                   # Semantic public-site footer
+│   │   └── Footer.tsx            # Server-rendered navigation + contact placeholders
 │   └── effects/                  # Visual effects
 │       ├── Magnet/               # Magnetic hover effect
 │       │   └── Magnet.tsx
@@ -72,6 +77,7 @@ arribajudemichael/
 │           └── three.d.ts        # Local Three.js declarations used by the effect
 ├── lib/
 │   ├── fonts.ts                  # Font configurations (Bricolage Grotesque)
+│   ├── site.ts                   # Shared typed navigation and contact configuration
 │   ├── useActiveSection.ts       # Hook for active section detection
 │   └── animations/
 │       ├── useRoleCycle.ts       # Text role cycling animation
@@ -97,8 +103,8 @@ arribajudemichael/
 ### 1. Routing & Layouts
 - **App Router** with route groups: `(public)` group for public-facing pages
 - Root layout (`app/layout.tsx`): Sets up fonts, metadata, HTML structure
-- Public layout (`app/(public)/layout.tsx`): Wraps pages with Preloader and Navbar
-- Homepage order: `Home` -> `WhatIDo` -> `AboutMe` -> `Experience` -> `TechStack` -> `Projects`
+- Public layout (`app/(public)/layout.tsx`): Wraps pages with Preloader and Navbar, then renders the semantic Footer after `<main>`
+- Homepage order: `Home` -> `WhatIDo` -> `AboutMe` -> `Experience` -> `TechStack` -> `Projects` -> `Contact`
 - Client components marked with `'use client'` directive
 
 ### 2. Component Architecture
@@ -107,6 +113,8 @@ arribajudemichael/
 - Dynamic imports for heavy components (e.g., FloatingLines with `ssr: false`)
 - Component co-location: styles next to component files
 - Projects and certificates currently use typed static arrays in `projects.data.ts`; keep this data boundary replaceable for later database integration.
+- Navigation and public contact destinations are centralized in `lib/site.ts`; empty contact URLs must render as non-interactive content, never empty anchors.
+- The Contact form is a static client-side preview until Supabase integration. Keep field names stable and do not imply that submissions were delivered or persisted.
 
 ### 3. Styling Approach
 - **Tailwind CSS 4 is mandatory for standard styling** - Use utility classes for layout, spacing, sizing, typography, colors, borders, shadows, responsive states, and simple hover/focus states.
@@ -369,5 +377,5 @@ See `.github/workflows/test.yml` for the complete workflow configuration.
 
 ---
 
-**Last Updated:** 2026-08-08
+**Last Updated:** 2026-08-09
 **Maintained by:** AI Agents working on this project

@@ -3,28 +3,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Menu, X } from 'lucide-react';
 import { useActiveSection } from '@/lib/useActiveSection';
+import { SITE_NAVIGATION } from '@/lib/site';
+import { NAV_LINK_UNDERLINE_CLASS } from '@/components/ui/navigationStyles';
 
-interface NavItem {
-    id: string;
-    label: string;
-}
-
-const NAV_ITEMS: NavItem[] = [
-    { id: 'home', label: 'Home' },
-    { id: 'about', label: 'About' },
-    { id: 'experience', label: 'Experience' },
-    { id: 'techstack', label: 'Tech Stack' },
-    { id: 'projects', label: 'Projects' },
-    { id: 'contact', label: 'Contact' },
-];
-
-const TRACKED_SECTION_IDS = ['home', 'what-i-do', ...NAV_ITEMS.filter((item) => item.id !== 'home').map((item) => item.id)];
+const TRACKED_SECTION_IDS = ['home', 'what-i-do', ...SITE_NAVIGATION.filter((item) => item.id !== 'home').map((item) => item.id)];
 const TOP_THRESHOLD = 24;
 const SCROLL_DELTA = 6;
 const DESKTOP_BREAKPOINT = 768;
-const NAV_UNDERLINE_CLASS =
-    'pointer-events-none absolute inset-x-0 -bottom-1.5 h-0.5 origin-left transform-gpu bg-gradient-to-r from-[#e945f5] via-[var(--signal)] to-[#7c3aed] transition-transform duration-[420ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none';
-
 type NavMode = 'top' | 'hidden' | 'visible';
 
 export default function Navbar() {
@@ -168,13 +153,13 @@ export default function Navbar() {
                             J<span className="text-[var(--signal)] transition-colors duration-300 group-hover:text-[#e945f5]">M</span>
                             <span
                                 aria-hidden="true"
-                                className={`${NAV_UNDERLINE_CLASS} scale-x-0 group-hover:scale-x-100 group-focus-visible:scale-x-100`}
+                                className={`${NAV_LINK_UNDERLINE_CLASS} scale-x-0 group-hover:scale-x-100 group-focus-visible:scale-x-100`}
                             />
                         </span>
                     </button>
 
                     <ul className="relative z-[1] hidden h-10 min-w-0 items-center gap-1 md:flex lg:gap-2">
-                        {NAV_ITEMS.map((item) => {
+                        {SITE_NAVIGATION.map((item) => {
                             const isActive = active === item.id || (active === 'what-i-do' && item.id === 'home');
 
                             return (
@@ -192,7 +177,7 @@ export default function Navbar() {
                                             {item.label}
                                             <span
                                                 aria-hidden="true"
-                                                className={`${NAV_UNDERLINE_CLASS} ${isActive
+                                                className={`${NAV_LINK_UNDERLINE_CLASS} ${isActive
                                                     ? 'scale-x-100'
                                                     : 'scale-x-0 group-hover:scale-x-100 group-focus-visible:scale-x-100'
                                                     }`}
@@ -255,7 +240,7 @@ export default function Navbar() {
                         className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-[var(--signal)]/40 to-transparent"
                     />
                     <ul className="relative flex flex-col gap-1 p-2.5">
-                        {NAV_ITEMS.map((item, index) => {
+                        {SITE_NAVIGATION.map((item, index) => {
                             const isActive = active === item.id || (active === 'what-i-do' && item.id === 'home');
 
                             return (

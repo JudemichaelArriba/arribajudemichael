@@ -18,7 +18,7 @@ This is Jude Michael Arriba's personal portfolio website built with Next.js 16.2
 #### File Organization
 ```
 app/
-  (public)/              -> Public pages (wrapped with Preloader + Navbar)
+  (public)/              -> Public pages (Preloader + Navbar + semantic Footer)
     layout.tsx           -> Public layout
     page.tsx             -> Home page composition
   layout.tsx             -> Root layout (fonts, metadata)
@@ -32,16 +32,19 @@ components/
     Experience/          -> Experience.tsx (timeline + replayable GSAP)
     TechStack/           -> TechStack.tsx (unframed icon/name lists + reversible scrubbed GSAP)
     Projects/            -> Projects.tsx + projects.data.ts (static projects/certificates showcase)
-  ui/                    -> Reusable UI (Button, RollingText, ScrollFloat, Bento)
+    Contact/             -> Contact.tsx (static form + replayable GSAP reveal)
+  ui/                    -> Reusable UI (Button, RollingText, ScrollFloat, Bento, navigation styles)
     ScrollFloat/         -> ScrollFloat.tsx (Tailwind CSS only)
     LineSidebar/         -> LineSidebar.tsx + .module.css (CSS variables)
     TiltedCard/          -> TiltedCard.tsx + TiltedCard.css (interactive card tilt)
   navbar/                -> Navbar.tsx + .module.css (complex transitions)
   loader/                -> Preloader components
+  footer/                -> Footer.tsx (server-rendered navigation and contact placeholders)
   effects/               -> Visual effects (Magnet, SpecularButton, FloatingLines)
 
 lib/
   fonts.ts               -> Font configurations
+  site.ts                -> Shared typed navigation and contact destinations
   useActiveSection.ts    -> Scroll detection hook
   animations/            -> Animation logic (useRoleCycle, preloader)
 
@@ -60,9 +63,11 @@ public/
 - **CSS Modules** (`.module.css`) for component-specific complex styles that Tailwind can't handle
 - **Dynamic imports for heavy components** - e.g., `FloatingLines` uses `dynamic(() => import(), { ssr: false })`
 - **GSAP for animations** - Complex timelines and interactions
-- **Homepage composition** - Home -> WhatIDo -> AboutMe -> Experience -> TechStack -> Projects
+- **Homepage composition** - Home -> WhatIDo -> AboutMe -> Experience -> TechStack -> Projects -> Contact
 - **Three.js/OGL for WebGL** - Advanced visual effects
 - **Static showcase boundary** - `projects.data.ts` owns typed temporary content and should remain replaceable by later database data.
+- **Shared site configuration** - `lib/site.ts` owns navigation and contact destinations used by Navbar, Contact, and Footer.
+- **Static contact boundary** - The current form validates locally and reports that no message was sent; replace only its submission boundary when Supabase is introduced.
 
 ### Component Patterns to Follow
 
@@ -409,6 +414,6 @@ When reviewing AI-generated code:
 
 ---
 
-**Last Updated:** 2026-07-31  
+**Last Updated:** 2026-08-09
 **Primary Reference:** `AGENTS.md`  
 **Purpose:** AI assistant quick reference and context document

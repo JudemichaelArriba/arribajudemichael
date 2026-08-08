@@ -4,6 +4,7 @@ import AboutMe from '@/components/sections/AboutMe/AboutMe';
 import Experience from '@/components/sections/Experience/Experience';
 import TechStack from '@/components/sections/TechStack/TechStack';
 import Projects from '@/components/sections/Projects/Projects';
+import Contact from '@/components/sections/Contact/Contact';
 
 export default function HomePage() {
     return (
@@ -14,6 +15,7 @@ export default function HomePage() {
             <Experience />
             <TechStack />
             <Projects />
+            <Contact />
         </>
     );
 }
