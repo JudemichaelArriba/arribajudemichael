@@ -4,7 +4,7 @@ import { useRef } from 'react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import ScrollFloat from '@/components/ui/ScrollFloat/ScrollFloat';
+import ScrollHighlight from '@/components/ui/ScrollHighlight/ScrollHighlight';
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
@@ -47,11 +47,13 @@ export default function WhatIDo({ sentence = DEFAULT_SENTENCE }: WhatIDoProps) {
         () => {
             const section = sectionRef.current;
             const header = headerRef.current;
+            const statement = section?.querySelector<HTMLElement>('.statement');
             const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-            if (!section || !header || prefersReducedMotion) return;
+            if (!section || !header || !statement || prefersReducedMotion) return;
 
             const headerLines = gsap.utils.toArray<HTMLElement>('[data-what-line]', header);
+            const statementWords = gsap.utils.toArray<HTMLElement>('.scroll-highlight-word', statement);
             const capabilityItems = gsap.utils.toArray<HTMLElement>(
                 '[data-what-capability]',
                 capabilityListRef.current ?? undefined
@@ -69,7 +71,16 @@ export default function WhatIDo({ sentence = DEFAULT_SENTENCE }: WhatIDoProps) {
                 gsap.set(capabilityItems, { autoAlpha: 0, y: 14 });
             };
 
+            const setStatementInitialState = () => {
+                gsap.set(statementWords, {
+                    autoAlpha: 0,
+                    y: 20,
+                    willChange: 'transform, opacity',
+                });
+            };
+
             setInitialState();
+            setStatementInitialState();
 
             const timeline = gsap.timeline({
                 paused: true,
@@ -97,10 +108,37 @@ export default function WhatIDo({ sentence = DEFAULT_SENTENCE }: WhatIDoProps) {
                     stagger: 0.07,
                 }, 0.3);
 
+            const statementTimeline = gsap.timeline({
+                paused: true,
+                defaults: { overwrite: 'auto', force3D: true },
+            });
+
+            statementTimeline.to(statementWords, {
+                autoAlpha: 1,
+                y: 0,
+                duration: 0.64,
+                ease: 'power3.out',
+                stagger: {
+                    each: 0.024,
+                    from: 'start',
+                },
+                clearProps: 'transform,opacity,visibility,willChange',
+            });
+
             const resetReveal = () => {
                 timeline.pause(0, true);
                 isSectionArmed = true;
                 setInitialState();
+            };
+
+            const resetStatementReveal = () => {
+                statementTimeline.pause(0, true);
+                setStatementInitialState();
+            };
+
+            const playStatementReveal = () => {
+                resetStatementReveal();
+                statementTimeline.restart(true);
             };
 
             const trigger = ScrollTrigger.create({
@@ -113,6 +151,15 @@ export default function WhatIDo({ sentence = DEFAULT_SENTENCE }: WhatIDoProps) {
                     setInitialState();
                     timeline.restart(true);
                 },
+            });
+
+            const statementTrigger = ScrollTrigger.create({
+                trigger: statement,
+                start: 'top 96%',
+                end: 'bottom top',
+                invalidateOnRefresh: true,
+                onEnter: playStatementReveal,
+                onLeaveBack: resetStatementReveal,
             });
 
             const resetObserver = new IntersectionObserver(
@@ -128,7 +175,9 @@ export default function WhatIDo({ sentence = DEFAULT_SENTENCE }: WhatIDoProps) {
             return () => {
                 resetObserver.disconnect();
                 trigger.kill(false);
+                statementTrigger.kill(false);
                 timeline.kill();
+                statementTimeline.kill();
             };
         },
         { scope: sectionRef }
@@ -160,29 +209,20 @@ export default function WhatIDo({ sentence = DEFAULT_SENTENCE }: WhatIDoProps) {
                     </span>
                 </div>
 
-                <ScrollFloat
+                <ScrollHighlight
                     as="h2"
                     containerClassName="statement mt-12 w-full max-w-6xl text-left font-display text-[2.15rem] font-extrabold tracking-normal text-[var(--text)] [text-wrap:balance] sm:mt-16 sm:text-5xl lg:text-[3.75rem]"
                     textClassName="statementText text-left leading-[1.06]"
-                    animationDuration={0.56}
-                    ease="power3.out"
-                    settleEase="power2.out"
-                    scrollStart="top bottom"
-                    scrollEnd="bottom top"
-                    charStagger={0.018}
-                    wordStagger={0.045}
-                    playOnce={false}
-                    highlightOnScroll
-                    highlightStart="top 105%"
-                    highlightEnd="bottom 70%"
-                    highlightScrub={0.1}
-                    highlightDuration={0.18}
-                    highlightCharStagger={0.025}
-                    highlightFromColor="#454a52"
-                    highlightToColor="var(--text)"
+                    scrollStart="top 105%"
+                    scrollEnd="bottom 70%"
+                    scrub={0.1}
+                    duration={0.18}
+                    charStagger={0.025}
+                    fromColor="#454a52"
+                    toColor="var(--text)"
                 >
                     {sentence}
-                </ScrollFloat>
+                </ScrollHighlight>
 
                 <ul
                     ref={capabilityListRef}
