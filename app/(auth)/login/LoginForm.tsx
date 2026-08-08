@@ -146,120 +146,131 @@ export default function LoginForm() {
                             disabled={isPending}
                             className="m-0 min-w-0 border-0 p-0"
                         >
-                        <div className="space-y-5">
-                            <div>
-                                <label
-                                    htmlFor="login-email"
-                                    className="mb-2 flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-normal text-[var(--muted)]/62"
-                                >
-                                    <span
-                                        aria-hidden="true"
-                                        className="text-[var(--signal)]/70"
-                                    >
-                                        01
-                                    </span>
-
-                                    Email address
-                                </label>
-
-                                <input
-                                    id="login-email"
-                                    name="email"
-                                    type="email"
-                                    inputMode="email"
-                                    autoComplete="username"
-                                    autoCapitalize="none"
-                                    spellCheck={false}
-                                    required
-                                    maxLength={254}
-                                    value={email}
-                                    onChange={(event) =>
-                                        setEmail(event.currentTarget.value)
-                                    }
-                                    placeholder="you@example.com"
-                                    className={INPUT_CLASS}
-                                />
-                            </div>
-
-                            <div>
-                                <div className="mb-2">
+                            <div className="space-y-5">
+                                <div>
                                     <label
-                                        htmlFor="login-password"
-                                        className="flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-normal text-[var(--muted)]/62"
+                                        htmlFor="login-email"
+                                        className="mb-2 flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-normal text-[var(--muted)]/62"
                                     >
                                         <span
                                             aria-hidden="true"
                                             className="text-[var(--signal)]/70"
                                         >
-                                            02
+                                            01
                                         </span>
 
-                                        Password
+                                        Email address
                                     </label>
-                                </div>
 
-                                <div className="relative">
                                     <input
-                                        id="login-password"
-                                        name="password"
-                                        type="password"
-                                        autoComplete="current-password"
+                                        id="login-email"
+                                        name="email"
+                                        type="email"
+                                        inputMode="email"
+                                        autoComplete="username"
+                                        autoCapitalize="none"
+                                        spellCheck={false}
                                         required
-                                        maxLength={1024}
-                                        value={password}
+                                        maxLength={254}
+                                        value={email}
                                         onChange={(event) =>
-                                            setPassword(event.currentTarget.value)
+                                            setEmail(event.currentTarget.value)
                                         }
-                                        placeholder="Enter your password"
+                                        placeholder="you@example.com"
                                         className={INPUT_CLASS}
                                     />
                                 </div>
+
+                                <div>
+                                    <div className="mb-2">
+                                        <label
+                                            htmlFor="login-password"
+                                            className="flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-normal text-[var(--muted)]/62"
+                                        >
+                                            <span
+                                                aria-hidden="true"
+                                                className="text-[var(--signal)]/70"
+                                            >
+                                                02
+                                            </span>
+
+                                            Password
+                                        </label>
+                                    </div>
+
+                                    <div className="relative">
+                                        <input
+                                            id="login-password"
+                                            name="password"
+                                            type="password"
+                                            autoComplete="current-password"
+                                            required
+                                            maxLength={1024}
+                                            value={password}
+                                            onChange={(event) =>
+                                                setPassword(event.currentTarget.value)
+                                            }
+                                            placeholder="Enter your password"
+                                            className={INPUT_CLASS}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <div
+                                        className="cf-turnstile"
+                                        data-sitekey={
+                                            process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
+                                        }
+                                        data-theme="dark"
+                                        data-size="flexible"
+                                    />
+                                </div>
                             </div>
-                        </div>
 
-                        <div className="mt-7">
-                            <Button
-                                type="submit"
-                                variant="brand"
-                                size="lg"
-                                radius={8}
-                                className="min-h-14 w-full justify-center px-5 text-sm shadow-[0_12px_30px_rgba(124,58,237,0.18)] transition-transform duration-200 hover:-translate-y-px active:translate-y-0 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
-                            >
-                                <span className="inline-flex items-center gap-2.5">
-                                    {isPending ? (
-                                        <>
-                                            <LoaderCircle
-                                                aria-hidden="true"
-                                                size={17}
-                                                strokeWidth={2}
-                                                className="animate-spin motion-reduce:animate-none"
-                                            />
-                                            Signing in...
-                                        </>
-                                    ) : (
-                                        <>
-                                            Sign in
-                                            <ArrowRight
-                                                aria-hidden="true"
-                                                size={17}
-                                                strokeWidth={2}
-                                                className="transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none"
-                                            />
-                                        </>
-                                    )}
-                                </span>
-                            </Button>
+                            <div className="mt-6">
+                                <Button
+                                    type="submit"
+                                    variant="brand"
+                                    size="lg"
+                                    radius={8}
+                                    className="min-h-14 w-full justify-center px-5 text-sm shadow-[0_12px_30px_rgba(124,58,237,0.18)] transition-transform duration-200 hover:-translate-y-px active:translate-y-0 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+                                >
+                                    <span className="inline-flex items-center gap-2.5">
+                                        {isPending ? (
+                                            <>
+                                                <LoaderCircle
+                                                    aria-hidden="true"
+                                                    size={17}
+                                                    strokeWidth={2}
+                                                    className="animate-spin motion-reduce:animate-none"
+                                                />
+                                                Signing in...
+                                            </>
+                                        ) : (
+                                            <>
+                                                Sign in
+                                                <ArrowRight
+                                                    aria-hidden="true"
+                                                    size={17}
+                                                    strokeWidth={2}
+                                                    className="transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none"
+                                                />
+                                            </>
+                                        )}
+                                    </span>
+                                </Button>
 
-                            <p
-                                id="login-form-status"
-                                role="status"
-                                aria-live="polite"
-                                aria-atomic="true"
-                                className="mt-3 min-h-5 text-xs leading-relaxed text-red-400"
-                            >
-                                {statusMessage}
-                            </p>
-                        </div>
+                                <p
+                                    id="login-form-status"
+                                    role="status"
+                                    aria-live="polite"
+                                    aria-atomic="true"
+                                    className="mt-3 min-h-5 text-xs leading-relaxed text-red-400"
+                                >
+                                    {statusMessage}
+                                </p>
+                            </div>
                         </fieldset>
                     </form>
                 </div>

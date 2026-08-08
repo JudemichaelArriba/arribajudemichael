@@ -12,11 +12,20 @@ export interface LoginActionState {
     attempt: number;
 }
 
-const INVALID_CREDENTIALS_MESSAGE = 'Invalid email or password.';
+const INVALID_CREDENTIALS_MESSAGE =
+    'Invalid email or password.';
+
 const RATE_LIMIT_MESSAGE =
     'Too many sign-in attempts. Please wait and try again.';
+
 const SERVICE_ERROR_MESSAGE =
     'Sign-in is temporarily unavailable. Please try again later.';
+
+const CAPTCHA_REQUIRED_MESSAGE =
+    'Please complete the security check.';
+
+const CAPTCHA_ERROR_MESSAGE =
+    'Security verification failed. Please try again.';
 
 const CREDENTIAL_ERROR_CODES = new Set([
     'email_address_invalid',
@@ -30,7 +39,6 @@ const CREDENTIAL_ERROR_CODES = new Set([
 ]);
 
 const RATE_LIMIT_ERROR_CODES = new Set([
-    'over_email_send_rate_limit',
     'over_request_rate_limit',
 ]);
 
@@ -40,8 +48,8 @@ function getErrorState(
 ): LoginActionState {
     const attempt =
         Number.isSafeInteger(previousState.attempt) &&
-        previousState.attempt >= 0 &&
-        previousState.attempt < Number.MAX_SAFE_INTEGER
+            previousState.attempt >= 0 &&
+            previousState.attempt < Number.MAX_SAFE_INTEGER
             ? previousState.attempt + 1
             : 1;
 
@@ -70,16 +78,30 @@ export async function login(
 ): Promise<LoginActionState> {
     const rawEmail = formData.get('email');
     const rawPassword = formData.get('password');
+    const rawCaptchaToken =
+        formData.get('cf-turnstile-response');
+
 
     if (
         typeof rawEmail !== 'string' ||
         typeof rawPassword !== 'string'
     ) {
-        return getErrorState(previousState, INVALID_CREDENTIALS_MESSAGE);
+        return getErrorState(
+            previousState,
+            INVALID_CREDENTIALS_MESSAGE,
+        );
+    }
+
+    if (typeof rawCaptchaToken !== 'string') {
+        return getErrorState(
+            previousState,
+            CAPTCHA_REQUIRED_MESSAGE,
+        );
     }
 
     const email = rawEmail.trim();
     const password = rawPassword;
+    const captchaToken = rawCaptchaToken.trim();
 
     if (
         email.length === 0 ||
@@ -87,34 +109,76 @@ export async function login(
         password.length === 0 ||
         password.length > 1024
     ) {
-        return getErrorState(previousState, INVALID_CREDENTIALS_MESSAGE);
+        return getErrorState(
+            previousState,
+            INVALID_CREDENTIALS_MESSAGE,
+        );
+    }
+
+    if (captchaToken.length === 0) {
+        return getErrorState(
+            previousState,
+            CAPTCHA_REQUIRED_MESSAGE,
+        );
     }
 
     try {
         const supabase = await createClient();
-        const { data, error } = await supabase.auth.signInWithPassword({
-            email,
-            password,
-        });
+
+        const { data, error } =
+            await supabase.auth.signInWithPassword({
+                email,
+                password,
+                options: {
+                    captchaToken,
+                },
+            });
 
         if (error) {
+
             logAuthFailure(error);
 
+            /*
+             * Supabase rate limiting.
+             */
             if (
                 error.status === 429 ||
-                RATE_LIMIT_ERROR_CODES.has(error.code ?? '')
+                RATE_LIMIT_ERROR_CODES.has(
+                    error.code ?? '',
+                )
             ) {
-                return getErrorState(previousState, RATE_LIMIT_MESSAGE);
+                return getErrorState(
+                    previousState,
+                    RATE_LIMIT_MESSAGE,
+                );
             }
 
-            if (CREDENTIAL_ERROR_CODES.has(error.code ?? '')) {
+            /*
+             * Turnstile/CAPTCHA verification failed.
+             */
+            if (error.code === 'captcha_failed') {
+                return getErrorState(
+                    previousState,
+                    CAPTCHA_ERROR_MESSAGE,
+                );
+            }
+
+
+            if (
+                CREDENTIAL_ERROR_CODES.has(
+                    error.code ?? '',
+                )
+            ) {
                 return getErrorState(
                     previousState,
                     INVALID_CREDENTIALS_MESSAGE,
                 );
             }
 
-            return getErrorState(previousState, SERVICE_ERROR_MESSAGE);
+            return getErrorState(
+                previousState,
+                SERVICE_ERROR_MESSAGE,
+            );
         }
 
         if (!data.user || !data.session) {
@@ -122,22 +186,52 @@ export async function login(
                 '[auth/login] Supabase returned no authenticated session.',
             );
 
-            return getErrorState(previousState, SERVICE_ERROR_MESSAGE);
+            return getErrorState(
+                previousState,
+                SERVICE_ERROR_MESSAGE,
+            );
         }
     } catch (error) {
-        if (error instanceof SupabaseConfigurationError) {
-            console.error('[auth/login] Supabase configuration is incomplete.');
+        /*
+         * Environment variables or Supabase configuration
+         * are missing/invalid.
+         */
+        if (
+            error instanceof SupabaseConfigurationError
+        ) {
+            console.error(
+                '[auth/login] Supabase configuration is incomplete.',
+            );
 
-            return getErrorState(previousState, SERVICE_ERROR_MESSAGE);
+            return getErrorState(
+                previousState,
+                SERVICE_ERROR_MESSAGE,
+            );
         }
 
-        console.error('[auth/login] Unexpected sign-in failure.', {
-            name: error instanceof Error ? error.name : 'UnknownError',
-        });
+        /*
+         * Unexpected runtime/network failure.
+         *
+         * 
+         */
+        console.error(
+            '[auth/login] Unexpected sign-in failure.',
+            {
+                name:
+                    error instanceof Error
+                        ? error.name
+                        : 'UnknownError',
+            },
+        );
 
-        return getErrorState(previousState, SERVICE_ERROR_MESSAGE);
+        return getErrorState(
+            previousState,
+            SERVICE_ERROR_MESSAGE,
+        );
     }
 
+
     revalidatePath('/', 'layout');
+
     redirect('/dashboard');
 }
