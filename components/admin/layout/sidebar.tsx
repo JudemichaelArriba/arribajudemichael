@@ -41,12 +41,17 @@ interface PlaceholderNavigationItem {
     icon: LucideIcon;
 }
 
+interface SectionNavigationItem extends PlaceholderNavigationItem {
+    href: string;
+}
+
 interface NavigationContentProps {
-    isDashboardActive: boolean;
     isExpanded: boolean;
     isMobile?: boolean;
     onDashboardNavigate?: () => void;
+    onSectionNavigate?: () => void;
     onToggleSections: () => void;
+    pathname: string;
     sectionsId: string;
     sectionsOpen: boolean;
 }
@@ -59,10 +64,25 @@ const DESKTOP_BREAKPOINT = '(min-width: 768px)';
 const FOCUSABLE_SELECTOR =
     'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-const SECTION_ITEMS: readonly PlaceholderNavigationItem[] = [
-    { id: 'projects', label: 'Projects', icon: FolderKanban },
-    { id: 'experiences', label: 'Experiences', icon: BriefcaseBusiness },
-    { id: 'certificates', label: 'Certificates', icon: Award },
+const SECTION_ITEMS: readonly SectionNavigationItem[] = [
+    {
+        id: 'projects',
+        label: 'Projects',
+        icon: FolderKanban,
+        href: '/dashboard/projects',
+    },
+    {
+        id: 'experiences',
+        label: 'Experiences',
+        icon: BriefcaseBusiness,
+        href: '/dashboard/experiences',
+    },
+    {
+        id: 'certificates',
+        label: 'Certificates',
+        icon: Award,
+        href: '/dashboard/certificates',
+    },
 ];
 
 const STATIC_ITEMS: readonly PlaceholderNavigationItem[] = [
@@ -71,7 +91,7 @@ const STATIC_ITEMS: readonly PlaceholderNavigationItem[] = [
 ];
 
 const INTERACTIVE_ITEM_CLASS =
-    'group relative flex min-h-11 w-full items-center gap-3 rounded-lg border border-transparent px-3 text-sm font-semibold tracking-normal text-[var(--muted)]/65 transition-[color,border-color,background-color,transform] duration-200 hover:border-white/[0.07] hover:bg-white/[0.045] hover:text-[var(--text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--signal)]/65 active:scale-[0.985] motion-reduce:transition-none motion-reduce:active:scale-100';
+    'group relative flex min-h-11 w-full items-center gap-3 rounded-lg border px-3 text-sm font-semibold tracking-normal transition-[color,border-color,background-color,transform] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--signal)]/65 active:scale-[0.985] motion-reduce:transition-none motion-reduce:active:scale-100';
 
 function PlaceholderButton({
     item,
@@ -98,16 +118,21 @@ function PlaceholderButton({
 }
 
 function NavigationContent({
-    isDashboardActive,
     isExpanded,
     isMobile = false,
     onDashboardNavigate,
+    onSectionNavigate,
     onToggleSections,
+    pathname,
     sectionsId,
     sectionsOpen,
 }: NavigationContentProps) {
     const showLabels = isMobile || isExpanded;
     const isSectionsVisible = showLabels && sectionsOpen;
+    const isDashboardActive = pathname === '/dashboard';
+    const isSectionRouteActive = SECTION_ITEMS.some(
+        (item) => pathname === item.href,
+    );
 
     return (
         <nav
@@ -142,7 +167,7 @@ function NavigationContent({
                 aria-controls={sectionsId}
                 aria-label={!showLabels ? 'Open Sections' : undefined}
                 title={!showLabels ? 'Sections' : undefined}
-                className={`${INTERACTIVE_ITEM_CLASS} ${showLabels ? 'justify-start' : 'justify-center px-0'}`}
+                className={`${INTERACTIVE_ITEM_CLASS} ${showLabels ? 'justify-start' : 'justify-center px-0'} ${isSectionRouteActive ? 'border-[rgba(195,109,252,0.16)] bg-[rgba(195,109,252,0.055)] text-[var(--signal)]' : 'border-transparent text-[var(--muted)]/65 hover:border-white/[0.07] hover:bg-white/[0.045] hover:text-[var(--text)]'}`}
             >
                 <Layers3 aria-hidden="true" size={18} strokeWidth={1.8} />
                 {showLabels ? (
@@ -161,17 +186,32 @@ function NavigationContent({
             <div
                 id={sectionsId}
                 aria-hidden={!isSectionsVisible}
+                inert={!isSectionsVisible ? true : undefined}
                 className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out motion-reduce:transition-none ${isSectionsVisible ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}
             >
                 <div className="overflow-hidden">
                     <div className="ml-4 space-y-1 border-l border-white/[0.06] pb-1 pl-2 pt-1">
-                        {SECTION_ITEMS.map((item) => (
-                            <PlaceholderButton
-                                key={item.id}
-                                item={item}
-                                showLabel={showLabels}
-                            />
-                        ))}
+                        {SECTION_ITEMS.map((item) => {
+                            const Icon = item.icon;
+                            const isActive = pathname === item.href;
+
+                            return (
+                                <Link
+                                    key={item.id}
+                                    href={item.href}
+                                    onClick={onSectionNavigate}
+                                    aria-current={isActive ? 'page' : undefined}
+                                    className={`group relative flex min-h-11 w-full items-center gap-3 rounded-lg border px-3 text-sm font-semibold tracking-normal transition-[color,border-color,background-color,transform] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--signal)]/65 active:scale-[0.985] motion-reduce:transition-none motion-reduce:active:scale-100 ${isActive ? 'border-[rgba(195,109,252,0.18)] bg-[rgba(195,109,252,0.075)] text-[var(--signal)]' : 'border-transparent text-[var(--muted)]/58 hover:border-white/[0.07] hover:bg-white/[0.04] hover:text-[var(--text)]'}`}
+                                >
+                                    <span
+                                        aria-hidden="true"
+                                        className={`absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-full bg-[var(--signal)] transition-opacity duration-200 motion-reduce:transition-none ${isActive ? 'opacity-100' : 'opacity-0'}`}
+                                    />
+                                    <Icon aria-hidden="true" size={17} strokeWidth={1.8} />
+                                    <span className="min-w-0 truncate">{item.label}</span>
+                                </Link>
+                            );
+                        })}
                     </div>
                 </div>
             </div>
@@ -230,14 +270,17 @@ export default function AdminShell({ children }: AdminShellProps) {
     const pathname = usePathname();
     const [isDesktopExpanded, setIsDesktopExpanded] = useState(true);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-    const [sectionsOpen, setSectionsOpen] = useState(false);
+    const [sectionsOpen, setSectionsOpen] = useState(() =>
+        SECTION_ITEMS.some((item) => pathname === item.href),
+    );
     const desktopSectionsId = `desktop-sections-${useId()}`;
     const mobileSectionsId = `mobile-sections-${useId()}`;
     const mobileMenuId = `admin-mobile-menu-${useId()}`;
     const mobileMenuButtonRef = useRef<HTMLButtonElement>(null);
     const mobilePanelRef = useRef<HTMLDivElement>(null);
-    const isDashboardActive =
-        pathname === '/dashboard' || pathname.startsWith('/dashboard/');
+    const isSectionRouteActive = SECTION_ITEMS.some(
+        (item) => pathname === item.href,
+    );
 
     const closeMobileMenu = useCallback((restoreFocus = false) => {
         setIsMobileMenuOpen(false);
@@ -258,6 +301,10 @@ export default function AdminShell({ children }: AdminShellProps) {
         mediaQuery.addEventListener('change', handleBreakpointChange);
         return () => mediaQuery.removeEventListener('change', handleBreakpointChange);
     }, []);
+
+    useEffect(() => {
+        if (isSectionRouteActive) setSectionsOpen(true);
+    }, [isSectionRouteActive, pathname]);
 
     useEffect(() => {
         if (!isMobileMenuOpen) {
@@ -376,9 +423,9 @@ export default function AdminShell({ children }: AdminShellProps) {
 
                 <div className="scrollbar-hide flex-1 overflow-y-auto px-2.5 py-4">
                     <NavigationContent
-                        isDashboardActive={isDashboardActive}
                         isExpanded={isDesktopExpanded}
                         onToggleSections={handleDesktopSectionsToggle}
+                        pathname={pathname}
                         sectionsId={desktopSectionsId}
                         sectionsOpen={sectionsOpen}
                     />
@@ -460,11 +507,12 @@ export default function AdminShell({ children }: AdminShellProps) {
             >
                 <div className="p-2.5">
                     <NavigationContent
-                        isDashboardActive={isDashboardActive}
                         isExpanded
                         isMobile
                         onDashboardNavigate={() => closeMobileMenu()}
+                        onSectionNavigate={() => closeMobileMenu()}
                         onToggleSections={() => setSectionsOpen((isOpen) => !isOpen)}
+                        pathname={pathname}
                         sectionsId={mobileSectionsId}
                         sectionsOpen={sectionsOpen}
                     />
