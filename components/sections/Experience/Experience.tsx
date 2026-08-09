@@ -5,55 +5,23 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useGSAP } from '@gsap/react';
 import { BentoCard, BentoSpotlight } from '@/components/ui/Bento/Bento';
+import type { PublicExperienceDto } from '@/features/admin/experiences/types';
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
-interface ExperienceItem {
-  title: string;
-  subtitle: string;
-  date: string;
-  description: string;
-  status: 'active' | 'complete';
+interface ExperienceProps {
+  experiences: PublicExperienceDto[];
+  experiencesUnavailable?: boolean;
 }
 
-const EXPERIENCE_ITEMS: ExperienceItem[] = [
-  {
-    title: 'Capstone Project Deployment',
-    subtitle: 'Production release',
-    date: '2025 - Present',
-    description:
-      'Deployed full-stack capstone and facility intelligence platforms into production-ready environments.',
-    status: 'active',
-  },
-  {
-    title: 'First Tagum City Hackathon',
-    subtitle: 'Participant and pitch',
-    date: '2026',
-    description:
-      "Competed in Tagum City's inaugural hackathon, shaping and pitching a practical technology solution.",
-    status: 'complete',
-  },
-  {
-    title: 'Started Building',
-    subtitle: 'Self-taught foundations',
-    date: '2023',
-    description:
-      'The first lines of code, bugs, and shipped sites that formed a lasting engineering practice.',
-    status: 'complete',
-  },
-  {
-    title: 'Bachelor of Science in Information Technology',
-    subtitle: 'Aces Tagum College, Inc.',
-    date: '2023',
-    description:
-      'Focused study in software engineering, systems design, and database architecture.',
-    status: 'complete',
-  },
-];
-
-export default function Experience() {
+export default function Experience({
+  experiences,
+  experiencesUnavailable = false,
+}: ExperienceProps) {
   const sectionRef = useRef<HTMLElement>(null);
   const timelineRef = useRef<HTMLOListElement>(null);
+  const milestoneCount = String(experiences.length).padStart(2, '0');
+  const hasTimeline = !experiencesUnavailable && experiences.length > 0;
 
   useGSAP(
     () => {
@@ -64,7 +32,7 @@ export default function Experience() {
         '(prefers-reduced-motion: reduce)'
       ).matches;
       const headingTargets = gsap.utils.toArray<HTMLElement>(
-        '.experience-heading-copy, .experience-intro, .experience-summary',
+        '.experience-heading-copy, .experience-intro, .experience-summary, .experience-state',
         section
       );
       const headingLines = gsap.utils.toArray<HTMLElement>(
@@ -308,7 +276,11 @@ export default function Experience() {
         timelines.forEach((timeline) => timeline.kill());
       };
     },
-    { scope: sectionRef, dependencies: [] }
+    {
+      scope: sectionRef,
+      dependencies: [experiences, experiencesUnavailable],
+      revertOnUpdate: true,
+    }
   );
 
   return (
@@ -338,7 +310,7 @@ export default function Experience() {
             className="h-px min-w-8 flex-1 bg-gradient-to-r from-[var(--signal)]/45 via-white/10 to-transparent"
           />
           <span className="hidden shrink-0 font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--muted)]/48 sm:inline">
-            04 / Milestones
+            {milestoneCount} / Milestones
           </span>
         </div>
 
@@ -353,7 +325,7 @@ export default function Experience() {
 
             <div className="experience-summary mt-8 grid grid-cols-2 border-y border-white/[0.08] py-5">
               <div>
-                <span className="block font-mono text-lg font-bold tabular-nums text-[var(--text)]">04</span>
+                <span className="block font-mono text-lg font-bold tabular-nums text-[var(--text)]">{milestoneCount}</span>
                 <span className="mt-1 block font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--muted)]/52">
                   Milestones
                 </span>
@@ -368,21 +340,23 @@ export default function Experience() {
           </header>
 
           <div className="relative min-w-0">
-            <BentoSpotlight
-              gridRef={timelineRef}
-              spotlightRadius={260}
-              glowColor="195, 109, 252"
-              activateOnCardOnly
-            />
+            {hasTimeline ? (
+              <>
+                <BentoSpotlight
+                  gridRef={timelineRef}
+                  spotlightRadius={260}
+                  glowColor="195, 109, 252"
+                  activateOnCardOnly
+                />
 
-            <ol ref={timelineRef} className="relative flex flex-col gap-6 sm:gap-7">
-              <div aria-hidden="true" className="absolute bottom-7 left-[0.6875rem] top-7 w-px bg-white/[0.09]">
-                <div className="experience-line-fill absolute inset-0 bg-gradient-to-b from-[#5227FF] via-[var(--signal)] to-[#FF9FFC] shadow-[0_0_12px_rgba(195,109,252,0.22)]" />
-              </div>
+                <ol ref={timelineRef} className="relative flex flex-col gap-6 sm:gap-7">
+                  <div aria-hidden="true" className="absolute bottom-7 left-[0.6875rem] top-7 w-px bg-white/[0.09]">
+                    <div className="experience-line-fill absolute inset-0 bg-gradient-to-b from-[#5227FF] via-[var(--signal)] to-[#FF9FFC] shadow-[0_0_12px_rgba(195,109,252,0.22)]" />
+                  </div>
 
-              {EXPERIENCE_ITEMS.map((item, index) => (
+                  {experiences.map((item, index) => (
                 <li
-                  key={item.title}
+                  key={item.id}
                   className="experience-item group relative grid grid-cols-[1.375rem_minmax(0,1fr)] items-start gap-x-4 sm:gap-x-5"
                 >
                   <div className="experience-node relative z-10 mt-7 flex size-[1.375rem] items-center justify-center rounded-full border border-white/15 bg-black transition-colors duration-300 group-hover:border-[var(--signal)]/45">
@@ -407,7 +381,7 @@ export default function Experience() {
                         </span>
                       </div>
                       <time className="experience-card-date shrink-0 font-mono text-[10px] font-bold uppercase tracking-[0.13em] text-[var(--signal)]">
-                        {item.date}
+                        {item.dateLabel}
                       </time>
                     </div>
 
@@ -430,8 +404,26 @@ export default function Experience() {
                     </div>
                   </BentoCard>
                 </li>
-              ))}
-            </ol>
+                  ))}
+                </ol>
+              </>
+            ) : (
+              <BentoCard className="experience-state flex min-h-[220px] flex-col justify-center text-left">
+                <p className="font-mono text-[10px] font-bold uppercase tracking-[0.13em] text-[var(--signal)]/70">
+                  Timeline status
+                </p>
+                <h3 className="mt-3 text-xl font-extrabold leading-tight tracking-normal text-[var(--text)] sm:text-2xl">
+                  {experiencesUnavailable
+                    ? 'Experience is temporarily unavailable.'
+                    : 'Experience milestones are being prepared.'}
+                </h3>
+                <p className="mt-2 max-w-xl text-sm leading-relaxed text-[var(--muted)]/62 sm:text-base">
+                  {experiencesUnavailable
+                    ? 'The rest of the portfolio remains available while this timeline reconnects.'
+                    : 'New milestones will appear here as they are prepared for publication.'}
+                </p>
+              </BentoCard>
+            )}
           </div>
         </div>
       </div>
