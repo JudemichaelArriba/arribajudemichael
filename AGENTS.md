@@ -41,9 +41,8 @@ arribajudemichael/
 │   │   │   └── Experience.tsx
 │   │   ├── TechStack/            # Categorized technology grid
 │   │   │   └── TechStack.tsx     # Unframed icon/name lists + reversible scrubbed per-tech reveal
-│   │   ├── Projects/             # Static projects and certificates showcase
-│   │   │   ├── Projects.tsx      # Segmented views + replayable GSAP reveal
-│   │   │   └── projects.data.ts  # Typed static data boundary for future database integration
+│   │   ├── Projects/             # Dynamic projects and certificates showcase
+│   │   │   └── Projects.tsx      # Supabase DTOs + PDF.js previews + replayable GSAP reveal
 │   │   └── Contact/              # Static contact form + contact channel presentation
 │   │       └── Contact.tsx       # Tailwind UI + replayable GSAP reveal
 │   ├── ui/                       # Reusable UI components
@@ -52,6 +51,8 @@ arribajudemichael/
 │   │   ├── RollingText.tsx       # Animated text roller component
 │   │   ├── ScrollFloat/          # Scroll-triggered float animation
 │   │   │   └── ScrollFloat.tsx   # Uses Tailwind CSS (no CSS module)
+│   │   ├── CertificatePdfPreview/ # Lazy PDF.js page-one canvas renderer
+│   │   │   └── CertificatePdfPreview.tsx
 │   │   ├── LineSidebar/          # Proximity-based sidebar navigation
 │   │   │   ├── LineSidebar.tsx
 │   │   │   └── LineSidebar.module.css  # Custom CSS variables (keep native CSS)
@@ -86,7 +87,8 @@ arribajudemichael/
 │   ├── profile.jpeg              # About/profile image
 │   ├── tech/                     # Locally hosted original-color technology SVGs
 │   ├── projectsTemporary/        # Temporary static project screenshots
-│   ├── certsTemporary/           # Certificate PDFs + generated first-page previews
+│   ├── certsTemporary/           # Retained legacy certificate assets (unused by live UI)
+│   ├── vendor/pdfjs/             # Generated worker/WASM assets (gitignored)
 │   ├── *.svg                     # SVG icons
 │   └── [fonts if any]
 └── Configuration files:
@@ -112,7 +114,10 @@ arribajudemichael/
 - Client components explicitly marked with `'use client'`
 - Dynamic imports for heavy components (e.g., FloatingLines with `ssr: false`)
 - Component co-location: styles next to component files
-- Projects and certificates currently use typed static arrays in `projects.data.ts`; keep this data boundary replaceable for later database integration.
+- Projects and Certificates are read from Supabase on the server and passed as serializable DTOs into the existing animated public showcase. Fetch them independently so one failed query does not hide the other view.
+- Certificate data access lives in `features/admin/certificates/`: public reads are published-only and cached with the `certificates` tag; admin reads are authenticated and uncached; mutations use authenticated Server Actions and invalidate both public and admin views.
+- Certificate PDFs are the single source of truth. Authenticated browsers upload directly to the public `certificate-files` bucket at `certificates/<uuid>/certificate.pdf`; actions accept metadata only, derive and verify canonical paths, and never trust a browser-supplied deletion path.
+- `CertificatePdfPreview` lazily renders page 1 with `pdfjs-dist`, caps DPR at 2, and cleans up rendering resources. Worker and WASM files are copied locally into ignored `public/vendor/pdfjs/` assets before development and production builds; do not use a CDN or generate duplicate preview images.
 - Navigation and public contact destinations are centralized in `lib/site.ts`; empty contact URLs must render as non-interactive content, never empty anchors.
 - The Contact form is a static client-side preview until Supabase integration. Keep field names stable and do not imply that submissions were delivered or persisted.
 
@@ -149,6 +154,7 @@ arribajudemichael/
   - Props: `href`, `variant`, `size`, `radius`, `magnetic`, `magnetPadding`, `glowProximity`
 - **RollingText** for animated text transitions
 - **Magnet wrapper** for magnetic hover effects on any component
+- **CertificatePdfPreview** for lazy client-only PDF page-one previews backed by local PDF.js runtime assets
 
 ## Development Guidelines
 
@@ -292,6 +298,7 @@ export default function Component({ title, onAction }: ComponentProps) {
 - `@gsap/react@2.1.2` - GSAP React integration
 - `three@0.185.1` - 3D/WebGL library
 - `ogl@1.0.11` - Lightweight WebGL library
+- `pdfjs-dist@6` - Client-side first-page certificate PDF rendering
 
 ### UI & Icons
 - `lucide-react@1.27.0` - Icon library
@@ -377,5 +384,5 @@ See `.github/workflows/test.yml` for the complete workflow configuration.
 
 ---
 
-**Last Updated:** 2026-08-09
+**Last Updated:** 2026-08-10
 **Maintained by:** AI Agents working on this project

@@ -3,7 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "pdfjs:sync": "node scripts/sync-pdfjs-assets.mjs",
+    "postinstall": "npm run pdfjs:sync",
+    "predev": "npm run pdfjs:sync",
     "dev": "next dev",
+    "prebuild": "npm run pdfjs:sync",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -20,6 +24,7 @@
     "motion": "^12.43.0",
     "next": "16.2.12",
     "ogl": "^1.0.11",
+    "pdfjs-dist": "^6.2.108",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "three": "^0.185.1"

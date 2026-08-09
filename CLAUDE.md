@@ -31,9 +31,10 @@ components/
     AboutMe/             -> AboutMe.tsx + AboutBento.tsx wrapper
     Experience/          -> Experience.tsx (timeline + replayable GSAP)
     TechStack/           -> TechStack.tsx (unframed icon/name lists + reversible scrubbed GSAP)
-    Projects/            -> Projects.tsx + projects.data.ts (static projects/certificates showcase)
+    Projects/            -> Projects.tsx (dynamic Supabase projects/certificates showcase)
     Contact/             -> Contact.tsx (static form + replayable GSAP reveal)
-  ui/                    -> Reusable UI (Button, RollingText, ScrollFloat, Bento, navigation styles)
+  ui/                    -> Reusable UI (Button, RollingText, ScrollFloat, Bento, PDF preview, navigation styles)
+    CertificatePdfPreview/ -> Lazy PDF.js first-page canvas renderer
     ScrollFloat/         -> ScrollFloat.tsx (Tailwind CSS only)
     LineSidebar/         -> LineSidebar.tsx + .module.css (CSS variables)
     TiltedCard/          -> TiltedCard.tsx + TiltedCard.css (interactive card tilt)
@@ -52,7 +53,8 @@ public/
   profile.jpeg           -> About/profile image
   tech/                  -> Local original-color technology SVG assets
   projectsTemporary/     -> Temporary project screenshots
-  certsTemporary/        -> Certificate PDFs + generated first-page previews
+  certsTemporary/        -> Retained legacy certificate assets (unused by live UI)
+  vendor/pdfjs/          -> Generated local PDF.js worker/WASM assets (gitignored)
   *.svg                  -> SVG icons
 ```
 
@@ -65,7 +67,10 @@ public/
 - **GSAP for animations** - Complex timelines and interactions
 - **Homepage composition** - Home -> WhatIDo -> AboutMe -> Experience -> TechStack -> Projects -> Contact
 - **Three.js/OGL for WebGL** - Advanced visual effects
-- **Static showcase boundary** - `projects.data.ts` owns typed temporary content and should remain replaceable by later database data.
+- **Dynamic showcase boundary** - Projects and Certificates are queried independently on the server and passed to the existing animated client showcase as serialized DTOs.
+- **Certificate feature boundary** - `features/admin/certificates/` owns generated-type aliases, DTOs, validation, public/admin queries, and authenticated metadata Server Actions.
+- **PDF-only credentials** - The authenticated browser uploads directly to `certificate-files/certificates/<uuid>/certificate.pdf`; Server Actions derive and verify that path, and public cards lazily render page 1 through `CertificatePdfPreview`.
+- **Local PDF.js runtime** - `pdfjs-dist` worker and WASM assets are synchronized into ignored `public/vendor/pdfjs/` before `dev` and `build`. Never add CDN workers or duplicate preview images.
 - **Shared site configuration** - `lib/site.ts` owns navigation and contact destinations used by Navbar, Contact, and Footer.
 - **Static contact boundary** - The current form validates locally and reports that no message was sent; replace only its submission boundary when Supabase is introduced.
 
@@ -414,6 +419,6 @@ When reviewing AI-generated code:
 
 ---
 
-**Last Updated:** 2026-08-09
+**Last Updated:** 2026-08-10
 **Primary Reference:** `AGENTS.md`  
 **Purpose:** AI assistant quick reference and context document

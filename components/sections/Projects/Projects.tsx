@@ -7,8 +7,9 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { ArrowUpRight, BadgeCheck, FileText, PanelsTopLeft } from 'lucide-react';
 import { BentoCard, BentoSpotlight } from '@/components/ui/Bento/Bento';
+import CertificatePdfPreview from '@/components/ui/CertificatePdfPreview/CertificatePdfPreview';
+import type { PublicCertificateDto } from '@/features/admin/certificates/types';
 import type { PublicProjectDto } from '@/features/admin/projects/types';
-import { CERTIFICATES, type CertificateItem } from './projects.data';
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
@@ -19,7 +20,9 @@ const SHOWCASE_BENTO_CARD_CLASS =
 
 interface ProjectsProps {
     projects: PublicProjectDto[];
+    certificates?: PublicCertificateDto[];
     projectsUnavailable?: boolean;
+    certificatesUnavailable?: boolean;
 }
 
 function ProjectCard({ project, index }: { project: PublicProjectDto; index: number }) {
@@ -90,26 +93,21 @@ function ProjectCard({ project, index }: { project: PublicProjectDto; index: num
     );
 }
 
-function CertificateCard({ certificate, index }: { certificate: CertificateItem; index: number }) {
+function CertificateCard({ certificate, index }: { certificate: PublicCertificateDto; index: number }) {
     return (
         <li data-showcase-item className="min-w-0">
             <a
-                href={certificate.pdfHref}
+                href={certificate.pdfUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={`Open ${certificate.title} certificate PDF in a new tab`}
                 className="block h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--signal)]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
             >
                 <BentoCard elevation="smooth" className={SHOWCASE_BENTO_CARD_CLASS}>
-                    <div className="relative aspect-[1.3/1] w-full overflow-hidden border-b border-white/[0.065] bg-white">
-                        <Image
-                            src={certificate.preview}
-                            alt={certificate.previewAlt}
-                            fill
-                            placeholder="blur"
-                            loading="eager"
-                            sizes="(max-width: 639px) calc(100vw - 2.5rem), (max-width: 1023px) calc(50vw - 3rem), 380px"
-                            className="object-contain transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.018] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+                    <div className="aspect-[1.3/1] w-full overflow-hidden border-b border-white/[0.065] bg-white transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.018] motion-reduce:transition-none motion-reduce:group-hover:scale-100">
+                        <CertificatePdfPreview
+                            source={certificate.pdfUrl}
+                            label={`${certificate.title} first-page preview`}
                         />
                     </div>
 
@@ -176,7 +174,40 @@ function ProjectStateCard({ unavailable }: { unavailable: boolean }) {
     );
 }
 
-export default function Projects({ projects, projectsUnavailable = false }: ProjectsProps) {
+function CertificateStateCard({ unavailable }: { unavailable: boolean }) {
+    return (
+        <li data-showcase-item className="min-w-0 sm:col-span-2 lg:col-span-3">
+            <BentoCard
+                elevation="smooth"
+                className="group h-full !min-h-56 !justify-center !gap-0 !p-6 text-center"
+            >
+                <BadgeCheck
+                    aria-hidden="true"
+                    size={24}
+                    strokeWidth={1.5}
+                    className="text-[var(--signal)]/65"
+                />
+                <h3 className="mt-4 text-lg font-extrabold tracking-normal text-[var(--text)]">
+                    {unavailable
+                        ? 'Certificates are temporarily unavailable.'
+                        : 'Certificates are being prepared.'}
+                </h3>
+                <p className="mt-2 max-w-md text-sm leading-relaxed text-[var(--muted)]/62">
+                    {unavailable
+                        ? 'Please check back shortly while this credential archive reconnects.'
+                        : 'Published credentials will appear here as they become available.'}
+                </p>
+            </BentoCard>
+        </li>
+    );
+}
+
+export default function Projects({
+    projects,
+    certificates = [],
+    projectsUnavailable = false,
+    certificatesUnavailable = false,
+}: ProjectsProps) {
     const [activeView, setActiveView] = useState<ShowcaseView>('projects');
     const sectionRef = useRef<HTMLElement>(null);
     const showcaseGridRef = useRef<HTMLDivElement>(null);
@@ -375,7 +406,11 @@ export default function Projects({ projects, projectsUnavailable = false }: Proj
                 if (itemsTweenRef.current === timeline) itemsTweenRef.current = null;
             };
         },
-        { scope: sectionRef, dependencies: [activeView, projects.length], revertOnUpdate: true }
+        {
+            scope: sectionRef,
+            dependencies: [activeView, projects.length, certificates.length],
+            revertOnUpdate: true,
+        }
     );
 
     return (
@@ -451,7 +486,7 @@ export default function Projects({ projects, projectsUnavailable = false }: Proj
                         >
                             <BadgeCheck aria-hidden="true" size={15} strokeWidth={1.8} />
                             <span className="truncate">Certificates</span>
-                            <span className="tabular-nums text-[9px] opacity-55">{CERTIFICATES.length}</span>
+                            <span className="tabular-nums text-[9px] opacity-55">{certificates.length}</span>
                         </button>
                     </div>
                 </div>
@@ -479,13 +514,17 @@ export default function Projects({ projects, projectsUnavailable = false }: Proj
                         </ul>
                     ) : (
                         <ul className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
-                            {CERTIFICATES.map((certificate, index) => (
-                                <CertificateCard
-                                    key={certificate.id}
-                                    certificate={certificate}
-                                    index={index}
-                                />
-                            ))}
+                            {certificates.length > 0 && !certificatesUnavailable ? (
+                                certificates.map((certificate, index) => (
+                                    <CertificateCard
+                                        key={certificate.id}
+                                        certificate={certificate}
+                                        index={index}
+                                    />
+                                ))
+                            ) : (
+                                <CertificateStateCard unavailable={certificatesUnavailable} />
+                            )}
                         </ul>
                     )}
                 </div>
