@@ -33,7 +33,7 @@ function ProjectCard({ project, index }: { project: PublicProjectDto; index: num
                             alt={project.imageAlt ?? ''}
                             fill
                             loading="lazy"
-                            sizes="(max-width: 767px) calc(100vw - 2.5rem), (max-width: 1279px) calc(50vw - 3rem), 592px"
+                            sizes="(max-width: 639px) calc(100vw - 2.5rem), (max-width: 1023px) calc(50vw - 2.5rem), (max-width: 1279px) calc(33vw - 2rem), 416px"
                             className="object-cover object-top transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.035] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
                         />
                     ) : (
@@ -152,7 +152,7 @@ function CertificateCard({ certificate, index }: { certificate: CertificateItem;
 
 function ProjectStateCard({ unavailable }: { unavailable: boolean }) {
     return (
-        <li data-showcase-item className="min-w-0 lg:col-span-2">
+        <li data-showcase-item className="min-w-0 sm:col-span-2 lg:col-span-3">
             <BentoCard
                 elevation="smooth"
                 className="group h-full !min-h-56 !justify-center !gap-0 !p-6 text-center"
@@ -468,7 +468,7 @@ export default function Projects({ projects, projectsUnavailable = false }: Proj
                         activateOnCardOnly
                     />
                     {activeView === 'projects' ? (
-                        <ul className="mx-auto grid max-w-5xl grid-cols-1 gap-5 lg:grid-cols-2 lg:gap-6">
+                        <ul className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
                             {projects.length > 0 && !projectsUnavailable ? (
                                 projects.map((project, index) => (
                                     <ProjectCard key={project.id} project={project} index={index} />
