@@ -32,7 +32,7 @@ function ProjectCard({ project, index }: { project: PublicProjectDto; index: num
                             src={project.imageUrl}
                             alt={project.imageAlt ?? ''}
                             fill
-                            loading="lazy"
+                            loading="eager"
                             sizes="(max-width: 639px) calc(100vw - 2.5rem), (max-width: 1023px) calc(50vw - 2.5rem), (max-width: 1279px) calc(33vw - 2rem), 416px"
                             className="object-cover object-top transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.035] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
                         />
@@ -107,7 +107,7 @@ function CertificateCard({ certificate, index }: { certificate: CertificateItem;
                             alt={certificate.previewAlt}
                             fill
                             placeholder="blur"
-                            loading="lazy"
+                            loading="eager"
                             sizes="(max-width: 639px) calc(100vw - 2.5rem), (max-width: 1023px) calc(50vw - 3rem), 380px"
                             className="object-contain transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.018] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
                         />
