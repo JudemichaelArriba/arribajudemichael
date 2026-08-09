@@ -1,47 +1,28 @@
+import { Suspense } from 'react';
+
 import Home from '@/components/sections/home/Home';
 import WhatIDo from '@/components/sections/WhatIDo/WhatIDo';
 import AboutMe from '@/components/sections/AboutMe/AboutMe';
-import Experience from '@/components/sections/Experience/Experience';
+import ExperienceSection from '@/components/sections/Experience/ExperienceSection';
+import ExperienceSkeleton from '@/components/sections/Experience/ExperienceSkeleton';
 import TechStack from '@/components/sections/TechStack/TechStack';
-import Projects from '@/components/sections/Projects/Projects';
+import ProjectsSection from '@/components/sections/Projects/ProjectsSection';
+import ProjectsSkeleton from '@/components/sections/Projects/ProjectsSkeleton';
 import Contact from '@/components/sections/Contact/Contact';
-import { getPublishedCertificates } from '@/features/admin/certificates/queries';
-import { getPublicExperiences } from '@/features/admin/experiences/queries';
-import { getPublishedProjects } from '@/features/admin/projects/queries';
 
-export default async function HomePage() {
-    const [projectsResult, certificatesResult, experiencesResult] = await Promise.allSettled([
-        getPublishedProjects(),
-        getPublishedCertificates(),
-        getPublicExperiences(),
-    ]);
-    const projects = projectsResult.status === 'fulfilled' ? projectsResult.value : [];
-    const certificates = certificatesResult.status === 'fulfilled'
-        ? certificatesResult.value
-        : [];
-    const projectsUnavailable = projectsResult.status === 'rejected';
-    const certificatesUnavailable = certificatesResult.status === 'rejected';
-    const experiences = experiencesResult.status === 'fulfilled'
-        ? experiencesResult.value
-        : [];
-    const experiencesUnavailable = experiencesResult.status === 'rejected';
-
+export default function HomePage() {
     return (
         <>
             <Home />
             <WhatIDo />
             <AboutMe />
-            <Experience
-                experiences={experiences}
-                experiencesUnavailable={experiencesUnavailable}
-            />
+            <Suspense fallback={<ExperienceSkeleton />}>
+                <ExperienceSection />
+            </Suspense>
             <TechStack />
-            <Projects
-                projects={projects}
-                certificates={certificates}
-                projectsUnavailable={projectsUnavailable}
-                certificatesUnavailable={certificatesUnavailable}
-            />
+            <Suspense fallback={<ProjectsSkeleton />}>
+                <ProjectsSection />
+            </Suspense>
             <Contact />
         </>
     );
