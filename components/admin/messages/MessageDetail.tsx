@@ -1,57 +1,87 @@
 import {
     Archive,
+    ArchiveRestore,
     ChevronLeft,
     MailCheck,
     MailOpen,
     MessageSquareText,
     Reply,
+    ShieldAlert,
     Star,
     Trash2,
     type LucideIcon,
 } from 'lucide-react';
 import type { RefObject } from 'react';
 
-import {
-    formatMessageTimestamp,
-    type AdminMessage,
-} from './messages.data';
+import type { AdminMessageDto } from '@/features/admin/messages/types';
+import { formatMessageTimestamp } from './messageFormatting';
 
 interface MessageDetailProps {
-    message: AdminMessage | null;
+    message: AdminMessageDto | null;
     isInert: boolean;
     backButtonRef: RefObject<HTMLButtonElement | null>;
-    disabledControlsDescriptionId: string;
+    replyDescriptionId: string;
+    isActionPending: boolean;
     onBack: () => void;
+    onToggleRead: () => void;
+    onToggleStar: () => void;
+    onArchiveToggle: () => void;
+    onDelete: () => void;
 }
 
-interface DisabledActionProps {
+interface MessageActionProps {
     icon: LucideIcon;
     label: string;
-    descriptionId: string;
-    emphasized?: boolean;
+    disabled: boolean;
+    onClick: () => void;
+    active?: boolean;
+    danger?: boolean;
 }
 
-function DisabledAction({
+function MessageAction({
     icon: Icon,
     label,
-    descriptionId,
-    emphasized = false,
-}: DisabledActionProps) {
+    disabled,
+    onClick,
+    active = false,
+    danger = false,
+}: MessageActionProps) {
+    const colorClass = danger
+        ? 'text-red-300/60 hover:border-red-300/18 hover:bg-red-300/[0.06] hover:text-red-200'
+        : active
+            ? 'text-[var(--signal)] hover:border-[var(--signal)]/18 hover:bg-[var(--signal)]/[0.07]'
+            : 'text-[var(--muted)]/58 hover:border-white/[0.08] hover:bg-white/[0.04] hover:text-[var(--text)]';
+
     return (
         <button
             type="button"
-            disabled
+            onClick={onClick}
+            disabled={disabled}
             aria-label={label}
-            aria-describedby={descriptionId}
-            title={`${label} - available after message integration`}
-            className={`inline-flex size-10 shrink-0 cursor-not-allowed items-center justify-center rounded-lg border border-transparent transition-none ${emphasized ? 'text-[var(--signal)]/48' : 'text-[var(--muted)]/30'}`}
+            title={label}
+            className={`inline-flex size-10 shrink-0 items-center justify-center rounded-lg border border-transparent transition-[color,border-color,background-color] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--signal)]/60 disabled:cursor-wait disabled:opacity-40 motion-reduce:transition-none ${colorClass}`}
         >
             <Icon
                 aria-hidden="true"
                 size={17}
                 strokeWidth={1.8}
-                fill={emphasized ? 'currentColor' : 'none'}
+                fill={active ? 'currentColor' : 'none'}
             />
+        </button>
+    );
+}
+
+function DisabledReply({ descriptionId }: { descriptionId: string }) {
+    return (
+        <button
+            type="button"
+            disabled
+            aria-label="Reply to message"
+            aria-describedby={descriptionId}
+            title="Reply requires an email service"
+            className="inline-flex size-10 shrink-0 cursor-not-allowed items-center justify-center rounded-lg border border-transparent text-[var(--muted)]/28"
+        >
+            <Reply aria-hidden="true" size={17} strokeWidth={1.8} />
         </button>
     );
 }
@@ -76,8 +106,13 @@ export default function MessageDetail({
     message,
     isInert,
     backButtonRef,
-    disabledControlsDescriptionId,
+    replyDescriptionId,
+    isActionPending,
     onBack,
+    onToggleRead,
+    onToggleStar,
+    onArchiveToggle,
+    onDelete,
 }: MessageDetailProps) {
     const headingId = message ? `message-detail-${message.id}` : undefined;
 
@@ -85,6 +120,7 @@ export default function MessageDetail({
         <article
             aria-labelledby={headingId}
             aria-label={message ? undefined : 'No selected message'}
+            aria-busy={isActionPending}
             inert={isInert ? true : undefined}
             className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden"
         >
@@ -92,7 +128,7 @@ export default function MessageDetail({
                 <NoSelectedMessage />
             ) : (
                 <>
-                    <div className="flex shrink-0 flex-col border-b border-white/[0.07] px-3 py-2 sm:min-h-16 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:py-0 sm:px-5">
+                    <div className="flex shrink-0 flex-col border-b border-white/[0.07] px-3 py-2 sm:min-h-16 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:px-5 sm:py-0">
                         <button
                             ref={backButtonRef}
                             type="button"
@@ -111,32 +147,33 @@ export default function MessageDetail({
                             aria-label="Message actions"
                             className="flex w-full items-center justify-between border-t border-white/[0.055] pt-1 sm:ml-auto sm:w-auto sm:justify-start sm:border-t-0 sm:pt-0"
                         >
-                            <DisabledAction
+                            <MessageAction
                                 icon={message.isRead ? MailOpen : MailCheck}
                                 label={message.isRead ? 'Mark as unread' : 'Mark as read'}
-                                descriptionId={disabledControlsDescriptionId}
+                                disabled={isActionPending}
+                                onClick={onToggleRead}
                             />
-                            <DisabledAction
+                            <MessageAction
                                 icon={Star}
                                 label={message.isStarred ? 'Remove star' : 'Add star'}
-                                descriptionId={disabledControlsDescriptionId}
-                                emphasized={message.isStarred}
+                                disabled={isActionPending}
+                                onClick={onToggleStar}
+                                active={message.isStarred}
                             />
-                            <DisabledAction
-                                icon={Archive}
-                                label="Archive message"
-                                descriptionId={disabledControlsDescriptionId}
+                            <MessageAction
+                                icon={message.isArchived ? ArchiveRestore : Archive}
+                                label={message.isArchived ? 'Restore to inbox' : 'Archive message'}
+                                disabled={isActionPending}
+                                onClick={onArchiveToggle}
                             />
-                            <DisabledAction
+                            <MessageAction
                                 icon={Trash2}
                                 label="Delete message"
-                                descriptionId={disabledControlsDescriptionId}
+                                disabled={isActionPending}
+                                onClick={onDelete}
+                                danger
                             />
-                            <DisabledAction
-                                icon={Reply}
-                                label="Reply to message"
-                                descriptionId={disabledControlsDescriptionId}
-                            />
+                            <DisabledReply descriptionId={replyDescriptionId} />
                         </div>
                     </div>
 
@@ -183,6 +220,18 @@ export default function MessageDetail({
                                     <span className="inline-flex items-center gap-1.5 rounded-md border border-[var(--signal)]/14 bg-[var(--signal)]/[0.045] px-2 py-1 text-[var(--signal)]/62">
                                         <Star aria-hidden="true" size={11} strokeWidth={1.8} fill="currentColor" />
                                         Starred
+                                    </span>
+                                ) : null}
+                                {message.isArchived ? (
+                                    <span className="inline-flex items-center gap-1.5 rounded-md border border-white/[0.08] bg-white/[0.025] px-2 py-1 text-[var(--muted)]/56">
+                                        <Archive aria-hidden="true" size={11} strokeWidth={1.8} />
+                                        Archived
+                                    </span>
+                                ) : null}
+                                {message.securityStatus === 'flagged' ? (
+                                    <span className="inline-flex items-center gap-1.5 rounded-md border border-amber-200/16 bg-amber-200/[0.055] px-2 py-1 text-amber-100/72">
+                                        <ShieldAlert aria-hidden="true" size={11} strokeWidth={1.8} />
+                                        Flagged
                                     </span>
                                 ) : null}
                             </div>

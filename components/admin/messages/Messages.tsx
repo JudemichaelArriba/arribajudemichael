@@ -1,48 +1,92 @@
 'use client';
 
-import { Inbox, Search } from 'lucide-react';
+import { RefreshCw, Search, X } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import {
     useCallback,
     useEffect,
     useMemo,
     useRef,
     useState,
+    useTransition,
 } from 'react';
 
 import { ManagementPage } from '@/components/admin/layout/ManagementPage';
+import { useDialog } from '@/components/dialog/Dialog';
+import {
+    archiveMessage,
+    deleteMessage,
+    markMessageRead,
+    markMessageUnread,
+    restoreMessage,
+    setMessageStarred,
+} from '@/features/admin/messages/actions';
+import type {
+    AdminMessagesPageDto,
+    MessageActionResult,
+    MessageFilter,
+} from '@/features/admin/messages/types';
+import { MESSAGE_SEARCH_MAX_LENGTH } from '@/features/admin/messages/validation';
 import MessageDetail from './MessageDetail';
-import MessageList from './MessageList';
-import type { AdminMessage } from './messages.data';
+import MessageList, { type MessageListEmptyState } from './MessageList';
 
 interface MessagesProps {
-    initialMessages: readonly AdminMessage[];
+    pageData: AdminMessagesPageDto;
     referenceTime: string;
+    unavailable?: boolean;
+}
+
+interface StatusMessage {
+    tone: 'success' | 'error';
+    message: string;
 }
 
 const SPLIT_VIEW_QUERY = '(min-width: 1280px)';
-const DISABLED_CONTROLS_DESCRIPTION_ID = 'messages-disabled-controls-description';
+const REPLY_DESCRIPTION_ID = 'messages-reply-description';
+const SEARCH_DEBOUNCE_MS = 350;
+const DIALOG_FOCUS_RETURN_DELAY_MS = 320;
+const MESSAGE_FILTERS = [
+    { id: 'inbox', label: 'Inbox' },
+    { id: 'unread', label: 'Unread' },
+    { id: 'starred', label: 'Starred' },
+    { id: 'archived', label: 'Archived' },
+] as const satisfies readonly { id: MessageFilter; label: string }[];
+
+function getMessagesUrl(filter: MessageFilter, search: string, page: number): string {
+    const params = new URLSearchParams();
+
+    if (filter !== 'inbox') params.set('filter', filter);
+    if (search) params.set('q', search);
+    if (page > 1) params.set('page', String(page));
+
+    const queryString = params.toString();
+    return queryString ? `/dashboard/messages?${queryString}` : '/dashboard/messages';
+}
 
 export default function Messages({
-    initialMessages,
+    pageData,
     referenceTime,
+    unavailable = false,
 }: MessagesProps) {
+    const dialog = useDialog();
+    const router = useRouter();
     const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
     const [isSplitView, setIsSplitView] = useState(false);
+    const [searchValue, setSearchValue] = useState(pageData.search);
+    const [activeFilter, setActiveFilter] = useState<MessageFilter>(pageData.filter);
+    const [statusMessage, setStatusMessage] = useState<StatusMessage | null>(null);
+    const [isNavigating, startNavigation] = useTransition();
+    const [isActionPending, startAction] = useTransition();
     const backButtonRef = useRef<HTMLButtonElement>(null);
+    const searchInputRef = useRef<HTMLInputElement>(null);
     const selectedTriggerRef = useRef<HTMLButtonElement | null>(null);
     const focusFrameRef = useRef<number | null>(null);
+    const focusTimerRef = useRef<number | null>(null);
+    const automaticReadIdsRef = useRef(new Set<string>());
 
     const selectedMessage = useMemo(
-        () => initialMessages.find((message) => message.id === selectedMessageId) ?? null,
-        [initialMessages, selectedMessageId],
-    );
-    const unreadCount = useMemo(
-        () => initialMessages.filter((message) => !message.isRead).length,
-        [initialMessages],
-    );
-    const starredCount = useMemo(
-        () => initialMessages.filter((message) => message.isStarred).length,
-        [initialMessages],
+        () => pageData.messages.find((message) => message.id === selectedMessageId) ?? null,
+        [pageData.messages, selectedMessageId],
     );
 
     useEffect(() => {
@@ -57,52 +101,253 @@ export default function Messages({
         return () => mediaQuery.removeEventListener('change', handleChange);
     }, []);
 
+    useEffect(() => {
+        setSearchValue(pageData.search);
+        setActiveFilter(pageData.filter);
+    }, [pageData.filter, pageData.search]);
+
+    useEffect(() => {
+        if (
+            selectedMessageId &&
+            !pageData.messages.some((message) => message.id === selectedMessageId)
+        ) {
+            setSelectedMessageId(null);
+        }
+
+        for (const messageId of automaticReadIdsRef.current) {
+            const message = pageData.messages.find((item) => item.id === messageId);
+            if (!message || message.isRead) automaticReadIdsRef.current.delete(messageId);
+        }
+    }, [pageData.messages, selectedMessageId]);
+
     useEffect(() => () => {
         if (focusFrameRef.current !== null) {
             window.cancelAnimationFrame(focusFrameRef.current);
         }
+        if (focusTimerRef.current !== null) {
+            window.clearTimeout(focusTimerRef.current);
+        }
     }, []);
 
-    const scheduleFocus = useCallback((target: () => HTMLElement | null) => {
+    const scheduleFocus = useCallback((
+        target: () => HTMLElement | null,
+        delay = 0,
+    ) => {
         if (focusFrameRef.current !== null) {
             window.cancelAnimationFrame(focusFrameRef.current);
         }
+        if (focusTimerRef.current !== null) {
+            window.clearTimeout(focusTimerRef.current);
+            focusTimerRef.current = null;
+        }
 
-        focusFrameRef.current = window.requestAnimationFrame(() => {
-            target()?.focus();
-            focusFrameRef.current = null;
-        });
+        const focusTarget = () => {
+            focusFrameRef.current = window.requestAnimationFrame(() => {
+                target()?.focus();
+                focusFrameRef.current = null;
+            });
+            focusTimerRef.current = null;
+        };
+
+        if (delay > 0) {
+            focusTimerRef.current = window.setTimeout(focusTarget, delay);
+        } else {
+            focusTarget();
+        }
     }, []);
+
+    const refreshMessages = useCallback(() => {
+        startNavigation(() => router.refresh());
+    }, [router]);
+
+    const clearSelection = useCallback((focusDelay = 0) => {
+        setSelectedMessageId(null);
+        selectedTriggerRef.current = null;
+        scheduleFocus(() => searchInputRef.current, focusDelay);
+    }, [scheduleFocus]);
+
+    const navigateMessages = useCallback((
+        filter: MessageFilter,
+        search: string,
+        page: number,
+    ) => {
+        setSelectedMessageId(null);
+        selectedTriggerRef.current = null;
+        setStatusMessage(null);
+        startNavigation(() => {
+            router.replace(getMessagesUrl(filter, search, page), { scroll: false });
+        });
+    }, [router]);
+
+    useEffect(() => {
+        if (unavailable || searchValue === pageData.search) return;
+
+        const timer = window.setTimeout(() => {
+            navigateMessages(activeFilter, searchValue.trim(), 1);
+        }, SEARCH_DEBOUNCE_MS);
+
+        return () => window.clearTimeout(timer);
+    }, [activeFilter, navigateMessages, pageData.search, searchValue, unavailable]);
 
     const handleSelectMessage = useCallback((
         messageId: string,
         trigger: HTMLButtonElement,
     ) => {
+        const message = pageData.messages.find((item) => item.id === messageId);
+        if (!message) return;
+
         selectedTriggerRef.current = trigger;
         setSelectedMessageId(messageId);
+        setStatusMessage(null);
 
         if (!isSplitView) {
             scheduleFocus(() => backButtonRef.current);
         }
-    }, [isSplitView, scheduleFocus]);
+
+        if (message.isRead || automaticReadIdsRef.current.has(messageId)) return;
+
+        automaticReadIdsRef.current.add(messageId);
+        startAction(async () => {
+            const result = await markMessageRead(messageId);
+
+            if (result.status === 'error') {
+                automaticReadIdsRef.current.delete(messageId);
+                setStatusMessage({ tone: 'error', message: result.message });
+                return;
+            }
+
+            if (activeFilter === 'unread') clearSelection();
+            refreshMessages();
+        });
+    }, [activeFilter, clearSelection, isSplitView, pageData.messages, refreshMessages, scheduleFocus]);
 
     const handleBackToInbox = useCallback(() => {
         setSelectedMessageId(null);
         scheduleFocus(() => selectedTriggerRef.current);
     }, [scheduleFocus]);
 
-    const filters = [
-        { id: 'all', label: 'All', count: initialMessages.length },
-        { id: 'unread', label: 'Unread', count: unreadCount },
-        { id: 'starred', label: 'Starred', count: starredCount },
-    ] as const;
+    const runSelectedAction = useCallback((
+        action: () => Promise<MessageActionResult>,
+        clearAfterSuccess = false,
+    ) => {
+        if (isActionPending) return;
+
+        setStatusMessage(null);
+        startAction(async () => {
+            const result = await action();
+            setStatusMessage({
+                tone: result.status === 'success' ? 'success' : 'error',
+                message: result.message,
+            });
+
+            if (result.status === 'success') {
+                if (clearAfterSuccess) clearSelection();
+                refreshMessages();
+            }
+        });
+    }, [clearSelection, isActionPending, refreshMessages]);
+
+    const handleToggleRead = useCallback(() => {
+        if (!selectedMessage) return;
+
+        const shouldClear = activeFilter === 'unread' && !selectedMessage.isRead;
+        runSelectedAction(
+            () => selectedMessage.isRead
+                ? markMessageUnread(selectedMessage.id)
+                : markMessageRead(selectedMessage.id),
+            shouldClear,
+        );
+    }, [activeFilter, runSelectedAction, selectedMessage]);
+
+    const handleToggleStar = useCallback(() => {
+        if (!selectedMessage) return;
+
+        const shouldClear = activeFilter === 'starred' && selectedMessage.isStarred;
+        runSelectedAction(
+            () => setMessageStarred(selectedMessage.id, !selectedMessage.isStarred),
+            shouldClear,
+        );
+    }, [activeFilter, runSelectedAction, selectedMessage]);
+
+    const handleArchiveToggle = useCallback(() => {
+        if (!selectedMessage) return;
+
+        runSelectedAction(
+            () => selectedMessage.isArchived
+                ? restoreMessage(selectedMessage.id)
+                : archiveMessage(selectedMessage.id),
+            true,
+        );
+    }, [runSelectedAction, selectedMessage]);
+
+    const handleDelete = useCallback(() => {
+        if (!selectedMessage) return;
+        const messageId = selectedMessage.id;
+        const senderName = selectedMessage.senderName;
+
+        dialog.confirm(
+            'Delete message?',
+            <>
+                The message from{' '}
+                <strong className="font-bold text-[var(--text)]">{senderName}</strong>{' '}
+                will be permanently removed. This action cannot be undone.
+            </>,
+            async () => {
+                const result = await deleteMessage(messageId);
+
+                if (result.status === 'error') {
+                    return { ok: false, message: result.message };
+                }
+
+                setStatusMessage({ tone: 'success', message: result.message });
+                clearSelection(DIALOG_FOCUS_RETURN_DELAY_MS);
+                refreshMessages();
+                return { ok: true };
+            },
+            undefined,
+            {
+                confirmLabel: 'Delete',
+                cancelLabel: 'Cancel',
+                pendingLabel: 'Deleting...',
+                tone: 'danger',
+            },
+        );
+    }, [clearSelection, dialog, refreshMessages, selectedMessage]);
+
+    const handleFilterChange = (filter: MessageFilter) => {
+        if (filter === activeFilter || unavailable) return;
+        setActiveFilter(filter);
+        navigateMessages(filter, searchValue.trim(), 1);
+    };
+
+    const handlePageChange = (page: number) => {
+        if (page < 1 || isNavigating) return;
+        navigateMessages(activeFilter, searchValue.trim(), page);
+    };
+
+    const handleRetry = () => {
+        setStatusMessage(null);
+        refreshMessages();
+    };
+
+    const filterCounts: Record<MessageFilter, number> = {
+        inbox: pageData.counts.inbox,
+        unread: pageData.counts.unread,
+        starred: pageData.counts.starred,
+        archived: pageData.counts.archived,
+    };
+    const emptyState: MessageListEmptyState = unavailable
+        ? 'unavailable'
+        : pageData.search
+            ? 'search'
+            : pageData.filter;
     const isDetailOpen = selectedMessage !== null;
 
     return (
         <ManagementPage>
             <section aria-labelledby="messages-page-heading">
-                <p id={DISABLED_CONTROLS_DESCRIPTION_ID} className="sr-only">
-                    This control is a visual preview and becomes available after message integration.
+                <p id={REPLY_DESCRIPTION_ID} className="sr-only">
+                    Reply requires an email delivery service and is not available yet.
                 </p>
 
                 <div className={isDetailOpen ? 'hidden xl:block' : 'block'}>
@@ -118,7 +363,7 @@ export default function Messages({
                                 Email / Messages
                             </h1>
                             <span className="font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--muted)]/48">
-                                {String(initialMessages.length).padStart(2, '0')} messages
+                                {String(pageData.counts.total).padStart(2, '0')} messages
                             </span>
                         </div>
                         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[var(--muted)]/62 sm:text-base">
@@ -127,42 +372,72 @@ export default function Messages({
                     </header>
 
                     <div className="mt-6 flex flex-col gap-3 border-y border-white/[0.07] py-4 lg:flex-row lg:items-center lg:justify-between">
-                        <div role="search" className="relative min-w-0 flex-1 lg:max-w-xl">
+                        <div
+                            role="search"
+                            aria-busy={isNavigating}
+                            className="relative min-w-0 flex-1 lg:max-w-xl"
+                        >
                             <label htmlFor="message-search" className="sr-only">
                                 Search sender, email, or message
                             </label>
-                            <Search
-                                aria-hidden="true"
-                                size={17}
-                                strokeWidth={1.8}
-                                className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--muted)]/32"
-                            />
+                            {isNavigating ? (
+                                <RefreshCw
+                                    aria-hidden="true"
+                                    size={17}
+                                    strokeWidth={1.8}
+                                    className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 animate-spin text-[var(--signal)]/58 motion-reduce:animate-none"
+                                />
+                            ) : (
+                                <Search
+                                    aria-hidden="true"
+                                    size={17}
+                                    strokeWidth={1.8}
+                                    className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--muted)]/38"
+                                />
+                            )}
                             <input
+                                ref={searchInputRef}
                                 id="message-search"
                                 type="search"
-                                disabled
-                                aria-describedby={DISABLED_CONTROLS_DESCRIPTION_ID}
+                                value={searchValue}
+                                maxLength={MESSAGE_SEARCH_MAX_LENGTH}
+                                disabled={unavailable}
+                                onChange={(event) => setSearchValue(event.target.value)}
                                 placeholder="Search sender, email, or message"
-                                className="min-h-11 w-full cursor-not-allowed rounded-lg border border-white/[0.08] bg-white/[0.025] py-2.5 pl-10 pr-4 text-sm text-[var(--muted)]/45 outline-none placeholder:text-[var(--muted)]/30 disabled:opacity-75"
+                                className="min-h-11 w-full rounded-lg border border-white/[0.08] bg-white/[0.025] py-2.5 pl-10 pr-11 text-sm text-[var(--text)] outline-none transition-[border-color,background-color] duration-200 placeholder:text-[var(--muted)]/34 focus:border-[var(--signal)]/30 focus:bg-white/[0.035] focus:ring-2 focus:ring-[var(--signal)]/16 disabled:cursor-not-allowed disabled:opacity-45 motion-reduce:transition-none"
                             />
+                            {searchValue ? (
+                                <button
+                                    type="button"
+                                    onClick={() => setSearchValue('')}
+                                    disabled={unavailable}
+                                    aria-label="Clear message search"
+                                    className="absolute right-1.5 top-1/2 inline-flex size-9 -translate-y-1/2 items-center justify-center rounded-md text-[var(--muted)]/48 transition-colors duration-200 hover:bg-white/[0.05] hover:text-[var(--text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--signal)]/60 disabled:cursor-not-allowed disabled:opacity-30 motion-reduce:transition-none"
+                                >
+                                    <X aria-hidden="true" size={16} strokeWidth={1.8} />
+                                </button>
+                            ) : null}
                         </div>
 
-                        <nav aria-label="Message filters" className="grid grid-cols-3 gap-1 rounded-lg border border-white/[0.08] bg-black/35 p-1 sm:w-fit">
-                            {filters.map((filter) => {
-                                const isActive = filter.id === 'all';
+                        <nav
+                            aria-label="Message filters"
+                            className="grid grid-cols-2 gap-1 rounded-lg border border-white/[0.08] bg-black/35 p-1 sm:grid-cols-4 sm:w-fit"
+                        >
+                            {MESSAGE_FILTERS.map((filter) => {
+                                const isActive = filter.id === activeFilter;
 
                                 return (
                                     <button
                                         key={filter.id}
                                         type="button"
-                                        disabled
+                                        onClick={() => handleFilterChange(filter.id)}
+                                        disabled={unavailable}
                                         aria-pressed={isActive}
-                                        aria-describedby={DISABLED_CONTROLS_DESCRIPTION_ID}
-                                        className={`inline-flex min-h-10 cursor-not-allowed items-center justify-center gap-2 rounded-md px-3 text-xs font-bold tracking-normal transition-none ${isActive ? 'bg-[var(--signal)]/[0.09] text-[var(--signal)]/72' : 'text-[var(--muted)]/38'}`}
+                                        className={`inline-flex min-h-10 items-center justify-center gap-2 rounded-md px-3 text-xs font-bold tracking-normal transition-[color,background-color] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--signal)]/60 disabled:cursor-not-allowed disabled:opacity-35 motion-reduce:transition-none ${isActive ? 'bg-[var(--signal)]/[0.09] text-[var(--signal)]/78' : 'text-[var(--muted)]/52 hover:bg-white/[0.04] hover:text-[var(--text)]'}`}
                                     >
                                         {filter.label}
                                         <span className="font-mono text-[9px] tabular-nums opacity-70">
-                                            {filter.count}
+                                            {filterCounts[filter.id]}
                                         </span>
                                     </button>
                                 );
@@ -171,9 +446,19 @@ export default function Messages({
                     </div>
                 </div>
 
+                {statusMessage ? (
+                    <p
+                        role={statusMessage.tone === 'error' ? 'alert' : 'status'}
+                        aria-live="polite"
+                        className={`mt-3 text-sm font-semibold ${statusMessage.tone === 'error' ? 'text-red-300/82' : 'text-emerald-300/72'}`}
+                    >
+                        {statusMessage.message}
+                    </p>
+                ) : null}
+
                 <div
                     aria-label="Portfolio inbox workspace"
-                    className={`relative grid min-w-0 overflow-hidden rounded-lg border border-white/[0.085] bg-white/[0.018] shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] xl:h-[clamp(32rem,calc(100dvh-15rem),52rem)] xl:grid-cols-[minmax(20rem,0.42fr)_minmax(0,1fr)] ${isDetailOpen ? 'mt-0 xl:mt-6' : 'mt-6'}`}
+                    className={`relative grid min-w-0 overflow-hidden rounded-lg border border-white/[0.085] bg-white/[0.018] shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] xl:h-[clamp(32rem,calc(100dvh-15rem),52rem)] xl:grid-cols-[minmax(20rem,0.42fr)_minmax(0,1fr)] ${isDetailOpen ? (statusMessage ? 'mt-3 xl:mt-6' : 'mt-0 xl:mt-6') : 'mt-6'}`}
                 >
                     <div
                         className={`min-h-[32rem] min-w-0 transition-[opacity,transform] duration-200 ease-out motion-reduce:transition-none xl:relative xl:inset-auto xl:h-full xl:translate-x-0 xl:border-r xl:border-white/[0.07] xl:opacity-100 ${
@@ -183,11 +468,19 @@ export default function Messages({
                         }`}
                     >
                         <MessageList
-                            messages={initialMessages}
+                            messages={pageData.messages}
                             selectedMessageId={selectedMessageId}
                             referenceTime={referenceTime}
                             isInert={isDetailOpen && !isSplitView}
+                            emptyState={emptyState}
+                            resultCount={pageData.resultCount}
+                            page={pageData.page}
+                            hasNewer={pageData.hasNewer}
+                            hasOlder={pageData.hasOlder}
+                            isNavigating={isNavigating}
                             onSelect={handleSelectMessage}
+                            onPageChange={handlePageChange}
+                            onRetry={handleRetry}
                         />
                     </div>
 
@@ -202,8 +495,13 @@ export default function Messages({
                             message={selectedMessage}
                             isInert={!isDetailOpen && !isSplitView}
                             backButtonRef={backButtonRef}
-                            disabledControlsDescriptionId={DISABLED_CONTROLS_DESCRIPTION_ID}
+                            replyDescriptionId={REPLY_DESCRIPTION_ID}
+                            isActionPending={isActionPending || isNavigating}
                             onBack={handleBackToInbox}
+                            onToggleRead={handleToggleRead}
+                            onToggleStar={handleToggleStar}
+                            onArchiveToggle={handleArchiveToggle}
+                            onDelete={handleDelete}
                         />
                     </div>
                 </div>

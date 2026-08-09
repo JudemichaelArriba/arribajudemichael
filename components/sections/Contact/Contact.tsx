@@ -1,6 +1,11 @@
 'use client';
 
-import { useRef, useState, type FormEvent } from 'react';
+import {
+    useCallback,
+    useRef,
+    useState,
+    type FormEvent,
+} from 'react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -8,11 +13,15 @@ import {
     ArrowUpRight,
     BriefcaseBusiness,
     GitFork,
+    LoaderCircle,
     Mail,
     Send,
     type LucideIcon,
 } from 'lucide-react';
 import Button from '@/components/ui/Button';
+import Turnstile, {
+    type TurnstileStatus,
+} from '@/components/ui/Turnstile/Turnstile';
 import {
     CONTACT_CHANNELS,
     type ContactChannel,
@@ -27,9 +36,65 @@ const CONTACT_ICONS: Record<ContactChannelId, LucideIcon> = {
     email: Mail,
 };
 
-const STATIC_FORM_NOTICE = 'This form is a preview for now; your message has not been sent.';
+const VERIFICATION_SERVICE_MESSAGE =
+    'Unable to verify your request. Please try again.';
+const CAPTCHA_REQUIRED_MESSAGE = 'Please complete the security check.';
+const CAPTCHA_REJECTED_MESSAGE = 'Verification failed. Please try again.';
+const RATE_LIMIT_MESSAGE =
+    'Too many message attempts. Please try again later.';
+const PROCESSING_SERVICE_MESSAGE =
+    'Unable to process your request right now. Please try again later.';
+const MESSAGE_SERVICE_MESSAGE =
+    'Unable to send your message right now. Please try again later.';
+const MESSAGE_SENT_MESSAGE = 'Message sent successfully.';
+const VALIDATION_MESSAGE = 'Please check the information you entered.';
 const FIELD_CLASS =
     'min-h-12 w-full rounded-lg border border-white/[0.09] bg-black/25 px-4 py-3 text-base leading-relaxed tracking-normal text-[var(--text)] outline-none transition-[border-color,background-color,box-shadow] duration-300 placeholder:text-[var(--muted)]/30 hover:border-white/[0.15] focus:border-[var(--signal)]/55 focus:bg-white/[0.035] focus:shadow-[0_0_0_3px_rgba(195,109,252,0.09)] motion-reduce:transition-none';
+const FIELD_ERROR_CLASS =
+    'border-red-400/45 focus:border-red-300/70 focus:shadow-[0_0_0_3px_rgba(248,113,113,0.08)]';
+const CONTACT_FIELD_NAMES = ['username', 'email', 'message'] as const;
+
+type ContactFieldName = (typeof CONTACT_FIELD_NAMES)[number];
+type ContactFieldErrors = Partial<Record<ContactFieldName, string>>;
+
+interface ParsedContactResponse {
+    ok: boolean;
+    message?: string;
+    fieldErrors: ContactFieldErrors;
+}
+
+function parseContactResponse(value: unknown): ParsedContactResponse | null {
+    if (typeof value !== 'object' || value === null) return null;
+
+    const response = value as Record<string, unknown>;
+    if (typeof response.ok !== 'boolean') return null;
+
+    const parsed: ParsedContactResponse = {
+        ok: response.ok,
+        fieldErrors: {},
+    };
+
+    if (
+        typeof response.message === 'string' &&
+        response.message.length <= 240
+    ) {
+        parsed.message = response.message;
+    }
+
+    if (typeof response.fieldErrors === 'object' && response.fieldErrors !== null) {
+        const responseFieldErrors = response.fieldErrors as Record<string, unknown>;
+
+        for (const fieldName of CONTACT_FIELD_NAMES) {
+            const error = responseFieldErrors[fieldName];
+
+            if (typeof error === 'string' && error.length <= 160) {
+                parsed.fieldErrors[fieldName] = error;
+            }
+        }
+    }
+
+    return parsed;
+}
 
 function ContactChannelItem({ channel }: { channel: ContactChannel }) {
     const Icon = CONTACT_ICONS[channel.id];
@@ -77,7 +142,12 @@ function ContactChannelItem({ channel }: { channel: ContactChannel }) {
 
 export default function Contact() {
     const sectionRef = useRef<HTMLElement>(null);
+    const isSubmittingRef = useRef(false);
+    const hasSubmissionResultRef = useRef(false);
     const [submitStatus, setSubmitStatus] = useState('');
+    const [fieldErrors, setFieldErrors] = useState<ContactFieldErrors>({});
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [turnstileResetKey, setTurnstileResetKey] = useState(0);
 
     useGSAP(
         () => {
@@ -203,9 +273,110 @@ export default function Contact() {
         { scope: sectionRef }
     );
 
-    const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    const handleTurnstileStatus = useCallback(
+        (status: TurnstileStatus) => {
+            if (isSubmittingRef.current || hasSubmissionResultRef.current) return;
+
+            if (status === 'verified') {
+                setSubmitStatus('');
+            } else if (status === 'expired') {
+                setSubmitStatus(CAPTCHA_REQUIRED_MESSAGE);
+            } else if (status === 'error') {
+                setSubmitStatus(VERIFICATION_SERVICE_MESSAGE);
+            }
+        },
+        [],
+    );
+
+    const clearFieldError = useCallback((fieldName: ContactFieldName) => {
+        setFieldErrors((currentErrors) => {
+            if (!currentErrors[fieldName]) return currentErrors;
+
+            const nextErrors = { ...currentErrors };
+            delete nextErrors[fieldName];
+            return nextErrors;
+        });
+    }, []);
+
+    const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        setSubmitStatus(STATIC_FORM_NOTICE);
+
+        if (isSubmittingRef.current) return;
+
+        const form = event.currentTarget;
+        const formData = new FormData(form);
+
+        isSubmittingRef.current = true;
+        hasSubmissionResultRef.current = false;
+        setIsSubmitting(true);
+        setSubmitStatus('');
+        setFieldErrors({});
+
+        try {
+            const response = await fetch('/api/contact', {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                },
+                body: formData,
+            });
+
+            let message: string;
+            let submissionSucceeded = false;
+
+            if (response.ok) {
+                message = MESSAGE_SENT_MESSAGE;
+            } else if (response.status === 400) {
+                message = VALIDATION_MESSAGE;
+            } else if (response.status === 429) {
+                message = RATE_LIMIT_MESSAGE;
+            } else if (response.status === 503) {
+                message = PROCESSING_SERVICE_MESSAGE;
+            } else if (response.status === 403) {
+                message = CAPTCHA_REJECTED_MESSAGE;
+            } else if (response.status === 500) {
+                message = MESSAGE_SERVICE_MESSAGE;
+            } else {
+                message = MESSAGE_SERVICE_MESSAGE;
+            }
+
+            try {
+                const result: unknown = await response.json();
+                const parsedResult = parseContactResponse(result);
+
+                if (parsedResult) {
+                    if (parsedResult.message) {
+                        message = parsedResult.message;
+                    }
+
+                    if (!response.ok) {
+                        setFieldErrors(parsedResult.fieldErrors);
+                    }
+
+                    submissionSucceeded = response.ok && parsedResult.ok;
+                }
+            } catch {
+                // The status-based fallback remains safe when a response is malformed.
+            }
+
+            if (response.ok && !submissionSucceeded) {
+                message = MESSAGE_SERVICE_MESSAGE;
+            }
+
+            if (submissionSucceeded) {
+                form.reset();
+            }
+
+            hasSubmissionResultRef.current = true;
+            setSubmitStatus(message);
+        } catch {
+            hasSubmissionResultRef.current = true;
+            setSubmitStatus(MESSAGE_SERVICE_MESSAGE);
+        } finally {
+            isSubmittingRef.current = false;
+            setIsSubmitting(false);
+            setTurnstileResetKey((currentKey) => currentKey + 1);
+        }
     };
 
     return (
@@ -278,11 +449,13 @@ export default function Contact() {
                         <form
                             className="mt-6"
                             aria-describedby="contact-form-status"
+                            aria-busy={isSubmitting}
                             onSubmit={handleSubmit}
-                            onInput={() => {
-                                if (submitStatus) setSubmitStatus('');
-                            }}
                         >
+                            <fieldset
+                                disabled={isSubmitting}
+                                className="m-0 min-w-0 border-0 p-0"
+                            >
                             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                                 <div data-contact-field className="min-w-0">
                                     <label
@@ -299,8 +472,19 @@ export default function Contact() {
                                         maxLength={80}
                                         required
                                         placeholder="Your name"
-                                        className={FIELD_CLASS}
+                                        aria-invalid={Boolean(fieldErrors.username)}
+                                        aria-describedby={fieldErrors.username ? 'contact-username-error' : undefined}
+                                        onInput={() => clearFieldError('username')}
+                                        className={`${FIELD_CLASS} ${fieldErrors.username ? FIELD_ERROR_CLASS : ''}`}
                                     />
+                                    {fieldErrors.username ? (
+                                        <p
+                                            id="contact-username-error"
+                                            className="mt-1.5 text-xs leading-relaxed text-red-300/90"
+                                        >
+                                            {fieldErrors.username}
+                                        </p>
+                                    ) : null}
                                 </div>
 
                                 <div data-contact-field className="min-w-0">
@@ -318,8 +502,19 @@ export default function Contact() {
                                         maxLength={254}
                                         required
                                         placeholder="you@example.com"
-                                        className={FIELD_CLASS}
+                                        aria-invalid={Boolean(fieldErrors.email)}
+                                        aria-describedby={fieldErrors.email ? 'contact-email-error' : undefined}
+                                        onInput={() => clearFieldError('email')}
+                                        className={`${FIELD_CLASS} ${fieldErrors.email ? FIELD_ERROR_CLASS : ''}`}
                                     />
+                                    {fieldErrors.email ? (
+                                        <p
+                                            id="contact-email-error"
+                                            className="mt-1.5 text-xs leading-relaxed text-red-300/90"
+                                        >
+                                            {fieldErrors.email}
+                                        </p>
+                                    ) : null}
                                 </div>
 
                                 <div data-contact-field className="min-w-0 sm:col-span-2">
@@ -336,7 +531,26 @@ export default function Contact() {
                                         maxLength={2000}
                                         required
                                         placeholder="Tell me about the project, role, or collaboration."
-                                        className={`${FIELD_CLASS} min-h-40 resize-y`}
+                                        aria-invalid={Boolean(fieldErrors.message)}
+                                        aria-describedby={fieldErrors.message ? 'contact-message-error' : undefined}
+                                        onInput={() => clearFieldError('message')}
+                                        className={`${FIELD_CLASS} min-h-40 resize-y ${fieldErrors.message ? FIELD_ERROR_CLASS : ''}`}
+                                    />
+                                    {fieldErrors.message ? (
+                                        <p
+                                            id="contact-message-error"
+                                            className="mt-1.5 text-xs leading-relaxed text-red-300/90"
+                                        >
+                                            {fieldErrors.message}
+                                        </p>
+                                    ) : null}
+                                </div>
+
+                                <div data-contact-field className="min-w-0 sm:col-span-2">
+                                    <Turnstile
+                                        action="contact"
+                                        resetKey={turnstileResetKey}
+                                        onStatusChange={handleTurnstileStatus}
                                     />
                                 </div>
                             </div>
@@ -354,8 +568,22 @@ export default function Contact() {
                                     className="!min-h-16 !w-full !max-w-[22rem] !px-7 !text-lg sm:!px-12"
                                 >
                                     <span className="inline-flex items-center gap-2.5">
-                                        Send message
-                                        <Send aria-hidden="true" size={20} strokeWidth={2.2} />
+                                        {isSubmitting ? (
+                                            <>
+                                                <LoaderCircle
+                                                    aria-hidden="true"
+                                                    size={20}
+                                                    strokeWidth={2.2}
+                                                    className="animate-spin motion-reduce:animate-none"
+                                                />
+                                                Sending...
+                                            </>
+                                        ) : (
+                                            <>
+                                                Send message
+                                                <Send aria-hidden="true" size={20} strokeWidth={2.2} />
+                                            </>
+                                        )}
                                     </span>
                                 </Button>
 
@@ -363,11 +591,13 @@ export default function Contact() {
                                     id="contact-form-status"
                                     role="status"
                                     aria-live="polite"
+                                    aria-atomic="true"
                                     className="min-h-5 max-w-md text-center text-xs leading-relaxed text-[var(--muted)]/62"
                                 >
                                     {submitStatus}
                                 </p>
                             </div>
+                            </fieldset>
                         </form>
                     </div>
                 </div>

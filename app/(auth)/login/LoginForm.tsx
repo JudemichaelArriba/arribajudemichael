@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 
 import Button from '@/components/ui/Button';
+import Turnstile from '@/components/ui/Turnstile/Turnstile';
 import { login } from './LoginActions';
 import type { LoginActionState } from './LoginActions';
 
@@ -216,16 +217,10 @@ export default function LoginForm() {
                                     </div>
                                 </div>
 
-                                <div>
-                                    <div
-                                        className="cf-turnstile"
-                                        data-sitekey={
-                                            process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
-                                        }
-                                        data-theme="dark"
-                                        data-size="flexible"
-                                    />
-                                </div>
+                                <Turnstile
+                                    action="login"
+                                    resetKey={loginState.attempt}
+                                />
                             </div>
 
                             <div className="mt-6">
