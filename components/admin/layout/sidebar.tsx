@@ -10,7 +10,6 @@ import {
     FolderKanban,
     Layers3,
     LayoutDashboard,
-    LoaderCircle,
     LogOut,
     Mail,
     Menu,
@@ -27,8 +26,8 @@ import {
     useState,
     type ReactNode,
 } from 'react';
-import { useFormStatus } from 'react-dom';
 
+import { DialogProvider, useDialog } from '@/components/dialog/Dialog';
 import { logout } from '@/lib/auth/logoutActions';
 
 interface AdminShellProps {
@@ -58,6 +57,10 @@ interface NavigationContentProps {
 
 interface LogoutControlProps {
     showLabel: boolean;
+}
+
+interface LogoutButtonProps extends LogoutControlProps {
+    onClick: () => void;
 }
 
 const DESKTOP_BREAKPOINT = '(min-width: 768px)';
@@ -227,46 +230,52 @@ function NavigationContent({
     );
 }
 
-function LogoutButton({ showLabel }: LogoutControlProps) {
-    const { pending } = useFormStatus();
-
+function LogoutButton({ showLabel, onClick }: LogoutButtonProps) {
     return (
         <button
-            type="submit"
-            disabled={pending}
-            aria-label={pending ? 'Signing out' : 'Sign out'}
-            title={!showLabel ? (pending ? 'Signing out' : 'Sign out') : undefined}
-            className={`group flex min-h-11 w-full items-center gap-3 rounded-lg border border-transparent px-3 text-sm font-semibold tracking-normal text-[var(--muted)]/55 transition-[color,border-color,background-color] duration-200 hover:border-red-400/15 hover:bg-red-400/[0.055] hover:text-red-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300/55 disabled:cursor-wait disabled:opacity-60 motion-reduce:transition-none ${showLabel ? 'justify-start' : 'justify-center px-0'}`}
+            type="button"
+            onClick={onClick}
+            aria-label="Sign out"
+            title={!showLabel ? 'Sign out' : undefined}
+            className={`group flex min-h-11 w-full items-center gap-3 rounded-lg border border-transparent px-3 text-sm font-semibold tracking-normal text-[var(--muted)]/55 transition-[color,border-color,background-color] duration-200 hover:border-red-400/15 hover:bg-red-400/[0.055] hover:text-red-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300/55 motion-reduce:transition-none ${showLabel ? 'justify-start' : 'justify-center px-0'}`}
         >
-            {pending ? (
-                <LoaderCircle
-                    aria-hidden="true"
-                    size={18}
-                    strokeWidth={1.8}
-                    className="animate-spin motion-reduce:animate-none"
-                />
-            ) : (
-                <LogOut
-                    aria-hidden="true"
-                    size={18}
-                    strokeWidth={1.8}
-                    className="transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none"
-                />
-            )}
-            {showLabel ? <span>{pending ? 'Signing out...' : 'Logout'}</span> : null}
+            <LogOut
+                aria-hidden="true"
+                size={18}
+                strokeWidth={1.8}
+                className="transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none"
+            />
+            {showLabel ? <span>Logout</span> : null}
         </button>
     );
 }
 
 function LogoutControl({ showLabel }: LogoutControlProps) {
+    const dialog = useDialog();
+
+    const handleLogout = useCallback(() => {
+        dialog.confirm(
+            'Sign out?',
+            'Your admin session will end and you will return to the login page.',
+            async () => {
+                await logout();
+                return { ok: true };
+            },
+            undefined,
+            {
+                confirmLabel: 'Sign out',
+                cancelLabel: 'Stay signed in',
+                pendingLabel: 'Signing out...',
+            },
+        );
+    }, [dialog]);
+
     return (
-        <form action={logout}>
-            <LogoutButton showLabel={showLabel} />
-        </form>
+        <LogoutButton showLabel={showLabel} onClick={handleLogout} />
     );
 }
 
-export default function AdminShell({ children }: AdminShellProps) {
+function AdminShellContent({ children }: AdminShellProps) {
     const pathname = usePathname();
     const [isDesktopExpanded, setIsDesktopExpanded] = useState(true);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -529,5 +538,13 @@ export default function AdminShell({ children }: AdminShellProps) {
                 {children}
             </main>
         </div>
+    );
+}
+
+export default function AdminShell(props: AdminShellProps) {
+    return (
+        <DialogProvider>
+            <AdminShellContent {...props} />
+        </DialogProvider>
     );
 }

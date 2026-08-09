@@ -1,6 +1,6 @@
 import type { ProjectFieldErrors } from './types';
 
-export const MAX_PROJECT_IMAGE_BYTES = 5 * 1024 * 1024;
+export const MAX_PROJECT_IMAGE_BYTES = 3 * 1024 * 1024;
 export const MAX_PROJECT_TAGS = 12;
 
 const PROJECT_IMAGE_MIME_TYPES = ['image/png', 'image/jpeg', 'image/webp'] as const;

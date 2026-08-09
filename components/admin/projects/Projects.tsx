@@ -18,8 +18,12 @@ import {
     ManagementPage,
     ManagementPageChrome,
 } from '@/components/admin/layout/ManagementPage';
-import type { AdminProjectDto } from '@/features/admin/projects/types';
-import DeleteProjectDialog from './DeleteProjectDialog';
+import { useDialog } from '@/components/dialog/Dialog';
+import { deleteProject } from '@/features/admin/projects/actions';
+import type {
+    AdminProjectDto,
+    ProjectActionState,
+} from '@/features/admin/projects/types';
 import ProjectModal from './ProjectModal/ProjectModal';
 
 interface ProjectsProps {
@@ -35,19 +39,56 @@ type EditorState =
 const ACTIVE_ACTION_CLASS =
     'inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border px-3 text-xs font-bold transition-[color,border-color,background-color] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--signal)]/60 disabled:cursor-not-allowed disabled:opacity-55 motion-reduce:transition-none';
 
+const DELETE_INITIAL_STATE: ProjectActionState = {
+    status: 'idle',
+    message: '',
+    attempt: 0,
+    fieldErrors: {},
+};
+
 export default function Projects({ projects, unavailable = false }: ProjectsProps) {
+    const dialog = useDialog();
     const router = useRouter();
     const [editor, setEditor] = useState<EditorState>(null);
-    const [projectToDelete, setProjectToDelete] = useState<AdminProjectDto | null>(null);
     const [statusMessage, setStatusMessage] = useState('');
     const [isRefreshing, startRefresh] = useTransition();
 
     const handleMutationSuccess = useCallback((message: string) => {
         setEditor(null);
-        setProjectToDelete(null);
         setStatusMessage(message);
         startRefresh(() => router.refresh());
     }, [router]);
+
+    const handleDelete = useCallback((project: AdminProjectDto) => {
+        dialog.confirm(
+            'Delete project?',
+            <>
+                <strong className="font-bold text-[var(--text)]">{project.title}</strong>{' '}
+                will be removed from the dashboard and public portfolio. This cannot be undone.
+            </>,
+            async () => {
+                const result = await deleteProject(
+                    project.id,
+                    { ...DELETE_INITIAL_STATE, fieldErrors: {} },
+                    new FormData(),
+                );
+
+                if (result.status !== 'success') {
+                    return { ok: false, message: result.message };
+                }
+
+                handleMutationSuccess(result.message);
+                return { ok: true };
+            },
+            undefined,
+            {
+                confirmLabel: 'Delete project',
+                cancelLabel: 'Cancel',
+                pendingLabel: 'Deleting...',
+                tone: 'danger',
+            },
+        );
+    }, [dialog, handleMutationSuccess]);
 
     const handleRetry = () => {
         startRefresh(() => router.refresh());
@@ -243,7 +284,7 @@ export default function Projects({ projects, unavailable = false }: ProjectsProp
                                         </button>
                                         <button
                                             type="button"
-                                            onClick={() => setProjectToDelete(project)}
+                                            onClick={() => handleDelete(project)}
                                             aria-label={`Delete ${project.title}`}
                                             className={`${ACTIVE_ACTION_CLASS} border-red-400/12 bg-red-400/[0.025] text-red-300/62 hover:border-red-300/25 hover:bg-red-400/[0.065] hover:text-red-200`}
                                         >
@@ -268,14 +309,6 @@ export default function Projects({ projects, unavailable = false }: ProjectsProp
                 />
             ) : null}
 
-            {projectToDelete ? (
-                <DeleteProjectDialog
-                    key={projectToDelete.id}
-                    project={projectToDelete}
-                    onClose={() => setProjectToDelete(null)}
-                    onSuccess={handleMutationSuccess}
-                />
-            ) : null}
         </ManagementPage>
     );
 }
