@@ -13,6 +13,9 @@ interface ManagementPageChromeProps {
     countLabel: string;
     actionLabel: string;
     noticeId: string;
+    action?: ReactNode;
+    notice?: ReactNode;
+    showNotice?: boolean;
 }
 
 interface StaticItemActionsProps {
@@ -40,6 +43,9 @@ export function ManagementPageChrome({
     countLabel,
     actionLabel,
     noticeId,
+    action,
+    notice,
+    showNotice = true,
 }: ManagementPageChromeProps) {
     return (
         <>
@@ -61,32 +67,38 @@ export function ManagementPageChrome({
                     </p>
                 </div>
 
-                <button
-                    type="button"
-                    disabled
-                    aria-describedby={noticeId}
-                    title="Available after database integration"
-                    className="inline-flex min-h-11 w-full shrink-0 cursor-not-allowed items-center justify-center gap-2 rounded-lg border border-[var(--signal)]/18 bg-[var(--signal)]/10 px-4 text-sm font-bold text-[var(--signal)]/55 sm:w-auto"
-                >
-                    <Plus aria-hidden="true" size={17} strokeWidth={2} />
-                    {actionLabel}
-                </button>
+                {action ?? (
+                    <button
+                        type="button"
+                        disabled
+                        aria-describedby={noticeId}
+                        title="Available after database integration"
+                        className="inline-flex min-h-11 w-full shrink-0 cursor-not-allowed items-center justify-center gap-2 rounded-lg border border-[var(--signal)]/18 bg-[var(--signal)]/10 px-4 text-sm font-bold text-[var(--signal)]/55 sm:w-auto"
+                    >
+                        <Plus aria-hidden="true" size={17} strokeWidth={2} />
+                        {actionLabel}
+                    </button>
+                )}
             </header>
 
-            <div
-                id={noticeId}
-                className="mt-6 flex items-start gap-3 border-y border-[var(--signal)]/12 bg-[var(--signal)]/[0.035] px-3.5 py-3 text-sm text-[var(--muted)]/62 sm:px-4"
-            >
-                <Info
-                    aria-hidden="true"
-                    size={17}
-                    strokeWidth={1.8}
-                    className="mt-0.5 shrink-0 text-[var(--signal)]/75"
-                />
-                <p className="leading-relaxed">
-                    Static preview mode. Management controls are visible for review, but changes are not saved or published.
-                </p>
-            </div>
+            {showNotice ? (
+                notice ?? (
+                    <div
+                        id={noticeId}
+                        className="mt-6 flex items-start gap-3 border-y border-[var(--signal)]/12 bg-[var(--signal)]/[0.035] px-3.5 py-3 text-sm text-[var(--muted)]/62 sm:px-4"
+                    >
+                        <Info
+                            aria-hidden="true"
+                            size={17}
+                            strokeWidth={1.8}
+                            className="mt-0.5 shrink-0 text-[var(--signal)]/75"
+                        />
+                        <p className="leading-relaxed">
+                            Static preview mode. Management controls are visible for review, but changes are not saved or published.
+                        </p>
+                    </div>
+                )
+            ) : null}
         </>
     );
 }

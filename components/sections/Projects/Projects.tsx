@@ -7,12 +7,8 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { ArrowUpRight, BadgeCheck, FileText, PanelsTopLeft } from 'lucide-react';
 import { BentoCard, BentoSpotlight } from '@/components/ui/Bento/Bento';
-import {
-    CERTIFICATES,
-    PROJECTS,
-    type CertificateItem,
-    type ProjectItem,
-} from './projects.data';
+import type { PublicProjectDto } from '@/features/admin/projects/types';
+import { CERTIFICATES, type CertificateItem } from './projects.data';
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
@@ -21,20 +17,30 @@ type ShowcaseView = 'projects' | 'certificates';
 const SHOWCASE_BENTO_CARD_CLASS =
     'group h-full !min-h-0 !justify-start !gap-0 !p-0 text-left';
 
-function ProjectCard({ project, index }: { project: ProjectItem; index: number }) {
+interface ProjectsProps {
+    projects: PublicProjectDto[];
+    projectsUnavailable?: boolean;
+}
+
+function ProjectCard({ project, index }: { project: PublicProjectDto; index: number }) {
     return (
         <li data-showcase-item className="min-w-0">
             <BentoCard elevation="smooth" className={SHOWCASE_BENTO_CARD_CLASS}>
                 <div className="relative aspect-[2.1/1] w-full overflow-hidden border-b border-white/[0.065] bg-[#05070a]">
-                    <Image
-                        src={project.image}
-                        alt={project.imageAlt}
-                        fill
-                        placeholder="blur"
-                        loading="lazy"
-                        sizes="(max-width: 767px) calc(100vw - 2.5rem), (max-width: 1279px) calc(50vw - 3rem), 592px"
-                        className="object-cover object-top transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.035] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
-                    />
+                    {project.imageUrl ? (
+                        <Image
+                            src={project.imageUrl}
+                            alt={project.imageAlt ?? ''}
+                            fill
+                            loading="lazy"
+                            sizes="(max-width: 767px) calc(100vw - 2.5rem), (max-width: 1279px) calc(50vw - 3rem), 592px"
+                            className="object-cover object-top transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.035] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+                        />
+                    ) : (
+                        <div className="flex h-full items-center justify-center text-[var(--muted)]/30">
+                            <PanelsTopLeft aria-hidden="true" size={32} strokeWidth={1.4} />
+                        </div>
+                    )}
                     <div
                         aria-hidden="true"
                         className="pointer-events-none absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-black/45 to-transparent"
@@ -66,15 +72,17 @@ function ProjectCard({ project, index }: { project: ProjectItem; index: number }
                                 </li>
                             ))}
                         </ul>
-                        <a
-                            href={project.previewHref}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex min-h-10 shrink-0 items-center gap-1.5 border-b border-[var(--signal)]/35 font-mono text-[10px] font-bold uppercase tracking-normal text-[var(--text)] transition-[border-color,color] duration-300 hover:border-[var(--signal)] hover:text-[var(--signal)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--signal)]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-                        >
-                            Preview
-                            <ArrowUpRight aria-hidden="true" size={14} strokeWidth={1.8} />
-                        </a>
+                        {project.githubUrl ? (
+                            <a
+                                href={project.githubUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex min-h-10 shrink-0 items-center gap-1.5 border-b border-[var(--signal)]/35 font-mono text-[10px] font-bold uppercase tracking-normal text-[var(--text)] transition-[border-color,color] duration-300 hover:border-[var(--signal)] hover:text-[var(--signal)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--signal)]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                            >
+                                View repository
+                                <ArrowUpRight aria-hidden="true" size={14} strokeWidth={1.8} />
+                            </a>
+                        ) : null}
                     </div>
                 </div>
             </BentoCard>
@@ -142,7 +150,33 @@ function CertificateCard({ certificate, index }: { certificate: CertificateItem;
     );
 }
 
-export default function Projects() {
+function ProjectStateCard({ unavailable }: { unavailable: boolean }) {
+    return (
+        <li data-showcase-item className="min-w-0 lg:col-span-2">
+            <BentoCard
+                elevation="smooth"
+                className="group h-full !min-h-56 !justify-center !gap-0 !p-6 text-center"
+            >
+                <PanelsTopLeft
+                    aria-hidden="true"
+                    size={24}
+                    strokeWidth={1.5}
+                    className="text-[var(--signal)]/65"
+                />
+                <h3 className="mt-4 text-lg font-extrabold tracking-normal text-[var(--text)]">
+                    {unavailable ? 'Projects are temporarily unavailable.' : 'Projects are being prepared.'}
+                </h3>
+                <p className="mt-2 max-w-md text-sm leading-relaxed text-[var(--muted)]/62">
+                    {unavailable
+                        ? 'Please check back shortly while this archive reconnects.'
+                        : 'Published work will appear here as it becomes available.'}
+                </p>
+            </BentoCard>
+        </li>
+    );
+}
+
+export default function Projects({ projects, projectsUnavailable = false }: ProjectsProps) {
     const [activeView, setActiveView] = useState<ShowcaseView>('projects');
     const sectionRef = useRef<HTMLElement>(null);
     const showcaseGridRef = useRef<HTMLDivElement>(null);
@@ -341,7 +375,7 @@ export default function Projects() {
                 if (itemsTweenRef.current === timeline) itemsTweenRef.current = null;
             };
         },
-        { scope: sectionRef, dependencies: [activeView], revertOnUpdate: true }
+        { scope: sectionRef, dependencies: [activeView, projects.length], revertOnUpdate: true }
     );
 
     return (
@@ -407,7 +441,7 @@ export default function Projects() {
                         >
                             <PanelsTopLeft aria-hidden="true" size={15} strokeWidth={1.8} />
                             <span className="truncate">Projects</span>
-                            <span className="tabular-nums text-[9px] opacity-55">{PROJECTS.length}</span>
+                            <span className="tabular-nums text-[9px] opacity-55">{projects.length}</span>
                         </button>
                         <button
                             type="button"
@@ -435,9 +469,13 @@ export default function Projects() {
                     />
                     {activeView === 'projects' ? (
                         <ul className="mx-auto grid max-w-5xl grid-cols-1 gap-5 lg:grid-cols-2 lg:gap-6">
-                            {PROJECTS.map((project, index) => (
-                                <ProjectCard key={project.id} project={project} index={index} />
-                            ))}
+                            {projects.length > 0 && !projectsUnavailable ? (
+                                projects.map((project, index) => (
+                                    <ProjectCard key={project.id} project={project} index={index} />
+                                ))
+                            ) : (
+                                <ProjectStateCard unavailable={projectsUnavailable} />
+                            )}
                         </ul>
                     ) : (
                         <ul className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">

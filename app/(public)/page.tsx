@@ -5,8 +5,19 @@ import Experience from '@/components/sections/Experience/Experience';
 import TechStack from '@/components/sections/TechStack/TechStack';
 import Projects from '@/components/sections/Projects/Projects';
 import Contact from '@/components/sections/Contact/Contact';
+import { getPublishedProjects } from '@/features/admin/projects/queries';
+import type { PublicProjectDto } from '@/features/admin/projects/types';
 
-export default function HomePage() {
+export default async function HomePage() {
+    let projects: PublicProjectDto[] = [];
+    let projectsUnavailable = false;
+
+    try {
+        projects = await getPublishedProjects();
+    } catch {
+        projectsUnavailable = true;
+    }
+
     return (
         <>
             <Home />
@@ -14,7 +25,7 @@ export default function HomePage() {
             <AboutMe />
             <Experience />
             <TechStack />
-            <Projects />
+            <Projects projects={projects} projectsUnavailable={projectsUnavailable} />
             <Contact />
         </>
     );
