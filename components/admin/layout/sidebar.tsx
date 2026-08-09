@@ -44,10 +44,15 @@ interface SectionNavigationItem extends PlaceholderNavigationItem {
     href: string;
 }
 
+interface DirectNavigationItem extends PlaceholderNavigationItem {
+    href: string;
+}
+
 interface NavigationContentProps {
     isExpanded: boolean;
     isMobile?: boolean;
     onDashboardNavigate?: () => void;
+    onMessageNavigate?: () => void;
     onSectionNavigate?: () => void;
     onToggleSections: () => void;
     pathname: string;
@@ -90,8 +95,14 @@ const SECTION_ITEMS: readonly SectionNavigationItem[] = [
 
 const STATIC_ITEMS: readonly PlaceholderNavigationItem[] = [
     { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-    { id: 'messages', label: 'Emails / Messages', icon: Mail },
 ];
+
+const MESSAGE_ITEM: DirectNavigationItem = {
+    id: 'messages',
+    label: 'Emails / Messages',
+    icon: Mail,
+    href: '/dashboard/messages',
+};
 
 const INTERACTIVE_ITEM_CLASS =
     'group relative flex min-h-11 w-full items-center gap-3 rounded-lg border px-3 text-sm font-semibold tracking-normal transition-[color,border-color,background-color,transform] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--signal)]/65 active:scale-[0.985] motion-reduce:transition-none motion-reduce:active:scale-100';
@@ -124,6 +135,7 @@ function NavigationContent({
     isExpanded,
     isMobile = false,
     onDashboardNavigate,
+    onMessageNavigate,
     onSectionNavigate,
     onToggleSections,
     pathname,
@@ -136,6 +148,8 @@ function NavigationContent({
     const isSectionRouteActive = SECTION_ITEMS.some(
         (item) => pathname === item.href,
     );
+    const isMessageActive = pathname === MESSAGE_ITEM.href;
+    const MessageIcon = MESSAGE_ITEM.icon;
 
     return (
         <nav
@@ -226,6 +240,28 @@ function NavigationContent({
                     showLabel={showLabels}
                 />
             ))}
+
+            <Link
+                href={MESSAGE_ITEM.href}
+                onClick={onMessageNavigate}
+                aria-current={isMessageActive ? 'page' : undefined}
+                aria-label={!showLabels ? MESSAGE_ITEM.label : undefined}
+                title={!showLabels ? MESSAGE_ITEM.label : undefined}
+                className={`${INTERACTIVE_ITEM_CLASS} overflow-hidden ${showLabels ? 'justify-start' : 'justify-center px-0'} ${
+                    isMessageActive
+                        ? 'border-[rgba(195,109,252,0.2)] bg-[rgba(195,109,252,0.09)] text-[var(--signal)] shadow-[inset_0_0_18px_rgba(195,109,252,0.035)]'
+                        : 'border-transparent text-[var(--muted)]/65 hover:border-white/[0.07] hover:bg-white/[0.045] hover:text-[var(--text)]'
+                }`}
+            >
+                <span
+                    aria-hidden="true"
+                    className={`absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-[var(--signal)] shadow-[0_0_12px_rgba(195,109,252,0.55)] transition-opacity duration-200 motion-reduce:transition-none ${isMessageActive ? 'opacity-100' : 'opacity-0'}`}
+                />
+                <MessageIcon aria-hidden="true" size={18} strokeWidth={1.8} />
+                {showLabels ? (
+                    <span className="min-w-0 truncate">{MESSAGE_ITEM.label}</span>
+                ) : null}
+            </Link>
         </nav>
     );
 }
@@ -519,6 +555,7 @@ function AdminShellContent({ children }: AdminShellProps) {
                         isExpanded
                         isMobile
                         onDashboardNavigate={() => closeMobileMenu()}
+                        onMessageNavigate={() => closeMobileMenu()}
                         onSectionNavigate={() => closeMobileMenu()}
                         onToggleSections={() => setSectionsOpen((isOpen) => !isOpen)}
                         pathname={pathname}
