@@ -164,6 +164,7 @@ export default function ProjectModal({
         });
 
         const handleCancel = (event: Event) => {
+            if (event.target !== dialog) return;
             event.preventDefault();
             animateClose();
         };

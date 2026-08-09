@@ -377,6 +377,7 @@ export default function CertificateModal({
             ref={dialogRef}
             aria-labelledby="certificate-modal-title"
             onCancel={(event) => {
+                if (event.target !== event.currentTarget) return;
                 event.preventDefault();
                 handleClose();
             }}
