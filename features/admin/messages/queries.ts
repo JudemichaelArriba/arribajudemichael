@@ -6,6 +6,7 @@ import type {
     AdminMessageDto,
     AdminMessageQuery,
     AdminMessagesPageDto,
+    ContactBan,
     Message,
 } from './types';
 import {
@@ -14,7 +15,9 @@ import {
 } from './validation';
 
 const ADMIN_MESSAGE_SELECT =
-    'id,sender_name,sender_email,message,received_at,is_read,is_starred,is_archived,security_status' as const;
+    'id,sender_name,sender_email,message,received_at,is_read,is_starred,is_archived,security_status,source_ip_hash' as const;
+const ADMIN_BAN_STATE_SELECT = 'ip_hash,expires_at' as const;
+const SOURCE_IDENTIFIER_PATTERN = /^[a-f0-9]{64}$/;
 
 type AdminMessageRow = Pick<
     Message,
@@ -27,7 +30,10 @@ type AdminMessageRow = Pick<
     | 'is_starred'
     | 'is_archived'
     | 'security_status'
+    | 'source_ip_hash'
 >;
+
+type AdminBanStateRow = Pick<ContactBan, 'ip_hash' | 'expires_at'>;
 
 function getErrorCode(error: unknown): string {
     if (typeof error !== 'object' || error === null || !('code' in error)) {
@@ -55,7 +61,10 @@ function quoteSearchPattern(search: string): string {
     return `"%${escapedSearch}%"`;
 }
 
-function toAdminMessage(row: AdminMessageRow): AdminMessageDto {
+function toAdminMessage(
+    row: AdminMessageRow,
+    activeSourceIdentifiers: ReadonlySet<string>,
+): AdminMessageDto {
     if (
         !isMessageSecurityStatus(row.security_status) ||
         !Number.isFinite(Date.parse(row.received_at))
@@ -73,7 +82,55 @@ function toAdminMessage(row: AdminMessageRow): AdminMessageDto {
         isStarred: row.is_starred,
         isArchived: row.is_archived,
         securityStatus: row.security_status,
+        isSourceBanned:
+            row.source_ip_hash !== null &&
+            activeSourceIdentifiers.has(row.source_ip_hash),
     };
+}
+
+async function getActiveSourceIdentifiers(
+    supabase: Awaited<ReturnType<typeof createClient>>,
+    messageRows: readonly AdminMessageRow[],
+): Promise<Set<string>> {
+    const sourceIdentifiers = [...new Set(
+        messageRows
+            .map((message) => message.source_ip_hash)
+            .filter((source): source is string =>
+                source !== null && SOURCE_IDENTIFIER_PATTERN.test(source)),
+    )];
+
+    if (sourceIdentifiers.length === 0) return new Set();
+
+    const { data, error } = await supabase
+        .from('contact_bans')
+        .select(ADMIN_BAN_STATE_SELECT)
+        .in('ip_hash', sourceIdentifiers)
+        .is('revoked_at', null);
+
+    if (error) {
+        logQueryFailure('ban-state', error);
+        throw new Error('Admin message security state is unavailable.');
+    }
+
+    const now = Date.now();
+    const activeSourceIdentifiers = new Set<string>();
+
+    for (const ban of (data ?? []) satisfies AdminBanStateRow[]) {
+        if (ban.expires_at === null) {
+            activeSourceIdentifiers.add(ban.ip_hash);
+            continue;
+        }
+
+        const expiresAt = Date.parse(ban.expires_at);
+        if (!Number.isFinite(expiresAt)) {
+            logQueryFailure('ban-state', { code: 'invalid_expiration' });
+            throw new Error('Admin message security state is unavailable.');
+        }
+
+        if (expiresAt > now) activeSourceIdentifiers.add(ban.ip_hash);
+    }
+
+    return activeSourceIdentifiers;
 }
 
 function requireExactCount(
@@ -178,7 +235,12 @@ export async function getAdminMessages(
     }
 
     try {
-        messages = messageRows.map(toAdminMessage);
+        const activeSourceIdentifiers = await getActiveSourceIdentifiers(
+            supabase,
+            messageRows,
+        );
+        messages = messageRows.map((message) =>
+            toAdminMessage(message, activeSourceIdentifiers));
     } catch (error) {
         logQueryFailure('message-mapping', error);
         throw new Error('Admin messages are unavailable.');

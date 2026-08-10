@@ -18,6 +18,7 @@ import {
     deleteMessage,
     markMessageRead,
     markMessageUnread,
+    revokeMessageSourceBan,
     restoreMessage,
     setMessageStarred,
 } from '@/features/admin/messages/actions';
@@ -27,6 +28,7 @@ import type {
     MessageFilter,
 } from '@/features/admin/messages/types';
 import { MESSAGE_SEARCH_MAX_LENGTH } from '@/features/admin/messages/validation';
+import BanSourceDialog from './BanSourceDialog';
 import MessageDetail from './MessageDetail';
 import MessageList, { type MessageListEmptyState } from './MessageList';
 
@@ -75,6 +77,7 @@ export default function Messages({
     const [searchValue, setSearchValue] = useState(pageData.search);
     const [activeFilter, setActiveFilter] = useState<MessageFilter>(pageData.filter);
     const [statusMessage, setStatusMessage] = useState<StatusMessage | null>(null);
+    const [banDialogMessageId, setBanDialogMessageId] = useState<string | null>(null);
     const [isNavigating, startNavigation] = useTransition();
     const [isActionPending, startAction] = useTransition();
     const backButtonRef = useRef<HTMLButtonElement>(null);
@@ -314,6 +317,46 @@ export default function Messages({
         );
     }, [clearSelection, dialog, refreshMessages, selectedMessage]);
 
+    const handleBanSource = useCallback(() => {
+        if (!selectedMessage || selectedMessage.isSourceBanned) return;
+        setStatusMessage(null);
+        setBanDialogMessageId(selectedMessage.id);
+    }, [selectedMessage]);
+
+    const handleBanSuccess = useCallback((message: string) => {
+        setBanDialogMessageId(null);
+        setStatusMessage({ tone: 'success', message });
+        refreshMessages();
+    }, [refreshMessages]);
+
+    const handleRevokeSourceBan = useCallback(() => {
+        if (!selectedMessage || !selectedMessage.isSourceBanned) return;
+        const messageId = selectedMessage.id;
+
+        dialog.confirm(
+            'Revoke source ban?',
+            'New contact submissions from this source will be allowed again, subject to rate limiting and Turnstile verification.',
+            async () => {
+                const result = await revokeMessageSourceBan(messageId);
+
+                if (result.status === 'error' && result.code !== 'no_active_ban') {
+                    return { ok: false, message: result.message };
+                }
+
+                setStatusMessage({ tone: 'success', message: result.message });
+                refreshMessages();
+                return { ok: true };
+            },
+            undefined,
+            {
+                confirmLabel: 'Revoke ban',
+                cancelLabel: 'Cancel',
+                pendingLabel: 'Revoking...',
+                tone: 'danger',
+            },
+        );
+    }, [dialog, refreshMessages, selectedMessage]);
+
     const handleFilterChange = (filter: MessageFilter) => {
         if (filter === activeFilter || unavailable) return;
         setActiveFilter(filter);
@@ -404,7 +447,7 @@ export default function Messages({
                                 disabled={unavailable}
                                 onChange={(event) => setSearchValue(event.target.value)}
                                 placeholder="Search sender, email, or message"
-                                className="min-h-11 w-full rounded-lg border border-white/[0.08] bg-white/[0.025] py-2.5 pl-10 pr-11 text-sm text-[var(--text)] outline-none transition-[border-color,background-color] duration-200 placeholder:text-[var(--muted)]/34 focus:border-[var(--signal)]/30 focus:bg-white/[0.035] focus:ring-2 focus:ring-[var(--signal)]/16 disabled:cursor-not-allowed disabled:opacity-45 motion-reduce:transition-none"
+                                className="min-h-11 w-full appearance-none rounded-lg border border-white/[0.08] bg-white/[0.025] py-2.5 pl-10 pr-11 text-sm text-[var(--text)] outline-none transition-[border-color,background-color] duration-200 placeholder:text-[var(--muted)]/34 focus:border-[var(--signal)]/30 focus:bg-white/[0.035] focus:ring-2 focus:ring-[var(--signal)]/16 disabled:cursor-not-allowed disabled:opacity-45 [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden motion-reduce:transition-none"
                             />
                             {searchValue ? (
                                 <button
@@ -501,6 +544,8 @@ export default function Messages({
                             onToggleRead={handleToggleRead}
                             onToggleStar={handleToggleStar}
                             onArchiveToggle={handleArchiveToggle}
+                            onBanSource={handleBanSource}
+                            onRevokeSourceBan={handleRevokeSourceBan}
                             onDelete={handleDelete}
                         />
                     </div>
@@ -512,6 +557,14 @@ export default function Messages({
                         : 'No message selected.'}
                 </p>
             </section>
+            {banDialogMessageId ? (
+                <BanSourceDialog
+                    key={banDialogMessageId}
+                    messageId={banDialogMessageId}
+                    onClose={() => setBanDialogMessageId(null)}
+                    onSuccess={handleBanSuccess}
+                />
+            ) : null}
         </ManagementPage>
     );
 }

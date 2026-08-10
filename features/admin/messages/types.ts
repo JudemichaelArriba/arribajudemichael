@@ -1,12 +1,25 @@
 import type {
     Tables,
+    TablesInsert,
     TablesUpdate,
 } from '@/lib/models/database.types';
 
 export type Message = Tables<'messages'>;
 export type MessageUpdate = TablesUpdate<'messages'>;
+export type ContactBan = Tables<'contact_bans'>;
+export type ContactBanInsert = TablesInsert<'contact_bans'>;
+export type ContactBanUpdate = TablesUpdate<'contact_bans'>;
 export type MessageFilter = 'inbox' | 'unread' | 'starred' | 'archived';
 export type MessageSecurityStatus = 'normal' | 'flagged';
+export type BanDuration = '24h' | '7d' | '30d' | 'permanent';
+export type BanSourceField = 'duration' | 'reason';
+export type BanSourceActionCode =
+    | 'already_banned'
+    | 'no_active_ban'
+    | 'source_unavailable'
+    | 'message_unavailable'
+    | 'validation_error'
+    | 'operation_failed';
 
 export interface AdminMessageDto {
     readonly id: string;
@@ -18,6 +31,7 @@ export interface AdminMessageDto {
     readonly isStarred: boolean;
     readonly isArchived: boolean;
     readonly securityStatus: MessageSecurityStatus;
+    readonly isSourceBanned: boolean;
 }
 
 export interface AdminMessageCounts {
@@ -46,4 +60,17 @@ export interface AdminMessagesPageDto extends AdminMessageQuery {
 export interface MessageActionResult {
     readonly status: 'success' | 'error';
     readonly message: string;
+}
+
+export interface BanSourceInput {
+    readonly messageId: string;
+    readonly duration: BanDuration;
+    readonly reason: string;
+}
+
+export type BanSourceFieldErrors = Partial<Record<BanSourceField, string>>;
+
+export interface BanSourceActionResult extends MessageActionResult {
+    readonly code?: BanSourceActionCode;
+    readonly fieldErrors?: BanSourceFieldErrors;
 }

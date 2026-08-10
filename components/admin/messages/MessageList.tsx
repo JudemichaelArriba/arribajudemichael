@@ -190,7 +190,7 @@ export default function MessageList({
                                     onClick={(event) => onSelect(message.id, event.currentTarget)}
                                     aria-current={isSelected ? 'true' : undefined}
                                     aria-label={`${message.isRead ? 'Read' : 'Unread'} message from ${message.senderName}: ${summary}`}
-                                    className={`group relative grid min-h-[8.25rem] w-full min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-x-3 px-4 py-4 text-left transition-[background-color,color] duration-200 focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--signal)]/60 motion-reduce:transition-none sm:px-5 ${
+                                    className={`group relative grid min-h-[7rem] w-full min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-x-3 px-4 py-3.5 text-left transition-[background-color,color] duration-200 focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--signal)]/60 motion-reduce:transition-none sm:px-5 ${
                                         isSelected
                                             ? 'bg-[var(--signal)]/[0.075]'
                                             : message.isRead
@@ -229,11 +229,11 @@ export default function MessageList({
                                         </span>
 
                                         <span
-                                            className={`mt-2 block truncate text-sm tracking-normal ${message.isRead ? 'font-semibold text-[var(--muted)]/58' : 'font-bold text-[var(--text)]/90'}`}
+                                            className={`mt-1.5 block truncate text-sm tracking-normal ${message.isRead ? 'font-semibold text-[var(--muted)]/58' : 'font-bold text-[var(--text)]/90'}`}
                                         >
                                             {summary}
                                         </span>
-                                        <span className="mt-1.5 line-clamp-2 block text-xs leading-relaxed text-[var(--muted)]/46 sm:text-[0.8125rem]">
+                                        <span className="mt-1 block truncate text-xs leading-relaxed text-[var(--muted)]/46 sm:text-[0.8125rem]">
                                             {message.message}
                                         </span>
                                     </span>

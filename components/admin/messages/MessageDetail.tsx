@@ -7,6 +7,9 @@ import {
     MessageSquareText,
     Reply,
     ShieldAlert,
+    ShieldBan,
+    ShieldCheck,
+    ShieldOff,
     Star,
     Trash2,
     type LucideIcon,
@@ -26,6 +29,8 @@ interface MessageDetailProps {
     onToggleRead: () => void;
     onToggleStar: () => void;
     onArchiveToggle: () => void;
+    onBanSource: () => void;
+    onRevokeSourceBan: () => void;
     onDelete: () => void;
 }
 
@@ -35,7 +40,9 @@ interface MessageActionProps {
     disabled: boolean;
     onClick: () => void;
     active?: boolean;
+    filled?: boolean;
     danger?: boolean;
+    security?: boolean;
 }
 
 function MessageAction({
@@ -44,10 +51,14 @@ function MessageAction({
     disabled,
     onClick,
     active = false,
+    filled = false,
     danger = false,
+    security = false,
 }: MessageActionProps) {
     const colorClass = danger
         ? 'text-red-300/60 hover:border-red-300/18 hover:bg-red-300/[0.06] hover:text-red-200'
+        : security
+            ? 'text-amber-100/58 hover:border-amber-200/16 hover:bg-amber-200/[0.055] hover:text-amber-100'
         : active
             ? 'text-[var(--signal)] hover:border-[var(--signal)]/18 hover:bg-[var(--signal)]/[0.07]'
             : 'text-[var(--muted)]/58 hover:border-white/[0.08] hover:bg-white/[0.04] hover:text-[var(--text)]';
@@ -65,7 +76,7 @@ function MessageAction({
                 aria-hidden="true"
                 size={17}
                 strokeWidth={1.8}
-                fill={active ? 'currentColor' : 'none'}
+                fill={filled ? 'currentColor' : 'none'}
             />
         </button>
     );
@@ -112,6 +123,8 @@ export default function MessageDetail({
     onToggleRead,
     onToggleStar,
     onArchiveToggle,
+    onBanSource,
+    onRevokeSourceBan,
     onDelete,
 }: MessageDetailProps) {
     const headingId = message ? `message-detail-${message.id}` : undefined;
@@ -159,12 +172,24 @@ export default function MessageDetail({
                                 disabled={isActionPending}
                                 onClick={onToggleStar}
                                 active={message.isStarred}
+                                filled={message.isStarred}
                             />
                             <MessageAction
                                 icon={message.isArchived ? ArchiveRestore : Archive}
                                 label={message.isArchived ? 'Restore to inbox' : 'Archive message'}
                                 disabled={isActionPending}
                                 onClick={onArchiveToggle}
+                            />
+                            <MessageAction
+                                icon={message.isSourceBanned ? ShieldOff : ShieldBan}
+                                label={message.isSourceBanned
+                                    ? 'Revoke source ban'
+                                    : 'Ban message source'}
+                                disabled={isActionPending}
+                                onClick={message.isSourceBanned
+                                    ? onRevokeSourceBan
+                                    : onBanSource}
+                                security
                             />
                             <MessageAction
                                 icon={Trash2}
@@ -232,6 +257,12 @@ export default function MessageDetail({
                                     <span className="inline-flex items-center gap-1.5 rounded-md border border-amber-200/16 bg-amber-200/[0.055] px-2 py-1 text-amber-100/72">
                                         <ShieldAlert aria-hidden="true" size={11} strokeWidth={1.8} />
                                         Flagged
+                                    </span>
+                                ) : null}
+                                {message.isSourceBanned ? (
+                                    <span className="inline-flex items-center gap-1.5 rounded-md border border-red-300/16 bg-red-300/[0.055] px-2 py-1 text-red-200/72">
+                                        <ShieldCheck aria-hidden="true" size={11} strokeWidth={1.8} />
+                                        Source banned
                                     </span>
                                 ) : null}
                             </div>
