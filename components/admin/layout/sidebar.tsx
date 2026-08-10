@@ -28,6 +28,7 @@ import {
 } from 'react';
 
 import { DialogProvider, useDialog } from '@/components/dialog/Dialog';
+import { SnackbarProvider } from '@/components/snackbar/Snackbar';
 import { logout } from '@/lib/auth/logoutActions';
 
 interface AdminShellProps {
@@ -581,7 +582,9 @@ function AdminShellContent({ children }: AdminShellProps) {
 export default function AdminShell(props: AdminShellProps) {
     return (
         <DialogProvider>
-            <AdminShellContent {...props} />
+            <SnackbarProvider>
+                <AdminShellContent {...props} />
+            </SnackbarProvider>
         </DialogProvider>
     );
 }

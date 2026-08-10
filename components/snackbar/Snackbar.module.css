@@ -1,0 +1,27 @@
+.progress {
+    animation-duration: var(--snackbar-duration);
+    animation-fill-mode: forwards;
+    animation-name: snackbar-progress;
+    animation-timing-function: linear;
+    transform-origin: left center;
+}
+
+.paused {
+    animation-play-state: paused;
+}
+
+@keyframes snackbar-progress {
+    from {
+        transform: scaleX(1);
+    }
+
+    to {
+        transform: scaleX(0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .progress {
+        animation: none;
+    }
+}

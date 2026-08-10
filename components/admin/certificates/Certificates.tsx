@@ -17,6 +17,7 @@ import {
     ManagementPageChrome,
 } from '@/components/admin/layout/ManagementPage';
 import { useDialog } from '@/components/dialog/Dialog';
+import { useSnackbar } from '@/components/snackbar/Snackbar';
 import CertificatePdfPreview from '@/components/ui/CertificatePdfPreview/CertificatePdfPreview';
 import { deleteCertificate } from '@/features/admin/certificates/actions';
 import type {
@@ -50,16 +51,16 @@ export default function Certificates({
     unavailable = false,
 }: CertificatesProps) {
     const dialog = useDialog();
+    const snackbar = useSnackbar();
     const router = useRouter();
     const [editor, setEditor] = useState<EditorState>(null);
-    const [statusMessage, setStatusMessage] = useState('');
     const [isRefreshing, startRefresh] = useTransition();
 
     const handleMutationSuccess = useCallback((message: string) => {
         setEditor(null);
-        setStatusMessage(message);
+        snackbar.success(message);
         startRefresh(() => router.refresh());
-    }, [router]);
+    }, [router, snackbar]);
 
     const handleDelete = useCallback((certificate: AdminCertificateDto) => {
         dialog.confirm(
@@ -118,10 +119,6 @@ export default function Certificates({
                     </button>
                 )}
             />
-
-            <div aria-live="polite" className="min-h-6 pt-4 text-sm text-emerald-300/72">
-                {statusMessage}
-            </div>
 
             <section aria-labelledby="certificate-list-heading" className="mt-4 sm:mt-6">
                 <div className="mb-4 flex items-center justify-between gap-4">

@@ -13,6 +13,7 @@ import {
 
 import { ManagementPage } from '@/components/admin/layout/ManagementPage';
 import { useDialog } from '@/components/dialog/Dialog';
+import { useSnackbar } from '@/components/snackbar/Snackbar';
 import {
     archiveMessage,
     deleteMessage,
@@ -36,11 +37,6 @@ interface MessagesProps {
     pageData: AdminMessagesPageDto;
     referenceTime: string;
     unavailable?: boolean;
-}
-
-interface StatusMessage {
-    tone: 'success' | 'error';
-    message: string;
 }
 
 const SPLIT_VIEW_QUERY = '(min-width: 1280px)';
@@ -71,12 +67,13 @@ export default function Messages({
     unavailable = false,
 }: MessagesProps) {
     const dialog = useDialog();
+    const snackbar = useSnackbar();
     const router = useRouter();
     const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
     const [isSplitView, setIsSplitView] = useState(false);
     const [searchValue, setSearchValue] = useState(pageData.search);
     const [activeFilter, setActiveFilter] = useState<MessageFilter>(pageData.filter);
-    const [statusMessage, setStatusMessage] = useState<StatusMessage | null>(null);
+    const [actionError, setActionError] = useState('');
     const [banDialogMessageId, setBanDialogMessageId] = useState<string | null>(null);
     const [isNavigating, startNavigation] = useTransition();
     const [isActionPending, startAction] = useTransition();
@@ -176,7 +173,7 @@ export default function Messages({
     ) => {
         setSelectedMessageId(null);
         selectedTriggerRef.current = null;
-        setStatusMessage(null);
+        setActionError('');
         startNavigation(() => {
             router.replace(getMessagesUrl(filter, search, page), { scroll: false });
         });
@@ -201,7 +198,7 @@ export default function Messages({
 
         selectedTriggerRef.current = trigger;
         setSelectedMessageId(messageId);
-        setStatusMessage(null);
+        setActionError('');
 
         if (!isSplitView) {
             scheduleFocus(() => backButtonRef.current);
@@ -215,7 +212,7 @@ export default function Messages({
 
             if (result.status === 'error') {
                 automaticReadIdsRef.current.delete(messageId);
-                setStatusMessage({ tone: 'error', message: result.message });
+                setActionError(result.message);
                 return;
             }
 
@@ -235,20 +232,19 @@ export default function Messages({
     ) => {
         if (isActionPending) return;
 
-        setStatusMessage(null);
+        setActionError('');
         startAction(async () => {
             const result = await action();
-            setStatusMessage({
-                tone: result.status === 'success' ? 'success' : 'error',
-                message: result.message,
-            });
-
-            if (result.status === 'success') {
-                if (clearAfterSuccess) clearSelection();
-                refreshMessages();
+            if (result.status === 'error') {
+                setActionError(result.message);
+                return;
             }
+
+            snackbar.success(result.message);
+            if (clearAfterSuccess) clearSelection();
+            refreshMessages();
         });
-    }, [clearSelection, isActionPending, refreshMessages]);
+    }, [clearSelection, isActionPending, refreshMessages, snackbar]);
 
     const handleToggleRead = useCallback(() => {
         if (!selectedMessage) return;
@@ -302,7 +298,8 @@ export default function Messages({
                     return { ok: false, message: result.message };
                 }
 
-                setStatusMessage({ tone: 'success', message: result.message });
+                setActionError('');
+                snackbar.success(result.message);
                 clearSelection(DIALOG_FOCUS_RETURN_DELAY_MS);
                 refreshMessages();
                 return { ok: true };
@@ -315,19 +312,20 @@ export default function Messages({
                 tone: 'danger',
             },
         );
-    }, [clearSelection, dialog, refreshMessages, selectedMessage]);
+    }, [clearSelection, dialog, refreshMessages, selectedMessage, snackbar]);
 
     const handleBanSource = useCallback(() => {
         if (!selectedMessage || selectedMessage.isSourceBanned) return;
-        setStatusMessage(null);
+        setActionError('');
         setBanDialogMessageId(selectedMessage.id);
     }, [selectedMessage]);
 
     const handleBanSuccess = useCallback((message: string) => {
         setBanDialogMessageId(null);
-        setStatusMessage({ tone: 'success', message });
+        setActionError('');
+        snackbar.success(message);
         refreshMessages();
-    }, [refreshMessages]);
+    }, [refreshMessages, snackbar]);
 
     const handleRevokeSourceBan = useCallback(() => {
         if (!selectedMessage || !selectedMessage.isSourceBanned) return;
@@ -343,7 +341,8 @@ export default function Messages({
                     return { ok: false, message: result.message };
                 }
 
-                setStatusMessage({ tone: 'success', message: result.message });
+                setActionError('');
+                snackbar.success(result.message);
                 refreshMessages();
                 return { ok: true };
             },
@@ -355,7 +354,7 @@ export default function Messages({
                 tone: 'danger',
             },
         );
-    }, [dialog, refreshMessages, selectedMessage]);
+    }, [dialog, refreshMessages, selectedMessage, snackbar]);
 
     const handleFilterChange = (filter: MessageFilter) => {
         if (filter === activeFilter || unavailable) return;
@@ -369,7 +368,7 @@ export default function Messages({
     };
 
     const handleRetry = () => {
-        setStatusMessage(null);
+        setActionError('');
         refreshMessages();
     };
 
@@ -489,19 +488,19 @@ export default function Messages({
                     </div>
                 </div>
 
-                {statusMessage ? (
+                {actionError ? (
                     <p
-                        role={statusMessage.tone === 'error' ? 'alert' : 'status'}
+                        role="alert"
                         aria-live="polite"
-                        className={`mt-3 text-sm font-semibold ${statusMessage.tone === 'error' ? 'text-red-300/82' : 'text-emerald-300/72'}`}
+                        className="mt-3 text-sm font-semibold text-red-300/82"
                     >
-                        {statusMessage.message}
+                        {actionError}
                     </p>
                 ) : null}
 
                 <div
                     aria-label="Portfolio inbox workspace"
-                    className={`relative grid min-w-0 overflow-hidden rounded-lg border border-white/[0.085] bg-white/[0.018] shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] xl:h-[clamp(32rem,calc(100dvh-15rem),52rem)] xl:grid-cols-[minmax(20rem,0.42fr)_minmax(0,1fr)] ${isDetailOpen ? (statusMessage ? 'mt-3 xl:mt-6' : 'mt-0 xl:mt-6') : 'mt-6'}`}
+                    className={`relative grid min-w-0 overflow-hidden rounded-lg border border-white/[0.085] bg-white/[0.018] shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] xl:h-[clamp(32rem,calc(100dvh-15rem),52rem)] xl:grid-cols-[minmax(20rem,0.42fr)_minmax(0,1fr)] ${isDetailOpen ? (actionError ? 'mt-3 xl:mt-6' : 'mt-0 xl:mt-6') : 'mt-6'}`}
                 >
                     <div
                         className={`min-h-[32rem] min-w-0 transition-[opacity,transform] duration-200 ease-out motion-reduce:transition-none xl:relative xl:inset-auto xl:h-full xl:translate-x-0 xl:border-r xl:border-white/[0.07] xl:opacity-100 ${

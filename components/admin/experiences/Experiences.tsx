@@ -16,6 +16,7 @@ import {
     ManagementPageChrome,
 } from '@/components/admin/layout/ManagementPage';
 import { useDialog } from '@/components/dialog/Dialog';
+import { useSnackbar } from '@/components/snackbar/Snackbar';
 import { deleteExperience } from '@/features/admin/experiences/actions';
 import type {
     AdminExperienceDto,
@@ -48,16 +49,16 @@ export default function Experiences({
     unavailable = false,
 }: ExperiencesProps) {
     const dialog = useDialog();
+    const snackbar = useSnackbar();
     const router = useRouter();
     const [editor, setEditor] = useState<EditorState>(null);
-    const [statusMessage, setStatusMessage] = useState('');
     const [isRefreshing, startRefresh] = useTransition();
 
     const handleMutationSuccess = useCallback((message: string) => {
         setEditor(null);
-        setStatusMessage(message);
+        snackbar.success(message);
         startRefresh(() => router.refresh());
-    }, [router]);
+    }, [router, snackbar]);
 
     const handleDelete = useCallback((experience: AdminExperienceDto) => {
         dialog.confirm(
@@ -116,10 +117,6 @@ export default function Experiences({
                     </button>
                 )}
             />
-
-            <div aria-live="polite" className="min-h-6 pt-4 text-sm text-emerald-300/72">
-                {statusMessage}
-            </div>
 
             <section aria-labelledby="experience-list-heading" className="mt-4 sm:mt-6">
                 <div className="mb-5 flex items-center justify-between gap-4">
