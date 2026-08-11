@@ -466,7 +466,7 @@ function AdminShellContent({
     };
 
     return (
-        <div className="relative min-h-svh overflow-x-hidden bg-[#020203] text-[var(--text)]">
+        <div className="relative min-h-svh overflow-x-clip bg-[#020203] text-[var(--text)]">
             <aside
                 className={`fixed bottom-4 left-4 top-4 z-40 hidden flex-col overflow-visible rounded-lg border border-white/[0.075] bg-[#050607]/96 shadow-[0_18px_52px_rgba(0,0,0,0.38),inset_0_1px_0_rgba(255,255,255,0.02)] backdrop-blur-md transition-[width] duration-300 ease-out motion-reduce:transition-none md:flex ${isDesktopExpanded ? 'w-64' : 'w-[4.5rem]'}`}
             >

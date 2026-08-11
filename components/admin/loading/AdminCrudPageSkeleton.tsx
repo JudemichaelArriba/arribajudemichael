@@ -377,6 +377,65 @@ function AnalyticsSkeleton() {
                     </div>
                 ))}
             </div>
+
+        </>
+    );
+}
+
+function DashboardSkeleton() {
+    return (
+        <>
+            <AdminHeaderSkeleton action="none" />
+
+            <div className="mb-4 mt-8 flex items-end justify-between gap-4">
+                <div>
+                    <SkeletonBlock className="h-4 w-44" />
+                    <SkeletonBlock className="mt-2.5 h-2.5 w-64 max-w-[68vw]" />
+                </div>
+                <SkeletonBlock className="hidden h-11 w-36 sm:block" />
+            </div>
+            <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+                {[0, 1, 2, 3].map((metric) => (
+                    <div
+                        key={metric}
+                        className="flex min-h-32 flex-col rounded-lg border border-white/[0.08] bg-[#07080a] p-4 sm:p-5"
+                    >
+                        <SkeletonBlock className="h-2.5 w-28 max-w-full" />
+                        <SkeletonBlock className="mt-4 h-7 w-20 sm:h-8" />
+                        <SkeletonBlock className="mt-auto h-2.5 w-32 max-w-full" />
+                    </div>
+                ))}
+            </div>
+
+            <div className="mt-3 overflow-hidden rounded-lg border border-white/[0.08] bg-[#07080a]">
+                <div className="flex flex-col gap-3 border-b border-white/[0.065] px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+                    <div>
+                        <SkeletonBlock className="h-3 w-24" />
+                        <SkeletonBlock className="mt-2 h-2.5 w-44" />
+                    </div>
+                    <div className="flex items-center gap-5">
+                        <SkeletonBlock className="h-2.5 w-24" />
+                        <SkeletonBlock className="h-2.5 w-16" />
+                    </div>
+                </div>
+                <div className="grid h-52 grid-cols-[1.75rem_minmax(0,1fr)] gap-3 px-3 pb-4 pt-6 sm:h-60 sm:grid-cols-[2rem_minmax(0,1fr)] sm:px-5">
+                    <div className="flex flex-col justify-between pb-6">
+                        {[0, 1, 2, 3].map((tick) => (
+                            <SkeletonBlock key={tick} className="h-2 w-5" />
+                        ))}
+                    </div>
+                    <div className="flex min-w-0 flex-col justify-between pb-6">
+                        {[0, 1, 2, 3].map((line) => (
+                            <div key={line} className="h-px w-full bg-white/[0.055]" />
+                        ))}
+                        <div className="flex items-end justify-between gap-1.5 sm:gap-3">
+                            {[0, 1, 2, 3, 4, 5, 6].map((tick) => (
+                                <SkeletonBlock key={tick} className="h-2 w-5 sm:w-7" />
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </div>
         </>
     );
 }
@@ -467,9 +526,7 @@ export default function AdminCrudPageSkeleton({
                 </span>
                 <div aria-hidden="true" className="animate-pulse motion-reduce:animate-none">
                     {variant === 'analytics' ? <AnalyticsSkeleton /> : null}
-                    {variant === 'dashboard' ? (
-                        <AdminHeaderSkeleton action="none" />
-                    ) : null}
+                    {variant === 'dashboard' ? <DashboardSkeleton /> : null}
                     {variant === 'projects' ? (
                         <>
                             <AdminHeaderSkeleton statCount={3} />

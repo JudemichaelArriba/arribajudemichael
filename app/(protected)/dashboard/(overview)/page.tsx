@@ -1,8 +1,24 @@
+import { unstable_rethrow } from 'next/navigation';
+
 import DashboardOverview from '@/components/admin/dashboard/DashboardOverview';
-import { requireUser } from '@/lib/auth/requireUser';
+import { getWeeklyAnalyticsSummary } from '@/features/admin/analytics/queries';
+import type { WeeklyAnalyticsSummary } from '@/features/admin/analytics/types';
 
 export default async function DashboardPage() {
-    await requireUser();
+    let analyticsSummary: WeeklyAnalyticsSummary | null = null;
+    let analyticsUnavailable = false;
 
-    return <DashboardOverview />;
+    try {
+        analyticsSummary = await getWeeklyAnalyticsSummary();
+    } catch (error) {
+        unstable_rethrow(error);
+        analyticsUnavailable = true;
+    }
+
+    return (
+        <DashboardOverview
+            analyticsSummary={analyticsSummary}
+            analyticsUnavailable={analyticsUnavailable}
+        />
+    );
 }

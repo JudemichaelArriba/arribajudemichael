@@ -13,6 +13,7 @@ import {
     type AnalyticsSectionSummary,
     type AnalyticsTrendBucket,
     type AnalyticsTrendPoint,
+    type WeeklyAnalyticsSummary,
 } from './types';
 
 type AnalyticsSupabaseClient = Awaited<ReturnType<typeof createClient>>;
@@ -509,5 +510,15 @@ export async function getAnalyticsDashboardData(
         trend,
         sections,
         highlights: getAnalyticsSectionHighlights(sections),
+    };
+}
+
+export async function getWeeklyAnalyticsSummary(): Promise<WeeklyAnalyticsSummary> {
+    const data = await getAnalyticsDashboardData('week');
+
+    return {
+        overview: data.overview,
+        mostVisited: data.highlights.mostVisited,
+        trend: data.trend,
     };
 }

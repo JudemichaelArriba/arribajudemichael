@@ -20,12 +20,14 @@ import type {
 import {
     formatChartBucketLabel,
     formatChartTooltipLabel,
+    formatChartWeekdayLabel,
     formatMetricNumber,
 } from './analyticsFormatting';
 
 interface VisitorTrendChartProps {
     period: AnalyticsPeriod;
     trend: readonly AnalyticsTrendPoint[];
+    variant?: 'default' | 'compact';
 }
 
 interface VisitorChartDatum {
@@ -82,7 +84,35 @@ function VisitorTooltip({
     );
 }
 
-function VisitorLegend() {
+function VisitorLegend({ variant }: { variant: 'default' | 'compact' }) {
+    if (variant === 'compact') {
+        return (
+            <div className="flex flex-col gap-3 border-b border-white/[0.065] px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+                <div>
+                    <p className="text-xs font-extrabold text-[var(--text)]">
+                        Visitor Activity
+                    </p>
+                    <p className="mt-1 text-[11px] leading-relaxed text-[var(--muted)]/46">
+                        Daily traffic for the current week
+                    </p>
+                </div>
+                <div
+                    aria-label="Chart series"
+                    className="flex flex-wrap items-center gap-x-5 gap-y-2"
+                >
+                    <span className="flex items-center gap-2 text-[11px] font-bold text-[var(--muted)]/62">
+                        <span aria-hidden="true" className="h-0.5 w-4 bg-[#c36dfc]" />
+                        Unique visitors
+                    </span>
+                    <span className="flex items-center gap-2 text-[11px] font-bold text-[var(--muted)]/62">
+                        <span aria-hidden="true" className="h-0.5 w-4 bg-[#65c7d4]" />
+                        Sessions
+                    </span>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div
             aria-label="Chart series"
@@ -103,18 +133,22 @@ function VisitorLegend() {
 export default function VisitorTrendChart({
     period,
     trend,
+    variant = 'default',
 }: VisitorTrendChartProps) {
     const shouldReduceMotion = useReducedMotion();
+    const isCompact = variant === 'compact';
     const chartData = useMemo<VisitorChartDatum[]>(
         () =>
             trend.map((point) => ({
                 axisLabel: formatChartBucketLabel(point.bucketStart, period),
                 bucketStart: point.bucketStart,
                 sessions: point.sessions,
-                tooltipLabel: formatChartTooltipLabel(point.bucketStart, period),
+                tooltipLabel: isCompact
+                    ? formatChartWeekdayLabel(point.bucketStart)
+                    : formatChartTooltipLabel(point.bucketStart, period),
                 uniqueVisitors: point.uniqueVisitors,
             })),
-        [period, trend],
+        [isCompact, period, trend],
     );
     const hasRecordedActivity = chartData.some(
         (point) => point.uniqueVisitors > 0 || point.sessions > 0,
@@ -122,28 +156,46 @@ export default function VisitorTrendChart({
 
     return (
         <div className="overflow-hidden rounded-lg border border-white/[0.08] bg-[#07080a]">
-            <VisitorLegend />
+            <VisitorLegend variant={variant} />
 
             {chartData.length === 0 || !hasRecordedActivity ? (
-                <div className="grid h-[19rem] place-items-center px-5 py-10 text-center sm:h-[22rem]">
+                <div
+                    className={`grid place-items-center px-5 text-center ${
+                        isCompact
+                            ? 'h-52 py-8 sm:h-60'
+                            : 'h-[19rem] py-10 sm:h-[22rem]'
+                    }`}
+                >
                     <div>
                         <p className="text-sm font-extrabold text-[var(--text)]">
-                            {chartData.length === 0
+                            {isCompact
+                                ? 'No visitor activity recorded this week.'
+                                : chartData.length === 0
                                 ? 'No visitor trend available'
                                 : 'No visitor activity recorded'}
                         </p>
-                        <p className="mx-auto mt-2 max-w-sm text-xs leading-relaxed text-[var(--muted)]/52">
-                            {chartData.length === 0
-                                ? 'This reporting period has not produced trend data yet.'
-                                : 'Every reporting bucket in this period is currently zero.'}
-                        </p>
+                        {!isCompact ? (
+                            <p className="mx-auto mt-2 max-w-sm text-xs leading-relaxed text-[var(--muted)]/52">
+                                {chartData.length === 0
+                                    ? 'This reporting period has not produced trend data yet.'
+                                    : 'Every reporting bucket in this period is currently zero.'}
+                            </p>
+                        ) : null}
                     </div>
                 </div>
             ) : (
                 <div
                     role="img"
-                    aria-label="Line chart comparing unique visitors and sessions over the selected reporting period"
-                    className="h-[19rem] min-w-0 px-1 pb-3 pt-5 sm:h-[22rem] sm:px-3 sm:pb-4"
+                    aria-label={
+                        isCompact
+                            ? 'Line chart comparing unique visitors and sessions for the current week'
+                            : 'Line chart comparing unique visitors and sessions over the selected reporting period'
+                    }
+                    className={`min-w-0 ${
+                        isCompact
+                            ? 'h-52 px-0 pb-2 pt-4 sm:h-60 sm:px-2 sm:pb-3'
+                            : 'h-[19rem] px-1 pb-3 pt-5 sm:h-[22rem] sm:px-3 sm:pb-4'
+                    }`}
                 >
                     <ResponsiveContainer width="100%" height="100%">
                         <LineChart
@@ -159,7 +211,7 @@ export default function VisitorTrendChart({
                             <XAxis
                                 dataKey="axisLabel"
                                 axisLine={false}
-                                interval="preserveStartEnd"
+                                interval={isCompact ? 0 : 'preserveStartEnd'}
                                 minTickGap={period === 'month' ? 26 : 18}
                                 tick={{ fill: 'rgba(232,234,236,0.43)', fontSize: 10 }}
                                 tickLine={false}
@@ -172,7 +224,7 @@ export default function VisitorTrendChart({
                                 tick={{ fill: 'rgba(232,234,236,0.4)', fontSize: 10 }}
                                 tickFormatter={(value: number) => formatMetricNumber(value)}
                                 tickLine={false}
-                                width={42}
+                                width={isCompact ? 36 : 42}
                             />
                             <Tooltip
                                 content={VisitorTooltip}

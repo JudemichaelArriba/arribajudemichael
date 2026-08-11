@@ -48,3 +48,9 @@ export interface AnalyticsDashboardData {
     readonly sections: readonly AnalyticsSectionSummary[];
     readonly highlights: AnalyticsSectionHighlights;
 }
+
+export interface WeeklyAnalyticsSummary {
+    readonly overview: AnalyticsOverview;
+    readonly mostVisited: AnalyticsSectionSummary | null;
+    readonly trend: readonly AnalyticsTrendPoint[];
+}

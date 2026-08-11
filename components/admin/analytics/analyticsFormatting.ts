@@ -26,6 +26,11 @@ const WEEKDAY_FORMATTER = new Intl.DateTimeFormat('en-US', {
     timeZone: ANALYTICS_REPORTING_TIME_ZONE,
 });
 
+const FULL_WEEKDAY_FORMATTER = new Intl.DateTimeFormat('en-US', {
+    weekday: 'long',
+    timeZone: ANALYTICS_REPORTING_TIME_ZONE,
+});
+
 const MONTH_BUCKET_FORMATTER = new Intl.DateTimeFormat('en-US', {
     month: 'short',
     timeZone: ANALYTICS_REPORTING_TIME_ZONE,
@@ -128,4 +133,11 @@ export function formatChartTooltipLabel(
     return period === 'year'
         ? FULL_MONTH_FORMATTER.format(date)
         : FULL_DATE_FORMATTER.format(date);
+}
+
+export function formatChartWeekdayLabel(bucketStart: string): string {
+    const date = new Date(bucketStart);
+    if (!Number.isFinite(date.getTime())) return '--';
+
+    return FULL_WEEKDAY_FORMATTER.format(date);
 }
