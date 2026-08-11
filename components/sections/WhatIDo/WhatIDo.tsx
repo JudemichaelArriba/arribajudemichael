@@ -186,6 +186,7 @@ export default function WhatIDo({ sentence = DEFAULT_SENTENCE }: WhatIDoProps) {
     return (
         <section
             id="what-i-do"
+            data-analytics-section="what-i-do"
             ref={sectionRef}
             className="section relative isolate flex min-h-[100svh] scroll-mt-[calc(var(--nav-height,80px)+2rem)] items-center justify-center overflow-hidden px-5 py-28 text-center text-[var(--text)] md:px-10 lg:py-32"
         >

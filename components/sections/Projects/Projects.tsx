@@ -416,6 +416,7 @@ export default function Projects({
     return (
         <section
             id="projects"
+            data-analytics-section="projects"
             ref={sectionRef}
             aria-labelledby="projects-heading"
             className="relative w-full scroll-mt-[calc(var(--nav-height,80px)+2rem)] px-5 py-24 md:px-8 md:py-32"

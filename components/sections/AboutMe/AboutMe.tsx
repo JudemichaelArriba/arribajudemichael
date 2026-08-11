@@ -147,7 +147,7 @@ export default function AboutMe() {
     );
 
     return (
-        <section id="about" ref={sectionRef} className="relative w-full scroll-mt-[calc(var(--nav-height,80px)+2rem)] px-5 py-20 sm:py-24 md:px-8 lg:py-28">
+        <section id="about" data-analytics-section="about" ref={sectionRef} className="relative w-full scroll-mt-[calc(var(--nav-height,80px)+2rem)] px-5 py-20 sm:py-24 md:px-8 lg:py-28">
             <div aria-hidden="true" className="pointer-events-none absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-[var(--signal)]/20 to-transparent md:inset-x-8" />
 
             <div className="mx-auto max-w-7xl">
@@ -266,5 +266,4 @@ export default function AboutMe() {
         </section>
     );
 }
-
 

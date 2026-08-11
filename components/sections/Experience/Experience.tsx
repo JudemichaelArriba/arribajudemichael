@@ -287,6 +287,7 @@ export default function Experience({
     <section
       ref={sectionRef}
       id="experience"
+      data-analytics-section="experience"
       className="relative w-full scroll-mt-[calc(var(--nav-height,80px)+2rem)] px-5 py-24 md:px-8 md:py-32"
     >
       <div

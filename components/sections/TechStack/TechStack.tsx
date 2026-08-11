@@ -250,6 +250,7 @@ export default function TechStack() {
         <section
             ref={sectionRef}
             id="techstack"
+            data-analytics-section="techstack"
             className="relative mx-auto w-full max-w-7xl scroll-mt-[calc(var(--nav-height,80px)+2rem)] px-5 py-24 md:px-8 md:py-32"
         >
             <div

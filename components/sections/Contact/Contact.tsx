@@ -382,6 +382,7 @@ export default function Contact() {
     return (
         <section
             id="contact"
+            data-analytics-section="contact"
             ref={sectionRef}
             aria-labelledby="contact-heading"
             className="relative w-full scroll-mt-[calc(var(--nav-height,80px)+2rem)] px-5 py-24 md:px-8 md:py-32"
