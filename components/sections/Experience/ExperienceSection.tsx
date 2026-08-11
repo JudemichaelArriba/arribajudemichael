@@ -2,10 +2,19 @@ import { getPublicExperiences } from '@/features/admin/experiences/queries';
 import Experience from './Experience';
 
 export default async function ExperienceSection() {
+    let experiences: Awaited<ReturnType<typeof getPublicExperiences>> = [];
+    let experiencesUnavailable = false;
+
     try {
-        const experiences = await getPublicExperiences();
-        return <Experience experiences={experiences} />;
+        experiences = await getPublicExperiences();
     } catch {
-        return <Experience experiences={[]} experiencesUnavailable />;
+        experiencesUnavailable = true;
     }
+
+    return (
+        <Experience
+            experiences={experiences}
+            experiencesUnavailable={experiencesUnavailable}
+        />
+    );
 }

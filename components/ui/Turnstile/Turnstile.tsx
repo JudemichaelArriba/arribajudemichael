@@ -6,6 +6,7 @@ import {
     useEffect,
     useRef,
     useState,
+    useSyncExternalStore,
 } from 'react';
 
 export type TurnstileAction = 'login' | 'contact';
@@ -56,6 +57,20 @@ const TURNSTILE_SCRIPT_URL =
     'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
 const COMPACT_QUERY = '(max-width: 399px)';
 
+function subscribeToCompactMode(onStoreChange: () => void): () => void {
+    const mediaQuery = window.matchMedia(COMPACT_QUERY);
+    mediaQuery.addEventListener('change', onStoreChange);
+    return () => mediaQuery.removeEventListener('change', onStoreChange);
+}
+
+function getCompactModeSnapshot(): boolean {
+    return window.matchMedia(COMPACT_QUERY).matches;
+}
+
+function getServerCompactModeSnapshot(): boolean {
+    return false;
+}
+
 export default function Turnstile({
     action,
     resetKey,
@@ -68,7 +83,11 @@ export default function Turnstile({
     const previousResetKeyRef = useRef(resetKey);
     const statusCallbackRef = useRef(onStatusChange);
     const [isScriptReady, setIsScriptReady] = useState(false);
-    const [isCompact, setIsCompact] = useState(false);
+    const isCompact = useSyncExternalStore(
+        subscribeToCompactMode,
+        getCompactModeSnapshot,
+        getServerCompactModeSnapshot,
+    );
 
     useEffect(() => {
         statusCallbackRef.current = onStatusChange;
@@ -79,18 +98,6 @@ export default function Turnstile({
             statusCallbackRef.current?.('error');
         }
     }, [siteKey]);
-
-    useEffect(() => {
-        const mediaQuery = window.matchMedia(COMPACT_QUERY);
-        const handleChange = (event: MediaQueryListEvent) => {
-            setIsCompact(event.matches);
-        };
-
-        setIsCompact(mediaQuery.matches);
-        mediaQuery.addEventListener('change', handleChange);
-
-        return () => mediaQuery.removeEventListener('change', handleChange);
-    }, []);
 
     const removeWidget = useCallback(() => {
         const widgetId = widgetIdRef.current;

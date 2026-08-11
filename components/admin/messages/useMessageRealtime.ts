@@ -41,16 +41,30 @@ export function useMessageRealtime(
     const pathname = usePathname();
     const snackbar = useSnackbar();
     const [supabase] = useState(() => createClient());
-    const [unreadMessageCount, setUnreadMessageCount] = useState(() =>
-        normalizeCount(initialUnreadMessageCount ?? 0));
+    const [unreadCountState, setUnreadCountState] = useState(() => ({
+        source: initialUnreadMessageCount,
+        value: normalizeCount(initialUnreadMessageCount ?? 0),
+    }));
     const pathnameRef = useRef(pathname);
-
-    pathnameRef.current = pathname;
+    const initialUnreadMessageCountRef = useRef(initialUnreadMessageCount);
+    if (
+        initialUnreadMessageCount !== null
+        && unreadCountState.source !== initialUnreadMessageCount
+    ) {
+        setUnreadCountState({
+            source: initialUnreadMessageCount,
+            value: normalizeCount(initialUnreadMessageCount),
+        });
+    }
+    const unreadMessageCount = initialUnreadMessageCount !== null
+        && unreadCountState.source !== initialUnreadMessageCount
+        ? normalizeCount(initialUnreadMessageCount)
+        : unreadCountState.value;
 
     useEffect(() => {
-        if (initialUnreadMessageCount === null) return;
-        setUnreadMessageCount(normalizeCount(initialUnreadMessageCount));
-    }, [initialUnreadMessageCount]);
+        pathnameRef.current = pathname;
+        initialUnreadMessageCountRef.current = initialUnreadMessageCount;
+    }, [initialUnreadMessageCount, pathname]);
 
     useEffect(() => {
         let isActive = true;
@@ -100,7 +114,10 @@ export function useMessageRealtime(
                         continue;
                     }
 
-                    setUnreadMessageCount(normalizeCount(count));
+                    setUnreadCountState({
+                        source: initialUnreadMessageCountRef.current,
+                        value: normalizeCount(count),
+                    });
                 } while (isActive && shouldRepeatCountSync);
             } catch (error) {
                 if (isActive) {

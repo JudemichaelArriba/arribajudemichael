@@ -161,7 +161,9 @@ export function DialogProvider({ children }: DialogProviderProps) {
     const errorId = `dialog-error-${useId()}`;
     const isOpen = config !== null;
 
-    pendingRef.current = isPending;
+    useEffect(() => {
+        pendingRef.current = isPending;
+    }, [isPending]);
 
     const clearCloseTimer = useCallback(() => {
         if (!closeTimerRef.current) return;

@@ -26,6 +26,11 @@ export default function CertificatePdfPreview({
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [isNearViewport, setIsNearViewport] = useState(eager);
     const [status, setStatus] = useState<PreviewStatus>(source ? 'idle' : 'error');
+    const displayStatus: PreviewStatus = !source
+        ? 'error'
+        : !eager && !isNearViewport
+            ? 'idle'
+            : status;
 
     useEffect(() => {
         if (eager || isNearViewport) return;
@@ -51,7 +56,6 @@ export default function CertificatePdfPreview({
 
     useEffect(() => {
         if (!source || (!eager && !isNearViewport)) {
-            setStatus(source ? 'idle' : 'error');
             return;
         }
 
@@ -180,12 +184,12 @@ export default function CertificatePdfPreview({
                 ref={canvasRef}
                 role="img"
                 aria-label={label}
-                className={status === 'ready' ? 'block max-h-full max-w-full' : 'invisible'}
+                className={displayStatus === 'ready' ? 'block max-h-full max-w-full' : 'invisible'}
             />
 
-            {status !== 'ready' ? (
+            {displayStatus !== 'ready' ? (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#f4f4f5] px-4 text-center text-black/50">
-                    {status === 'loading' || status === 'idle' ? (
+                    {displayStatus === 'loading' || displayStatus === 'idle' ? (
                         <>
                             <LoaderCircle
                                 aria-hidden="true"

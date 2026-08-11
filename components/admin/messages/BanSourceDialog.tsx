@@ -74,9 +74,11 @@ export default function BanSourceDialog({
     const [isVisible, setIsVisible] = useState(false);
     const [isPending, startTransition] = useTransition();
 
-    closeRef.current = onClose;
-    successRef.current = onSuccess;
-    pendingRef.current = isPending;
+    useEffect(() => {
+        closeRef.current = onClose;
+        successRef.current = onSuccess;
+        pendingRef.current = isPending;
+    }, [isPending, onClose, onSuccess]);
 
     const animateClose = useCallback((
         afterClose?: () => void,

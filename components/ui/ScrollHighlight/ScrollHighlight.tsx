@@ -1,15 +1,41 @@
 'use client';
 
-import { createElement, useMemo, useRef } from 'react';
-import type { ElementType, ReactNode, RefObject } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
+import type { ReactNode, RefObject } from 'react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
+type ScrollHighlightElement = 'div' | 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'p' | 'span';
+
+interface ScrollHighlightContainerProps {
+    as: ScrollHighlightElement;
+    children: ReactNode;
+    className: string;
+    setContainer: (element: HTMLElement | null) => void;
+}
+
+function ScrollHighlightContainer({
+    as,
+    children,
+    className,
+    setContainer,
+}: ScrollHighlightContainerProps) {
+    if (as === 'div') return <div ref={setContainer} className={className}>{children}</div>;
+    if (as === 'h1') return <h1 ref={setContainer} className={className}>{children}</h1>;
+    if (as === 'h2') return <h2 ref={setContainer} className={className}>{children}</h2>;
+    if (as === 'h3') return <h3 ref={setContainer} className={className}>{children}</h3>;
+    if (as === 'h4') return <h4 ref={setContainer} className={className}>{children}</h4>;
+    if (as === 'h5') return <h5 ref={setContainer} className={className}>{children}</h5>;
+    if (as === 'h6') return <h6 ref={setContainer} className={className}>{children}</h6>;
+    if (as === 'p') return <p ref={setContainer} className={className}>{children}</p>;
+    return <span ref={setContainer} className={className}>{children}</span>;
+}
+
 interface ScrollHighlightProps {
-    as?: ElementType;
+    as?: ScrollHighlightElement;
     children: ReactNode;
     scrollContainerRef?: RefObject<HTMLElement | null>;
     containerClassName?: string;
@@ -38,6 +64,9 @@ export default function ScrollHighlight({
     toColor = 'var(--text)',
 }: ScrollHighlightProps) {
     const containerRef = useRef<HTMLElement>(null);
+    const setContainer = useCallback((element: HTMLElement | null) => {
+        containerRef.current = element;
+    }, []);
 
     const words = useMemo(() => {
         const text = typeof children === 'string' ? children : '';
@@ -121,9 +150,12 @@ export default function ScrollHighlight({
         }
     );
 
-    return createElement(
-        Component,
-        { ref: containerRef, className: `overflow-hidden text-center ${containerClassName}` },
+    return (
+        <ScrollHighlightContainer
+            as={Component}
+            className={`overflow-hidden text-center ${containerClassName}`}
+            setContainer={setContainer}
+        >
         <span className={`inline-block max-w-full text-center leading-[1.08] ${textClassName}`}>
             {words.map((word, wordIndex) => (
                 <span className="scroll-highlight-word inline-block" key={`word-${wordIndex}`}>
@@ -140,5 +172,6 @@ export default function ScrollHighlight({
                 </span>
             ))}
         </span>
+        </ScrollHighlightContainer>
     );
 }

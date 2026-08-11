@@ -50,6 +50,7 @@ export default function Navbar() {
                 setMode('top');
             } else if (diff > SCROLL_DELTA) {
                 setMode('hidden');
+                setMenuOpen(false);
             } else if (diff < -SCROLL_DELTA) {
                 setMode('visible');
             }
@@ -70,12 +71,6 @@ export default function Navbar() {
 
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
-
-
-    useEffect(() => {
-        if (mode === 'hidden' && menuOpen) setMenuOpen(false);
-    }, [mode, menuOpen]);
-
 
     useEffect(() => {
         const handleResize = () => {

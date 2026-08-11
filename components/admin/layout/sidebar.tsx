@@ -369,10 +369,6 @@ function AdminShellContent({
     const mobileMenuId = `admin-mobile-menu-${useId()}`;
     const mobileMenuButtonRef = useRef<HTMLButtonElement>(null);
     const mobilePanelRef = useRef<HTMLDivElement>(null);
-    const isSectionRouteActive = SECTION_ITEMS.some(
-        (item) => pathname === item.href,
-    );
-
     const closeMobileMenu = useCallback((restoreFocus = false) => {
         setIsMobileMenuOpen(false);
 
@@ -392,10 +388,6 @@ function AdminShellContent({
         mediaQuery.addEventListener('change', handleBreakpointChange);
         return () => mediaQuery.removeEventListener('change', handleBreakpointChange);
     }, []);
-
-    useEffect(() => {
-        if (isSectionRouteActive) setSectionsOpen(true);
-    }, [isSectionRouteActive, pathname]);
 
     useEffect(() => {
         if (!isMobileMenuOpen) {
@@ -515,6 +507,7 @@ function AdminShellContent({
                 <div className="scrollbar-hide flex-1 overflow-y-auto px-2.5 py-5">
                     <NavigationContent
                         isExpanded={isDesktopExpanded}
+                        onSectionNavigate={() => setSectionsOpen(true)}
                         onToggleSections={handleDesktopSectionsToggle}
                         pathname={pathname}
                         sectionsId={desktopSectionsId}
@@ -599,7 +592,10 @@ function AdminShellContent({
                         onAnalyticsNavigate={() => closeMobileMenu()}
                         onDashboardNavigate={() => closeMobileMenu()}
                         onMessageNavigate={() => closeMobileMenu()}
-                        onSectionNavigate={() => closeMobileMenu()}
+                        onSectionNavigate={() => {
+                            setSectionsOpen(true);
+                            closeMobileMenu();
+                        }}
                         onToggleSections={() => setSectionsOpen((isOpen) => !isOpen)}
                         pathname={pathname}
                         sectionsId={mobileSectionsId}

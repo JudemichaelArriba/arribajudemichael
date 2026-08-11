@@ -385,7 +385,9 @@ export function SnackbarProvider({ children }: SnackbarProviderProps) {
         removalTimersRef.current.set(id, removalTimer);
     }, [clearAutoDismissTimer, removeItem, updateItem]);
 
-    dismissRef.current = dismiss;
+    useEffect(() => {
+        dismissRef.current = dismiss;
+    }, [dismiss]);
 
     const show = useCallback((options: SnackbarOptions): string => {
         const id = createSnackbarId();

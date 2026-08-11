@@ -25,17 +25,17 @@ const INITIAL_LOGIN_STATE: LoginActionState = {
 
 export default function LoginForm() {
     const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
     const [loginState, formAction, isPending] = useActionState(
         login,
         INITIAL_LOGIN_STATE,
     );
-
-    useEffect(() => {
-        if (loginState.status === 'error') {
-            setPassword('');
-        }
-    }, [loginState.attempt, loginState.status]);
+    const [passwordEntry, setPasswordEntry] = useState({
+        attempt: loginState.attempt,
+        value: '',
+    });
+    const password = passwordEntry.attempt === loginState.attempt
+        ? passwordEntry.value
+        : '';
 
     useEffect(() => {
         const url = new URL(window.location.href);
@@ -209,7 +209,10 @@ export default function LoginForm() {
                                             maxLength={1024}
                                             value={password}
                                             onChange={(event) =>
-                                                setPassword(event.currentTarget.value)
+                                                setPasswordEntry({
+                                                    attempt: loginState.attempt,
+                                                    value: event.currentTarget.value,
+                                                })
                                             }
                                             placeholder="Enter your password"
                                             className={INPUT_CLASS}

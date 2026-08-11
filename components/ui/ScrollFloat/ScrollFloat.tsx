@@ -1,15 +1,41 @@
 'use client';
 
-import { createElement, useMemo, useRef } from 'react';
-import type { ElementType, ReactNode, RefObject } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
+import type { ReactNode, RefObject } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useGSAP } from '@gsap/react';
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
+type ScrollFloatElement = 'div' | 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'p' | 'span';
+
+interface ScrollFloatContainerProps {
+    as: ScrollFloatElement;
+    children: ReactNode;
+    className: string;
+    setContainer: (element: HTMLElement | null) => void;
+}
+
+function ScrollFloatContainer({
+    as,
+    children,
+    className,
+    setContainer,
+}: ScrollFloatContainerProps) {
+    if (as === 'div') return <div ref={setContainer} className={className}>{children}</div>;
+    if (as === 'h1') return <h1 ref={setContainer} className={className}>{children}</h1>;
+    if (as === 'h3') return <h3 ref={setContainer} className={className}>{children}</h3>;
+    if (as === 'h4') return <h4 ref={setContainer} className={className}>{children}</h4>;
+    if (as === 'h5') return <h5 ref={setContainer} className={className}>{children}</h5>;
+    if (as === 'h6') return <h6 ref={setContainer} className={className}>{children}</h6>;
+    if (as === 'p') return <p ref={setContainer} className={className}>{children}</p>;
+    if (as === 'span') return <span ref={setContainer} className={className}>{children}</span>;
+    return <h2 ref={setContainer} className={className}>{children}</h2>;
+}
+
 interface ScrollFloatProps {
-    as?: ElementType;
+    as?: ScrollFloatElement;
     children: ReactNode;
     scrollContainerRef?: RefObject<HTMLElement | null>;
     containerClassName?: string;
@@ -57,6 +83,9 @@ export default function ScrollFloat({
 }: ScrollFloatProps) {
     const containerRef = useRef<HTMLElement>(null);
     const hasPlayedRef = useRef(false);
+    const setContainer = useCallback((element: HTMLElement | null) => {
+        containerRef.current = element;
+    }, []);
 
     const words = useMemo(() => {
         const text = typeof children === 'string' ? children : '';
@@ -272,9 +301,12 @@ export default function ScrollFloat({
         }
     );
 
-    return createElement(
-        Component,
-        { ref: containerRef, className: `overflow-hidden text-center ${containerClassName}` },
+    return (
+        <ScrollFloatContainer
+            as={Component}
+            className={`overflow-hidden text-center ${containerClassName}`}
+            setContainer={setContainer}
+        >
         <span className={`inline-block max-w-full text-center leading-[1.08] ${textClassName}`}>
             {words.map((word, wordIndex) => (
                 <span
@@ -294,5 +326,6 @@ export default function ScrollFloat({
                 </span>
             ))}
         </span>
+        </ScrollFloatContainer>
     );
 }

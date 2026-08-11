@@ -8,6 +8,7 @@ import {
     useMemo,
     useRef,
     useState,
+    useSyncExternalStore,
     useTransition,
 } from 'react';
 
@@ -52,6 +53,20 @@ const MESSAGE_FILTERS = [
     { id: 'archived', label: 'Archived' },
 ] as const satisfies readonly { id: MessageFilter; label: string }[];
 
+function subscribeToSplitView(onStoreChange: () => void): () => void {
+    const mediaQuery = window.matchMedia(SPLIT_VIEW_QUERY);
+    mediaQuery.addEventListener('change', onStoreChange);
+    return () => mediaQuery.removeEventListener('change', onStoreChange);
+}
+
+function getSplitViewSnapshot(): boolean {
+    return window.matchMedia(SPLIT_VIEW_QUERY).matches;
+}
+
+function getServerSplitViewSnapshot(): boolean {
+    return false;
+}
+
 function getMessagesUrl(filter: MessageFilter, search: string, page: number): string {
     const params = new URLSearchParams();
 
@@ -63,7 +78,7 @@ function getMessagesUrl(filter: MessageFilter, search: string, page: number): st
     return queryString ? `/dashboard/messages?${queryString}` : '/dashboard/messages';
 }
 
-export default function Messages({
+function MessagesContent({
     pageData,
     referenceTime,
     unavailable = false,
@@ -72,7 +87,6 @@ export default function Messages({
     const snackbar = useSnackbar();
     const router = useRouter();
     const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
-    const [isSplitView, setIsSplitView] = useState(false);
     const [searchValue, setSearchValue] = useState(pageData.search);
     const [activeFilter, setActiveFilter] = useState<MessageFilter>(pageData.filter);
     const [actionError, setActionError] = useState('');
@@ -85,42 +99,24 @@ export default function Messages({
     const focusFrameRef = useRef<number | null>(null);
     const focusTimerRef = useRef<number | null>(null);
     const automaticReadIdsRef = useRef(new Set<string>());
+    const isSplitView = useSyncExternalStore(
+        subscribeToSplitView,
+        getSplitViewSnapshot,
+        getServerSplitViewSnapshot,
+    );
 
     const selectedMessage = useMemo(
         () => pageData.messages.find((message) => message.id === selectedMessageId) ?? null,
         [pageData.messages, selectedMessageId],
     );
+    const visibleSelectedMessageId = selectedMessage ? selectedMessageId : null;
 
     useEffect(() => {
-        const mediaQuery = window.matchMedia(SPLIT_VIEW_QUERY);
-        const handleChange = (event: MediaQueryListEvent) => {
-            setIsSplitView(event.matches);
-        };
-
-        setIsSplitView(mediaQuery.matches);
-        mediaQuery.addEventListener('change', handleChange);
-
-        return () => mediaQuery.removeEventListener('change', handleChange);
-    }, []);
-
-    useEffect(() => {
-        setSearchValue(pageData.search);
-        setActiveFilter(pageData.filter);
-    }, [pageData.filter, pageData.search]);
-
-    useEffect(() => {
-        if (
-            selectedMessageId &&
-            !pageData.messages.some((message) => message.id === selectedMessageId)
-        ) {
-            setSelectedMessageId(null);
-        }
-
         for (const messageId of automaticReadIdsRef.current) {
             const message = pageData.messages.find((item) => item.id === messageId);
             if (!message || message.isRead) automaticReadIdsRef.current.delete(messageId);
         }
-    }, [pageData.messages, selectedMessageId]);
+    }, [pageData.messages]);
 
     useEffect(() => () => {
         if (focusFrameRef.current !== null) {
@@ -514,7 +510,7 @@ export default function Messages({
                     >
                         <MessageList
                             messages={pageData.messages}
-                            selectedMessageId={selectedMessageId}
+                            selectedMessageId={visibleSelectedMessageId}
                             referenceTime={referenceTime}
                             isInert={isDetailOpen && !isSplitView}
                             emptyState={emptyState}
@@ -568,4 +564,9 @@ export default function Messages({
             ) : null}
         </ManagementPage>
     );
+}
+
+export default function Messages(props: MessagesProps) {
+    const { filter, search } = props.pageData;
+    return <MessagesContent key={`${filter}:${search}`} {...props} />;
 }

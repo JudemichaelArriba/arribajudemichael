@@ -5,6 +5,7 @@ import {
     Mail,
     type LucideIcon,
 } from 'lucide-react';
+import Link from 'next/link';
 import {
     CONTACT_CHANNELS,
     SITE_NAVIGATION,
@@ -87,7 +88,7 @@ export default function Footer() {
 
             <div className="mx-auto max-w-7xl">
                 <div className="flex flex-col gap-6 border-b border-white/[0.07] pb-8 sm:flex-row sm:items-end sm:justify-between md:pb-10">
-                    <a
+                    <Link
                         href="/#home"
                         aria-label="Jude Michael Arriba - go to home"
                         className="group inline-flex min-h-12 w-fit items-center font-[family-name:var(--font-name)] text-4xl font-extrabold tracking-normal text-[var(--text)] transition-colors duration-300 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--signal)]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black motion-reduce:transition-none sm:text-5xl"
@@ -102,7 +103,7 @@ export default function Footer() {
                                 className={`${NAV_LINK_UNDERLINE_CLASS} scale-x-0 group-hover:scale-x-100 group-focus-visible:scale-x-100`}
                             />
                         </span>
-                    </a>
+                    </Link>
 
                     <div className="sm:text-right">
                         <p className="font-mono text-[10px] font-bold uppercase tracking-normal text-[var(--signal)]/72">

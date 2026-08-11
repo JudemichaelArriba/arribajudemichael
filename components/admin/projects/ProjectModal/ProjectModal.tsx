@@ -83,6 +83,7 @@ export default function ProjectModal({
 }: ProjectModalProps) {
     const dialogRef = useRef<HTMLDialogElement>(null);
     const imageInputRef = useRef<HTMLInputElement>(null);
+    const imagePreviewUrlRef = useRef<string | null>(null);
     const bypassValidationRef = useRef(false);
     const validationRunningRef = useRef(false);
     const closeRef = useRef(onClose);
@@ -126,9 +127,22 @@ export default function ProjectModal({
         return [...tags, ...(hasDuplicate ? [] : [pendingTag])].join(', ');
     }, [tagDraft, tags]);
 
-    closeRef.current = onClose;
-    successRef.current = onSuccess;
-    pendingRef.current = busy;
+    useEffect(() => {
+        closeRef.current = onClose;
+        successRef.current = onSuccess;
+        pendingRef.current = busy;
+    }, [busy, onClose, onSuccess]);
+
+    const updateSelectedImage = useCallback((image: File | null) => {
+        if (imagePreviewUrlRef.current) {
+            URL.revokeObjectURL(imagePreviewUrlRef.current);
+        }
+
+        const nextPreviewUrl = image ? URL.createObjectURL(image) : null;
+        imagePreviewUrlRef.current = nextPreviewUrl;
+        setSelectedImage(image);
+        setImagePreviewUrl(nextPreviewUrl);
+    }, []);
 
     const animateClose = useCallback((afterClose?: () => void, force = false) => {
         if ((!force && pendingRef.current) || isClosingRef.current) return;
@@ -203,16 +217,12 @@ export default function ProjectModal({
         };
     }, [animateClose]);
 
-    useEffect(() => {
-        if (!selectedImage) {
-            setImagePreviewUrl(null);
-            return;
+    useEffect(() => () => {
+        if (imagePreviewUrlRef.current) {
+            URL.revokeObjectURL(imagePreviewUrlRef.current);
+            imagePreviewUrlRef.current = null;
         }
-
-        const objectUrl = URL.createObjectURL(selectedImage);
-        setImagePreviewUrl(objectUrl);
-        return () => URL.revokeObjectURL(objectUrl);
-    }, [selectedImage]);
+    }, []);
 
     useEffect(() => {
         if (state.attempt === 0 || state.attempt === handledAttemptRef.current) return;
@@ -277,14 +287,14 @@ export default function ProjectModal({
             return false;
         }
 
-        setSelectedImage(image);
+        updateSelectedImage(image);
         return true;
     };
 
     const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
         const image = event.target.files?.[0] ?? null;
         if (!image) {
-            setSelectedImage(null);
+            updateSelectedImage(null);
             return;
         }
 
@@ -294,7 +304,7 @@ export default function ProjectModal({
     const clearSelectedImage = () => {
         if (busy) return;
         if (imageInputRef.current) imageInputRef.current.value = '';
-        setSelectedImage(null);
+        updateSelectedImage(null);
         clearFieldError('image');
     };
 
@@ -339,7 +349,7 @@ export default function ProjectModal({
             transfer.items.add(image);
             if (imageInputRef.current) imageInputRef.current.files = transfer.files;
         } catch {
-            setSelectedImage(null);
+            updateSelectedImage(null);
             setClientErrors((current) => ({
                 ...current,
                 image: 'This browser could not attach the dropped image. Use Browse instead.',

@@ -102,9 +102,11 @@ export default function ExperienceModal({
         INITIAL_ACTION_STATE,
     );
 
-    closeRef.current = onClose;
-    successRef.current = onSuccess;
-    pendingRef.current = isPending;
+    useEffect(() => {
+        closeRef.current = onClose;
+        successRef.current = onSuccess;
+        pendingRef.current = isPending;
+    }, [isPending, onClose, onSuccess]);
 
     const animateClose = useCallback((afterClose?: () => void, force = false) => {
         if ((!force && pendingRef.current) || isClosingRef.current) return;
