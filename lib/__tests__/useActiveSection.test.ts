@@ -1,269 +1,108 @@
-import { renderHook } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
+
 import { useActiveSection } from '../useActiveSection';
 
-describe('useActiveSection Hook', () => {
-  let mockObserver: {
-    observe: jest.Mock;
-    disconnect: jest.Mock;
-    unobserve: jest.Mock;
-    takeRecords: jest.Mock;
-  };
-  let mockObserverInstance: IntersectionObserver;
-  let observerCallback: IntersectionObserverCallback;
+const SECTION_IDS = ['home', 'about', 'contact'];
+
+interface SectionBounds {
+  bottom: number;
+  top: number;
+}
+
+function addSection(id: string, bounds: SectionBounds): HTMLElement {
+  const element = document.createElement('section');
+  element.id = id;
+  element.getBoundingClientRect = jest.fn(() => ({
+    bottom: bounds.bottom,
+    height: bounds.bottom - bounds.top,
+    left: 0,
+    right: 100,
+    top: bounds.top,
+    width: 100,
+    x: 0,
+    y: bounds.top,
+    toJSON: () => ({}),
+  }));
+  document.body.appendChild(element);
+  return element;
+}
+
+describe('useActiveSection', () => {
+  let queuedFrame: FrameRequestCallback | null;
 
   beforeEach(() => {
-    // Create a mock IntersectionObserver
-    mockObserver = {
-      observe: jest.fn(),
-      disconnect: jest.fn(),
-      unobserve: jest.fn(),
-      takeRecords: jest.fn(),
-    };
-
-    // Store the callback when IntersectionObserver is created
-    global.IntersectionObserver = jest.fn((callback, options) => {
-      observerCallback = callback;
-      mockObserverInstance = mockObserver as any;
-      return mockObserver as any;
-    }) as any;
-
-    // Reset DOM
-    document.body.innerHTML = '';
+    document.body.replaceChildren();
+    queuedFrame = null;
+    Object.defineProperty(window, 'innerHeight', {
+      configurable: true,
+      value: 1_000,
+    });
+    Object.defineProperty(window, 'scrollY', {
+      configurable: true,
+      value: 0,
+      writable: true,
+    });
+    window.requestAnimationFrame = jest.fn((callback: FrameRequestCallback) => {
+      queuedFrame = callback;
+      return 1;
+    });
+    window.cancelAnimationFrame = jest.fn();
   });
 
-  afterEach(() => {
-    jest.clearAllMocks();
+  it('keeps Home active while the visitor is near the top', () => {
+    addSection('home', { top: -500, bottom: 300 });
+    addSection('about', { top: 300, bottom: 1_100 });
+
+    const { result } = renderHook(() => useActiveSection(SECTION_IDS));
+
+    expect(result.current).toBe('home');
   });
 
-  describe('Initialization', () => {
-    it('returns the first section as active by default', () => {
-      const { result } = renderHook(() => useActiveSection(['home', 'about', 'contact']));
-      expect(result.current).toBe('home');
-    });
+  it('prefers the section containing the viewport focus line', () => {
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 900 });
+    addSection('home', { top: -900, bottom: -100 });
+    addSection('about', { top: 100, bottom: 700 });
+    addSection('contact', { top: 650, bottom: 1_200 });
 
-    it('creates IntersectionObserver with correct options', () => {
-      renderHook(() => useActiveSection(['home', 'about']));
-      
-      expect(global.IntersectionObserver).toHaveBeenCalledWith(
-        expect.any(Function),
-        { rootMargin: '-40% 0px -55% 0px' }
-      );
-    });
+    const { result } = renderHook(() => useActiveSection(SECTION_IDS));
 
-    it('observes all provided section IDs', () => {
-      // Create test elements
-      const home = document.createElement('div');
-      home.id = 'home';
-      const about = document.createElement('div');
-      about.id = 'about';
-      document.body.appendChild(home);
-      document.body.appendChild(about);
-
-      renderHook(() => useActiveSection(['home', 'about']));
-
-      expect(mockObserver.observe).toHaveBeenCalledTimes(2);
-      expect(mockObserver.observe).toHaveBeenCalledWith(home);
-      expect(mockObserver.observe).toHaveBeenCalledWith(about);
-    });
-
-    it('handles missing elements gracefully', () => {
-      // Only create one element
-      const home = document.createElement('div');
-      home.id = 'home';
-      document.body.appendChild(home);
-
-      renderHook(() => useActiveSection(['home', 'nonexistent']));
-
-      expect(mockObserver.observe).toHaveBeenCalledTimes(1);
-      expect(mockObserver.observe).toHaveBeenCalledWith(home);
-    });
+    expect(result.current).toBe('about');
   });
 
-  describe('Section Detection', () => {
-    it('updates active section when intersection occurs', () => {
-      const home = document.createElement('div');
-      home.id = 'home';
-      const about = document.createElement('div');
-      about.id = 'about';
-      document.body.appendChild(home);
-      document.body.appendChild(about);
-
-      const { result } = renderHook(() => useActiveSection(['home', 'about']));
-
-      // Initially home
-      expect(result.current).toBe('home');
-
-      // Simulate about section becoming visible
-      const entries: Partial<IntersectionObserverEntry>[] = [
-        {
-          target: about,
-          isIntersecting: true,
-          intersectionRatio: 0.5,
-          boundingClientRect: {} as DOMRectReadOnly,
-          intersectionRect: {} as DOMRectReadOnly,
-          rootBounds: null,
-          time: Date.now(),
-        },
-      ];
-      observerCallback(entries as IntersectionObserverEntry[], mockObserverInstance);
-
-      expect(result.current).toBe('about');
+  it('updates after scrolling and falls back to Home when no section is visible', () => {
+    const home = addSection('home', { top: -900, bottom: -100 });
+    const about = addSection('about', { top: 100, bottom: 700 });
+    addSection('contact', { top: 800, bottom: 1_400 });
+    Object.defineProperty(window, 'scrollY', {
+      configurable: true,
+      value: 900,
+      writable: true,
     });
 
-    it('ignores non-intersecting entries', () => {
-      const home = document.createElement('div');
-      home.id = 'home';
-      const about = document.createElement('div');
-      about.id = 'about';
-      document.body.appendChild(home);
-      document.body.appendChild(about);
+    const { result } = renderHook(() => useActiveSection(SECTION_IDS));
+    expect(result.current).toBe('about');
 
-      const { result } = renderHook(() => useActiveSection(['home', 'about']));
+    home.getBoundingClientRect = jest.fn(() => ({ top: -2_000, bottom: -1_000 }) as DOMRect);
+    about.getBoundingClientRect = jest.fn(() => ({ top: -900, bottom: -100 }) as DOMRect);
+    const contact = document.getElementById('contact');
+    if (contact) {
+      contact.getBoundingClientRect = jest.fn(() => ({ top: 1_200, bottom: 1_800 }) as DOMRect);
+    }
 
-      // Simulate about section not visible
-      const entries: Partial<IntersectionObserverEntry>[] = [
-        {
-          target: about,
-          isIntersecting: false,
-          intersectionRatio: 0,
-          boundingClientRect: {} as DOMRectReadOnly,
-          intersectionRect: {} as DOMRectReadOnly,
-          rootBounds: null,
-          time: Date.now(),
-        },
-      ];
-      observerCallback(entries as IntersectionObserverEntry[], mockObserverInstance);
-
-      // Should still be home
-      expect(result.current).toBe('home');
+    act(() => {
+      window.dispatchEvent(new Event('scroll'));
+      queuedFrame?.(0);
     });
 
-    it('handles multiple intersection entries', () => {
-      const home = document.createElement('div');
-      home.id = 'home';
-      const about = document.createElement('div');
-      about.id = 'about';
-      const contact = document.createElement('div');
-      contact.id = 'contact';
-      document.body.appendChild(home);
-      document.body.appendChild(about);
-      document.body.appendChild(contact);
-
-      const { result } = renderHook(() => useActiveSection(['home', 'about', 'contact']));
-
-      // Simulate multiple sections visible
-      const entries: Partial<IntersectionObserverEntry>[] = [
-        {
-          target: about,
-          isIntersecting: true,
-          intersectionRatio: 0.5,
-          boundingClientRect: {} as DOMRectReadOnly,
-          intersectionRect: {} as DOMRectReadOnly,
-          rootBounds: null,
-          time: Date.now(),
-        },
-        {
-          target: contact,
-          isIntersecting: true,
-          intersectionRatio: 0.7,
-          boundingClientRect: {} as DOMRectReadOnly,
-          intersectionRect: {} as DOMRectReadOnly,
-          rootBounds: null,
-          time: Date.now(),
-        },
-      ];
-      observerCallback(entries as IntersectionObserverEntry[], mockObserverInstance);
-
-      // Last intersecting entry should win
-      expect(result.current).toBe('contact');
-    });
+    expect(result.current).toBe('home');
   });
 
-  describe('Cleanup', () => {
-    it('disconnects observer on unmount', () => {
-      const { unmount } = renderHook(() => useActiveSection(['home', 'about']));
-      
-      unmount();
-      
-      expect(mockObserver.disconnect).toHaveBeenCalledTimes(1);
-    });
+  it('ignores missing section elements without throwing', () => {
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 900 });
+    addSection('about', { top: 100, bottom: 700 });
 
-    it('recreates observer when sectionIds change', () => {
-      const { rerender } = renderHook(
-        ({ ids }) => useActiveSection(ids),
-        { initialProps: { ids: ['home', 'about'] } }
-      );
+    const { result } = renderHook(() => useActiveSection(SECTION_IDS));
 
-      expect(mockObserver.observe).toHaveBeenCalledTimes(2);
-      expect(mockObserver.disconnect).toHaveBeenCalledTimes(0);
-
-      // Change section IDs
-      rerender({ ids: ['home', 'about', 'contact'] });
-
-      expect(mockObserver.disconnect).toHaveBeenCalledTimes(1);
-      expect(global.IntersectionObserver).toHaveBeenCalledTimes(2);
-    });
-  });
-
-  describe('Edge Cases', () => {
-    it('handles empty section array', () => {
-      const { result } = renderHook(() => useActiveSection([]));
-      expect(result.current).toBeUndefined();
-    });
-
-    it('handles single section', () => {
-      const home = document.createElement('div');
-      home.id = 'home';
-      document.body.appendChild(home);
-
-      const { result } = renderHook(() => useActiveSection(['home']));
-      expect(result.current).toBe('home');
-      expect(mockObserver.observe).toHaveBeenCalledTimes(1);
-    });
-
-    it('handles rapid section changes', () => {
-      const home = document.createElement('div');
-      home.id = 'home';
-      const about = document.createElement('div');
-      about.id = 'about';
-      const contact = document.createElement('div');
-      contact.id = 'contact';
-      document.body.appendChild(home);
-      document.body.appendChild(about);
-      document.body.appendChild(contact);
-
-      const { result } = renderHook(() => useActiveSection(['home', 'about', 'contact']));
-
-      // Rapid changes
-      const createEntry = (target: HTMLElement, isIntersecting: boolean): Partial<IntersectionObserverEntry> => ({
-        target,
-        isIntersecting,
-        intersectionRatio: isIntersecting ? 0.5 : 0,
-        boundingClientRect: {} as DOMRectReadOnly,
-        intersectionRect: {} as DOMRectReadOnly,
-        rootBounds: null,
-        time: Date.now(),
-      });
-
-      observerCallback([createEntry(about, true)] as IntersectionObserverEntry[], mockObserverInstance);
-      expect(result.current).toBe('about');
-
-      observerCallback([createEntry(contact, true)] as IntersectionObserverEntry[], mockObserverInstance);
-      expect(result.current).toBe('contact');
-
-      observerCallback([createEntry(home, true)] as IntersectionObserverEntry[], mockObserverInstance);
-      expect(result.current).toBe('home');
-    });
-  });
-
-  describe('Root Margin Configuration', () => {
-    it('uses correct viewport offset for detection', () => {
-      renderHook(() => useActiveSection(['home']));
-      
-      const constructorCall = (global.IntersectionObserver as jest.Mock).mock.calls[0];
-      expect(constructorCall[1]).toEqual({
-        rootMargin: '-40% 0px -55% 0px',
-      });
-    });
+    expect(result.current).toBe('about');
   });
 });

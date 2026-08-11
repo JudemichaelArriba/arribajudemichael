@@ -258,8 +258,6 @@ const FloatingLines = dynamic(
 
 ### Testing & Verification
 
-### Testing & Verification
-
 #### Test Commands
 ```bash
 npm test            # Run all tests
@@ -271,6 +269,7 @@ npm run test:coverage  # Run tests with coverage report
 ```bash
 npm run lint        # Check for errors
 npm test            # Run all tests
+npm run test:coverage  # Inspect risk-area coverage
 npm run build       # Verify production build
 npm run dev         # Test in development
 ```
@@ -286,20 +285,21 @@ npm run dev         # Test in development
 - [ ] Analytics changes preserve visitor/session reuse, Admin and Home exclusion, inactive/hidden timing, 30-second delta batching, retry retention, Asia/Manila periods, real-data charts, and distinct zero/unavailable states
 
 #### Test Coverage
-This project has **235+ test cases** covering:
-- UI components (Button, RollingText, Magnet, ScrollFloat)
-- Custom hooks (useActiveSection, useRoleCycle)
-- Page sections (Home, WhatIDo)
-- Navigation and layout (Navbar, Preloader)
+The Jest + React Testing Library suite is deliberately risk-based rather than count-driven. Tests are co-located with the code they protect in `__tests__/` directories and prioritize:
+- Authentication and protected-route authorization
+- Contact validation, source identification, rate limiting, bans, Turnstile, and API orchestration
+- Projects, Certificates, Experiences, and Messages mutation safety
+- Analytics session expiry, payload validation, batching, retries, idempotency, and Admin/Home exclusion
+- Important user-facing navigation and submit behavior
 
-Tests are co-located with components in `__tests__/` directories.
+Do not add tests for Tailwind class strings, exact decorative DOM, GSAP/WebGL/PDF.js internals, or trivial rendering. Mock Supabase, Upstash, Turnstile, and network boundaries; never use production credentials or live data. Coverage is used to find meaningful gaps, not to pursue 100%.
 
 #### CI/CD Pipeline
 GitHub Actions runs on every push/PR to all branches:
-- ✅ Linting
-- ✅ Unit tests with coverage
-- ✅ Production build
-- ✅ Artifact archiving
+- Linting
+- Unit tests with coverage
+- Production build
+- Artifact archiving
 
 See `.github/workflows/test.yml` for workflow configuration.
 

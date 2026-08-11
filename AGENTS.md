@@ -342,16 +342,16 @@ npm run test:coverage   # Run tests with coverage report
 ```
 
 #### Test Structure
-- Tests are co-located with components in `__tests__/` directories
-- **235+ test cases** covering:
-  - UI components (Button, RollingText, Magnet, ScrollFloat)
-  - Custom hooks (useActiveSection, useRoleCycle)
-  - Page sections (Home, WhatIDo)
-  - Navigation and layout (Navbar, Preloader)
+- Tests are co-located with the behavior they protect in `__tests__/` directories.
+- The suite is deliberately risk-based rather than coverage-count driven. Prioritize authentication and authorization, Contact security boundaries, authenticated admin mutations, message-source bans, and analytics session/idempotency behavior.
+- UI tests are limited to meaningful user behavior such as navigation, menu accessibility, and submit semantics. Do not assert Tailwind class strings, exact decorative markup, GSAP/WebGL/PDF.js internals, or trivial rendering.
+- External Supabase, Upstash, Turnstile, and network boundaries must be mocked. Tests must never depend on production credentials or mutate live data.
+- Analytics coverage must preserve Admin and Home exclusion, session expiry, strict payload validation, immutable batch IDs across retries, exact snapshot acknowledgment, separation of new in-flight deltas, and stale-session batch disposal.
+- Coverage is a diagnostic signal, not a mandate for 100%. Add tests only where a regression would create meaningful security, data-integrity, or workflow risk.
 
 #### Configuration Files
 - `jest.config.ts` - Jest configuration with Next.js 16 support
-- `jest.setup.ts` - Test setup with mocks for Next.js, GSAP, observers
+- `jest.setup.ts` - Minimal shared DOM observer and media-query shims
 
 #### GitHub Actions CI/CD
 Tests run automatically on every push and pull request to all branches:
@@ -366,12 +366,13 @@ See `.github/workflows/test.yml` for the complete workflow configuration.
 ### Before Committing
 1. Run `npm run lint` - fix all errors
 2. Run `npm test` - ensure tests pass
-3. Run `npm run build` - ensure build succeeds
-4. Test in browser (dev mode)
-5. Check console for warnings/errors
-6. Verify responsive design
-7. For CSS-to-Tailwind conversions, verify no design changes, preserved reduced-motion behavior, preserved GSAP/query selector hooks, and no stale CSS imports
-8. For analytics changes, run `npm run build` and manually verify cookie/session reuse, admin and Home exclusion, hidden/inactive timing, 30-second batching, retry retention, zero/unavailable reporting states, and both Admin charts without mutating the database
+3. Run `npm run test:coverage` - inspect risk-area coverage and unexpected gaps
+4. Run `npm run build` - ensure build succeeds
+5. Test in browser (dev mode)
+6. Check console for warnings/errors
+7. Verify responsive design
+8. For CSS-to-Tailwind conversions, verify no design changes, preserved reduced-motion behavior, preserved GSAP/query selector hooks, and no stale CSS imports
+9. For analytics changes, run `npm run build` and manually verify cookie/session reuse, admin and Home exclusion, hidden/inactive timing, 30-second batching, retry retention, zero/unavailable reporting states, and both Admin charts without mutating the database
 
 ## Notes for AI Agents
 
