@@ -37,23 +37,24 @@ interface AdminShellProps {
     initialUnreadMessageCount?: number | null;
 }
 
-interface PlaceholderNavigationItem {
+interface AdminNavigationItem {
     id: string;
     label: string;
     icon: LucideIcon;
 }
 
-interface SectionNavigationItem extends PlaceholderNavigationItem {
+interface SectionNavigationItem extends AdminNavigationItem {
     href: string;
 }
 
-interface DirectNavigationItem extends PlaceholderNavigationItem {
+interface DirectNavigationItem extends AdminNavigationItem {
     href: string;
 }
 
 interface NavigationContentProps {
     isExpanded: boolean;
     isMobile?: boolean;
+    onAnalyticsNavigate?: () => void;
     onDashboardNavigate?: () => void;
     onMessageNavigate?: () => void;
     onSectionNavigate?: () => void;
@@ -97,9 +98,12 @@ const SECTION_ITEMS: readonly SectionNavigationItem[] = [
     },
 ];
 
-const STATIC_ITEMS: readonly PlaceholderNavigationItem[] = [
-    { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-];
+const ANALYTICS_ITEM: DirectNavigationItem = {
+    id: 'analytics',
+    label: 'Analytics',
+    icon: BarChart3,
+    href: '/dashboard/analytics',
+};
 
 const MESSAGE_ITEM: DirectNavigationItem = {
     id: 'messages',
@@ -115,33 +119,10 @@ function formatUnreadMessageCount(count: number): string {
     return count > 99 ? '99+' : String(count);
 }
 
-function PlaceholderButton({
-    item,
-    showLabel,
-}: {
-    item: PlaceholderNavigationItem;
-    showLabel: boolean;
-}) {
-    const Icon = item.icon;
-
-    return (
-        <button
-            type="button"
-            disabled
-            aria-disabled="true"
-            aria-label={!showLabel ? item.label : undefined}
-            title={!showLabel ? item.label : undefined}
-            className={`flex min-h-11 w-full cursor-not-allowed items-center gap-3 rounded-md px-3 text-sm font-semibold tracking-normal text-[var(--muted)]/35 ${showLabel ? 'justify-start' : 'justify-center px-0'}`}
-        >
-            <Icon aria-hidden="true" size={18} strokeWidth={1.8} />
-            {showLabel ? <span className="min-w-0 truncate">{item.label}</span> : null}
-        </button>
-    );
-}
-
 function NavigationContent({
     isExpanded,
     isMobile = false,
+    onAnalyticsNavigate,
     onDashboardNavigate,
     onMessageNavigate,
     onSectionNavigate,
@@ -157,7 +138,9 @@ function NavigationContent({
     const isSectionRouteActive = SECTION_ITEMS.some(
         (item) => pathname === item.href,
     );
+    const isAnalyticsActive = pathname === ANALYTICS_ITEM.href;
     const isMessageActive = pathname === MESSAGE_ITEM.href;
+    const AnalyticsIcon = ANALYTICS_ITEM.icon;
     const MessageIcon = MESSAGE_ITEM.icon;
     const unreadMessageLabel = unreadMessageCount === 1
         ? '1 unread message'
@@ -261,13 +244,27 @@ function NavigationContent({
                 <div aria-hidden="true" className="mx-3 my-3 h-px bg-white/[0.055]" />
             )}
 
-            {STATIC_ITEMS.map((item) => (
-                <PlaceholderButton
-                    key={item.id}
-                    item={item}
-                    showLabel={showLabels}
+            <Link
+                href={ANALYTICS_ITEM.href}
+                onClick={onAnalyticsNavigate}
+                aria-current={isAnalyticsActive ? 'page' : undefined}
+                aria-label={!showLabels ? ANALYTICS_ITEM.label : undefined}
+                title={!showLabels ? ANALYTICS_ITEM.label : undefined}
+                className={`${INTERACTIVE_ITEM_CLASS} overflow-hidden ${showLabels ? 'justify-start' : 'justify-center px-0'} ${
+                    isAnalyticsActive
+                        ? 'bg-white/[0.055] text-[var(--text)]'
+                        : 'text-[var(--muted)]/65 hover:bg-white/[0.035] hover:text-[var(--text)]'
+                }`}
+            >
+                <span
+                    aria-hidden="true"
+                    className={`absolute bottom-2 left-0 top-2 w-0.5 bg-[var(--signal)] transition-opacity duration-200 motion-reduce:transition-none ${isAnalyticsActive ? 'opacity-100' : 'opacity-0'}`}
                 />
-            ))}
+                <AnalyticsIcon aria-hidden="true" size={18} strokeWidth={1.8} />
+                {showLabels ? (
+                    <span className="min-w-0 truncate">{ANALYTICS_ITEM.label}</span>
+                ) : null}
+            </Link>
 
             <Link
                 href={MESSAGE_ITEM.href}
@@ -599,6 +596,7 @@ function AdminShellContent({
                     <NavigationContent
                         isExpanded
                         isMobile
+                        onAnalyticsNavigate={() => closeMobileMenu()}
                         onDashboardNavigate={() => closeMobileMenu()}
                         onMessageNavigate={() => closeMobileMenu()}
                         onSectionNavigate={() => closeMobileMenu()}

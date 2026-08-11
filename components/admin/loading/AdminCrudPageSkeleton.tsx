@@ -1,6 +1,7 @@
 import { ManagementPage } from '@/components/admin/layout/ManagementPage';
 
 type AdminSkeletonVariant =
+    | 'analytics'
     | 'dashboard'
     | 'projects'
     | 'certificates'
@@ -18,6 +19,7 @@ interface AdminHeaderSkeletonProps {
 }
 
 const VARIANT_LABELS: Record<AdminSkeletonVariant, string> = {
+    analytics: 'analytics',
     dashboard: 'dashboard',
     projects: 'projects',
     certificates: 'certificates',
@@ -29,6 +31,14 @@ const PROJECT_ROWS = [0, 1, 2, 3] as const;
 const CERTIFICATE_ROWS = [0, 1, 2] as const;
 const EXPERIENCE_ROWS = [0, 1, 2, 3] as const;
 const MESSAGE_ROWS = [0, 1, 2, 3, 4] as const;
+const ANALYTICS_SECTION_ROWS = [0, 1, 2, 3] as const;
+const ANALYTICS_CHART_BARS = [
+    'w-[88%]',
+    'w-[76%]',
+    'w-[65%]',
+    'w-[54%]',
+    'w-[43%]',
+] as const;
 
 function SkeletonBlock({ className }: { className: string }) {
     return <div className={`rounded-[6px] bg-white/[0.06] ${className}`} />;
@@ -244,6 +254,133 @@ function ExperienceRowsSkeleton() {
     );
 }
 
+function AnalyticsSkeleton() {
+    return (
+        <>
+            <AdminHeaderSkeleton action="none" filters />
+
+            <div className="mb-4 mt-8">
+                <SkeletonBlock className="h-4 w-28" />
+                <SkeletonBlock className="mt-2.5 h-2.5 w-64 max-w-[70vw]" />
+            </div>
+            <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+                {[0, 1, 2, 3].map((metric) => (
+                    <div
+                        key={metric}
+                        className="flex min-h-36 flex-col rounded-lg border border-white/[0.08] bg-[#07080a] p-4 sm:p-5"
+                    >
+                        <SkeletonBlock className="h-3 w-24 max-w-full" />
+                        <SkeletonBlock className="mt-5 h-8 w-20 sm:h-9" />
+                        <SkeletonBlock className="mt-auto h-2 w-16" />
+                    </div>
+                ))}
+            </div>
+
+            <div className="mb-4 mt-10 flex items-end justify-between gap-4">
+                <div>
+                    <SkeletonBlock className="h-4 w-32" />
+                    <SkeletonBlock className="mt-2.5 h-2.5 w-72 max-w-[68vw]" />
+                </div>
+                <SkeletonBlock className="hidden h-2.5 w-28 sm:block" />
+            </div>
+            <div className="overflow-hidden rounded-lg border border-white/[0.08] bg-[#07080a]">
+                <div className="flex items-center gap-5 border-b border-white/[0.07] px-4 py-3.5 sm:px-5">
+                    <SkeletonBlock className="h-2.5 w-24" />
+                    <SkeletonBlock className="h-2.5 w-20" />
+                </div>
+                <div className="grid h-[19rem] grid-cols-[2rem_minmax(0,1fr)] gap-3 px-4 pb-5 pt-7 sm:h-[22rem] sm:px-5">
+                    <div className="flex flex-col justify-between pb-6">
+                        {[0, 1, 2, 3].map((tick) => (
+                            <SkeletonBlock key={tick} className="h-2 w-5" />
+                        ))}
+                    </div>
+                    <div className="flex min-w-0 flex-col justify-between pb-6">
+                        {[0, 1, 2, 3].map((line) => (
+                            <div key={line} className="h-px w-full bg-white/[0.055]" />
+                        ))}
+                        <div className="flex items-end justify-between gap-3">
+                            {[0, 1, 2, 3, 4, 5].map((tick) => (
+                                <SkeletonBlock key={tick} className="h-2 w-8" />
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div className="mb-4 mt-10">
+                <SkeletonBlock className="h-4 w-40" />
+                <SkeletonBlock className="mt-2.5 h-2.5 w-80 max-w-[68vw]" />
+            </div>
+            <div className="overflow-hidden rounded-lg border border-white/[0.08] bg-[#07080a]">
+                <div className="flex flex-col gap-3 border-b border-white/[0.07] px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+                    <div>
+                        <SkeletonBlock className="h-3 w-48 max-w-full" />
+                        <SkeletonBlock className="mt-2 h-2.5 w-64 max-w-full" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-1 rounded-lg border border-white/[0.06] p-1">
+                        <SkeletonBlock className="h-10 w-24" />
+                        <SkeletonBlock className="h-10 w-24" />
+                    </div>
+                </div>
+                <div className="space-y-7 px-4 py-7 sm:px-5">
+                    {ANALYTICS_CHART_BARS.map((width) => (
+                        <div key={width} className="grid grid-cols-[5rem_minmax(0,1fr)] items-center gap-4 sm:grid-cols-[7rem_minmax(0,1fr)]">
+                            <SkeletonBlock className="h-2.5 w-full" />
+                            <div className="flex items-center gap-2">
+                                <SkeletonBlock className={`h-4 ${width}`} />
+                                <SkeletonBlock className="h-2.5 w-8 shrink-0" />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            <div className="mb-4 mt-10">
+                <SkeletonBlock className="h-4 w-36" />
+                <SkeletonBlock className="mt-2.5 h-2.5 w-72 max-w-[68vw]" />
+            </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                {[0, 1, 2, 3].map((highlight) => (
+                    <div
+                        key={highlight}
+                        className="min-h-36 rounded-lg border border-white/[0.08] bg-[#07080a] p-4 sm:p-5"
+                    >
+                        <SkeletonBlock className="h-2 w-24" />
+                        <SkeletonBlock className="mt-5 h-6 w-32 max-w-full" />
+                        <SkeletonBlock className="mt-3 h-3 w-28" />
+                    </div>
+                ))}
+            </div>
+
+            <div className="mb-4 mt-10 flex items-end justify-between gap-4">
+                <div>
+                    <SkeletonBlock className="h-4 w-40" />
+                    <SkeletonBlock className="mt-2.5 h-2.5 w-80 max-w-[68vw]" />
+                </div>
+                <SkeletonBlock className="hidden h-2.5 w-16 sm:block" />
+            </div>
+            <div className="space-y-3 xl:space-y-0 xl:overflow-hidden xl:rounded-lg xl:border xl:border-white/[0.08] xl:bg-[#07080a]">
+                {ANALYTICS_SECTION_ROWS.map((row) => (
+                    <div
+                        key={row}
+                        className="rounded-lg border border-white/[0.08] bg-[#07080a] p-4 xl:grid xl:grid-cols-[1.5fr_repeat(6,1fr)] xl:items-center xl:gap-4 xl:rounded-none xl:border-0 xl:border-b xl:border-white/[0.06] xl:px-5 xl:py-4 xl:last:border-b-0"
+                    >
+                        <SkeletonBlock className="h-4 w-28" />
+                        <div className="mt-4 grid grid-cols-2 gap-4 xl:contents">
+                            {[0, 1, 2, 3, 4, 5].map((metric) => (
+                                <SkeletonBlock
+                                    key={metric}
+                                    className="h-3 w-12 xl:ml-auto"
+                                />
+                            ))}
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </>
+    );
+}
+
 function MessagesSkeleton() {
     return (
         <>
@@ -329,6 +466,7 @@ export default function AdminCrudPageSkeleton({
                     Loading {VARIANT_LABELS[variant]}...
                 </span>
                 <div aria-hidden="true" className="animate-pulse motion-reduce:animate-none">
+                    {variant === 'analytics' ? <AnalyticsSkeleton /> : null}
                     {variant === 'dashboard' ? (
                         <AdminHeaderSkeleton action="none" />
                     ) : null}
