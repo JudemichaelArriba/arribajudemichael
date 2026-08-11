@@ -9,6 +9,13 @@ import {
     ANALYTICS_VISITOR_COOKIE,
     validateAnalyticsSession,
 } from '@/features/analytics/session';
+import {
+    ANALYTICS_MAX_SECTION_KEY_LENGTH as MAX_SECTION_KEY_LENGTH,
+    ANALYTICS_MAX_SECTIONS_PER_BATCH as MAX_SECTIONS,
+    ANALYTICS_MAX_VIEW_COUNT_DELTA as MAX_VIEW_COUNT,
+    ANALYTICS_MAX_VISIBLE_MS_DELTA as MAX_VISIBLE_MS,
+    ANALYTICS_SECTION_KEY_PATTERN as SECTION_KEY_PATTERN,
+} from '@/features/analytics/constants';
 import type { Json } from '@/lib/models/database.types';
 import { checkAnalyticsEngagementRateLimit } from '@/lib/security/analyticsEngagementRateLimit';
 import {
@@ -19,12 +26,7 @@ import {
 export const runtime = 'nodejs';
 
 const MAX_REQUEST_BYTES = 16 * 1024;
-const MAX_SECTIONS = 20;
-const MAX_SECTION_KEY_LENGTH = 64;
-const MAX_VIEW_COUNT = 100;
-const MAX_VISIBLE_MS = 1_800_000;
 const DATABASE_TIMEOUT_MS = 5_000;
-const SECTION_KEY_PATTERN = /^[a-z0-9][a-z0-9_-]*$/;
 const REQUEST_KEYS = new Set(['sections']);
 const SECTION_KEYS = new Set([
     'sectionKey',
@@ -67,8 +69,13 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 async function readBoundedJson(request: Request): Promise<BoundedJsonResult> {
-    const contentType = request.headers.get('content-type')?.toLowerCase() ?? '';
-    if (!contentType.startsWith('application/json')) {
+    const contentType =
+        request.headers
+            .get('content-type')
+            ?.split(';', 1)[0]
+            .trim()
+            .toLowerCase() ?? '';
+    if (contentType !== 'application/json') {
         return { status: 'malformed' };
     }
 

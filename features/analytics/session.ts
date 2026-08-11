@@ -2,30 +2,35 @@ import 'server-only';
 
 import { randomUUID } from 'node:crypto';
 
-import type {
-    TablesInsert,
-    TablesUpdate,
-} from '@/lib/models/database.types';
+import type { Database } from '@/lib/models/database.types';
 import {
     createSystemClient,
     SupabaseSystemConfigurationError,
 } from '@/lib/supabase/system';
+import { ANALYTICS_SESSION_INACTIVITY_MS } from './constants';
 
 export const ANALYTICS_VISITOR_COOKIE = 'portfolio_visitor_id';
 export const ANALYTICS_SESSION_COOKIE = 'portfolio_session_id';
 
 const UUID_PATTERN =
     /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const SESSION_INACTIVITY_MS = 30 * 60 * 1_000;
 const MAX_CLOCK_SKEW_MS = 5 * 60 * 1_000;
 const DATABASE_TIMEOUT_MS = 5_000;
 
-type DatabaseOperation = 'insert' | 'lookup' | 'update';
+type DatabaseOperation = 'lookup' | 'rpc';
 
-interface RecordAnalyticsSessionInput {
+interface AnalyticsSessionCookieInput {
     sessionCookieValue?: string;
     visitorCookieValue?: string;
 }
+
+type RecordAnalyticsSessionInput = Pick<
+    AnalyticsSessionCookieInput,
+    'visitorCookieValue'
+>;
+
+type GetOrCreateAnalyticsSessionResult =
+    Database['public']['Functions']['get_or_create_analytics_session']['Returns'];
 
 export type AnalyticsSessionValidationResult =
     | { valid: true; sessionId: string }
@@ -42,6 +47,18 @@ function parseUuid(value: string | undefined): string | null {
     return value.toLowerCase();
 }
 
+function parseCreatedSessionId(
+    data: GetOrCreateAnalyticsSessionResult | null,
+): string | null {
+    if (!Array.isArray(data) || data.length !== 1) return null;
+
+    const [row] = data;
+
+    if (!row || typeof row.created !== 'boolean') return null;
+
+    return parseUuid(row.session_id);
+}
+
 function isSessionActive(lastSeenAt: string, now: Date): boolean {
     const lastSeenTime = Date.parse(lastSeenAt);
 
@@ -51,7 +68,7 @@ function isSessionActive(lastSeenAt: string, now: Date): boolean {
 
     return (
         inactivityMs >= -MAX_CLOCK_SKEW_MS &&
-        inactivityMs < SESSION_INACTIVITY_MS
+        inactivityMs < ANALYTICS_SESSION_INACTIVITY_MS
     );
 }
 
@@ -78,7 +95,7 @@ function logDatabaseError(operation: DatabaseOperation, code: string): void {
 export async function validateAnalyticsSession({
     sessionCookieValue,
     visitorCookieValue,
-}: RecordAnalyticsSessionInput): Promise<AnalyticsSessionValidationResult> {
+}: AnalyticsSessionCookieInput): Promise<AnalyticsSessionValidationResult> {
     const visitorId = parseUuid(visitorCookieValue);
     const sessionId = parseUuid(sessionCookieValue);
 
@@ -137,7 +154,6 @@ export async function validateAnalyticsSession({
 }
 
 export async function recordAnalyticsSession({
-    sessionCookieValue,
     visitorCookieValue,
 }: RecordAnalyticsSessionInput): Promise<RecordedAnalyticsSession | null> {
     let supabase: ReturnType<typeof createSystemClient>;
@@ -159,79 +175,30 @@ export async function recordAnalyticsSession({
     const storedVisitorId = parseUuid(visitorCookieValue);
     const visitorId = storedVisitorId ?? randomUUID();
     const shouldSetVisitorCookie = storedVisitorId === null;
-    const storedSessionId = shouldSetVisitorCookie
-        ? null
-        : parseUuid(sessionCookieValue);
-    const now = new Date();
-    let operation: DatabaseOperation = 'lookup';
 
     try {
-        if (storedSessionId) {
-            const { data: existingSession, error: lookupError } =
-                await withDatabaseTimeout(async (signal) =>
-                    supabase
-                        .from('analytics_sessions')
-                        .select('id, last_seen_at')
-                        .eq('id', storedSessionId)
-                        .eq('visitor_id', visitorId)
-                        .abortSignal(signal)
-                        .maybeSingle(),
-                );
-
-            if (lookupError) {
-                logDatabaseError('lookup', lookupError.code);
-                return null;
-            }
-
-            if (
-                existingSession &&
-                isSessionActive(existingSession.last_seen_at, now)
-            ) {
-                operation = 'update';
-
-                const sessionUpdate = {
-                    last_seen_at: now.toISOString(),
-                } satisfies TablesUpdate<'analytics_sessions'>;
-                const { error: updateError } = await withDatabaseTimeout(
-                    async (signal) =>
-                        supabase
-                            .from('analytics_sessions')
-                            .update(sessionUpdate)
-                            .eq('id', storedSessionId)
-                            .eq('visitor_id', visitorId)
-                            .abortSignal(signal),
-                );
-
-                if (updateError) {
-                    logDatabaseError('update', updateError.code);
-                    return null;
-                }
-
-                return {
-                    sessionId: storedSessionId,
-                    shouldSetVisitorCookie,
-                    visitorId,
-                };
-            }
-        }
-
-        operation = 'insert';
-
-        const sessionId = randomUUID();
-        const sessionInsert = {
-            id: sessionId,
-            visitor_id: visitorId,
-        } satisfies TablesInsert<'analytics_sessions'>;
-        const { error: insertError } = await withDatabaseTimeout(
+        const { data, error: rpcError } = await withDatabaseTimeout(
             async (signal) =>
                 supabase
-                    .from('analytics_sessions')
-                    .insert(sessionInsert)
+                    .rpc('get_or_create_analytics_session', {
+                        p_visitor_id: visitorId,
+                        p_inactivity_seconds:
+                            ANALYTICS_SESSION_INACTIVITY_MS / 1_000,
+                    })
                     .abortSignal(signal),
         );
 
-        if (insertError) {
-            logDatabaseError('insert', insertError.code);
+        if (rpcError) {
+            logDatabaseError('rpc', rpcError.code);
+            return null;
+        }
+
+        const sessionId = parseCreatedSessionId(data);
+
+        if (!sessionId) {
+            console.error('[analytics/session] RPC returned an invalid result.', {
+                operation: 'rpc',
+            });
             return null;
         }
 
@@ -242,7 +209,7 @@ export async function recordAnalyticsSession({
         };
     } catch (error) {
         console.error('[analytics/session] Database request failed.', {
-            operation,
+            operation: 'rpc',
             name: error instanceof Error ? error.name : 'UnknownError',
         });
         return null;

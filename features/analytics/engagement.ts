@@ -1,5 +1,10 @@
 'use client';
 
+import {
+    ANALYTICS_MAX_VIEW_COUNT_DELTA,
+    ANALYTICS_MAX_VISIBLE_MS_DELTA,
+} from './constants';
+
 export interface SectionEngagementMetric {
     sectionKey: string;
     viewCount: number;
@@ -192,34 +197,19 @@ function flushAllActiveRecords(): void {
     });
 }
 
-function serializeMetric(
-    metric: SectionEngagementMetric,
-): SectionEngagementMetric {
-    return {
-        sectionKey: metric.sectionKey,
-        viewCount: metric.viewCount,
-        visibleMs: Math.max(0, Math.round(metric.visibleMs)),
-        maxVisibility: clampVisibility(metric.maxVisibility),
-        firstSeenAt: metric.firstSeenAt,
-        lastSeenAt: metric.lastSeenAt,
-    };
-}
-
-export function snapshotEngagement(): SectionEngagementMetric[] {
-    flushAllActiveRecords();
-
-    return Array.from(engagementRecords.values(), serializeMetric).sort(
-        (first, second) => first.sectionKey.localeCompare(second.sectionKey),
-    );
-}
-
 export function snapshotEngagementDeltas(): SectionEngagementDelta[] {
     flushAllActiveRecords();
 
     return Array.from(engagementDeltas.values(), (delta) => ({
         sectionKey: delta.sectionKey,
-        viewCount: delta.viewCount,
-        visibleMs: Math.max(0, Math.round(delta.visibleMs)),
+        viewCount: Math.min(
+            ANALYTICS_MAX_VIEW_COUNT_DELTA,
+            delta.viewCount,
+        ),
+        visibleMs: Math.min(
+            ANALYTICS_MAX_VISIBLE_MS_DELTA,
+            Math.max(0, Math.round(delta.visibleMs)),
+        ),
         maxVisibility: clampVisibility(delta.maxVisibility),
     }))
         .filter((delta) => delta.viewCount > 0 || delta.visibleMs > 0)

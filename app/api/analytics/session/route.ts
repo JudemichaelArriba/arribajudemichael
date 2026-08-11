@@ -5,6 +5,7 @@ import {
     ANALYTICS_VISITOR_COOKIE,
     recordAnalyticsSession,
 } from '@/features/analytics/session';
+import { ANALYTICS_SESSION_INACTIVITY_MS } from '@/features/analytics/constants';
 import {
     getAnalyticsAuthenticationState,
     isAnalyticsEnabled,
@@ -14,7 +15,8 @@ import { checkAnalyticsSessionRateLimit } from '@/lib/security/analyticsSessionR
 export const runtime = 'nodejs';
 
 const VISITOR_COOKIE_MAX_AGE_SECONDS = 365 * 24 * 60 * 60;
-const SESSION_COOKIE_MAX_AGE_SECONDS = 30 * 60;
+const SESSION_COOKIE_MAX_AGE_SECONDS =
+    ANALYTICS_SESSION_INACTIVITY_MS / 1_000;
 
 function noContentResponse(): Response {
     return new Response(null, {
@@ -40,7 +42,6 @@ export async function POST(request: Request): Promise<Response> {
         const cookieStore = await cookies();
         const recordedSession = await recordAnalyticsSession({
             visitorCookieValue: cookieStore.get(ANALYTICS_VISITOR_COOKIE)?.value,
-            sessionCookieValue: cookieStore.get(ANALYTICS_SESSION_COOKIE)?.value,
         });
 
         if (!recordedSession) return noContentResponse();

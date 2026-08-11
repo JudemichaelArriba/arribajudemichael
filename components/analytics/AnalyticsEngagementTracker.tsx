@@ -9,10 +9,17 @@ import {
     recordSectionVisibility,
     resumeSectionEngagement,
 } from '@/features/analytics/engagement';
+import {
+    ANALYTICS_SESSION_INACTIVITY_MS,
+    getLastAnalyticsActivityAt,
+    subscribeToAnalyticsActivity,
+} from '@/features/analytics/activity';
+import {
+    ANALYTICS_MAX_SECTION_KEY_LENGTH,
+    ANALYTICS_SECTION_KEY_PATTERN,
+} from '@/features/analytics/constants';
 
 const TRACKED_SECTION_SELECTOR = '[data-analytics-section]';
-const SECTION_KEY_PATTERN = /^[a-z0-9][a-z0-9_-]*$/;
-const MAX_SECTION_KEY_LENGTH = 64;
 const MEANINGFUL_VISIBILITY = 0.25;
 const MEANINGFUL_DWELL_MS = 1_000;
 const VISIBILITY_THRESHOLDS = [0, 0.25, 0.5, 0.75, 1];
@@ -98,8 +105,8 @@ function getSectionKey(element: HTMLElement): string | null {
 
     if (
         !sectionKey ||
-        sectionKey.length > MAX_SECTION_KEY_LENGTH ||
-        !SECTION_KEY_PATTERN.test(sectionKey)
+        sectionKey.length > ANALYTICS_MAX_SECTION_KEY_LENGTH ||
+        !ANALYTICS_SECTION_KEY_PATTERN.test(sectionKey)
     ) {
         return null;
     }
@@ -111,8 +118,13 @@ export default function AnalyticsEngagementTracker() {
     useEffect(() => {
         const trackedByElement = new Map<HTMLElement, TrackedSection>();
         const trackedByKey = new Map<string, TrackedSection>();
+        const initialActivityAt = getLastAnalyticsActivityAt() || Date.now();
+        let inactivityTimerId: number | null = null;
         let isDisposed = false;
-        let isPageActive = document.visibilityState === 'visible';
+        let isPageActive =
+            document.visibilityState === 'visible' &&
+            Date.now() - initialActivityAt <
+                ANALYTICS_SESSION_INACTIVITY_MS;
 
         const clearQualificationTimer = (state: TrackedSection) => {
             if (state.qualificationTimerId === null) return;
@@ -327,11 +339,10 @@ export default function AnalyticsEngagementTracker() {
             subtree: true,
         });
 
-        const pauseTracking = () => {
+        const pauseTracking = (now = performance.now()) => {
             if (!isPageActive) return;
             isPageActive = false;
 
-            const now = performance.now();
             const observedAt = new Date().toISOString();
 
             trackedByElement.forEach((state) => {
@@ -381,18 +392,81 @@ export default function AnalyticsEngagementTracker() {
             });
         };
 
+        const clearInactivityTimer = () => {
+            if (inactivityTimerId === null) return;
+
+            window.clearTimeout(inactivityTimerId);
+            inactivityTimerId = null;
+        };
+
+        const scheduleInactivityPause = (activityAt: number) => {
+            clearInactivityTimer();
+            if (document.visibilityState !== 'visible') return;
+
+            const remainingMs = Math.max(
+                0,
+                activityAt + ANALYTICS_SESSION_INACTIVITY_MS - Date.now(),
+            );
+            const inactivityDeadline = performance.now() + remainingMs;
+
+            inactivityTimerId = window.setTimeout(() => {
+                inactivityTimerId = null;
+
+                const latestActivityAt = getLastAnalyticsActivityAt();
+                if (
+                    latestActivityAt > activityAt &&
+                    Date.now() - latestActivityAt <
+                        ANALYTICS_SESSION_INACTIVITY_MS
+                ) {
+                    scheduleInactivityPause(latestActivityAt);
+                    return;
+                }
+
+                pauseTracking(
+                    Math.min(performance.now(), inactivityDeadline),
+                );
+            }, remainingMs);
+        };
+
+        const handleAnalyticsActivity = (activityAt: number) => {
+            if (document.visibilityState !== 'visible') return;
+
+            scheduleInactivityPause(activityAt);
+            resumeTracking();
+        };
+
+        const unsubscribeFromAnalyticsActivity =
+            subscribeToAnalyticsActivity(handleAnalyticsActivity);
+
+        scheduleInactivityPause(initialActivityAt);
+
         const handleVisibilityChange = () => {
             if (document.visibilityState === 'visible') {
+                const latestActivityAt = getLastAnalyticsActivityAt();
+                if (
+                    latestActivityAt <= 0 ||
+                    Date.now() - latestActivityAt >=
+                        ANALYTICS_SESSION_INACTIVITY_MS
+                ) return;
+
+                scheduleInactivityPause(latestActivityAt);
                 resumeTracking();
             } else {
+                clearInactivityTimer();
                 pauseTracking();
             }
         };
 
-        const handlePageHide = () => pauseTracking();
-        const handlePageShow = () => resumeTracking();
-        const handleFreeze = () => pauseTracking();
-        const handleResume = () => resumeTracking();
+        const handlePageHide = () => {
+            clearInactivityTimer();
+            pauseTracking();
+        };
+        const handlePageShow = () => handleVisibilityChange();
+        const handleFreeze = () => {
+            clearInactivityTimer();
+            pauseTracking();
+        };
+        const handleResume = () => handleVisibilityChange();
 
         document.addEventListener('visibilitychange', handleVisibilityChange);
         window.addEventListener('pagehide', handlePageHide);
@@ -401,6 +475,8 @@ export default function AnalyticsEngagementTracker() {
         document.addEventListener('resume', handleResume);
 
         return () => {
+            clearInactivityTimer();
+            unsubscribeFromAnalyticsActivity();
             pauseTracking();
             isDisposed = true;
             mutationObserver.disconnect();

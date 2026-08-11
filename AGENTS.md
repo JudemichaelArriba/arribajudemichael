@@ -105,7 +105,7 @@ arribajudemichael/
 ### 1. Routing & Layouts
 - **App Router** with route groups: `(public)` group for public-facing pages
 - Root layout (`app/layout.tsx`): Sets up fonts, metadata, HTML structure
-- Public layout (`app/(public)/layout.tsx`): Wraps pages with Preloader and Navbar, then renders the semantic Footer after `<main>`
+- Public layout (`app/(public)/layout.tsx`): Mounts the analytics bootstrap/tracker/batcher, wraps pages with Preloader and Navbar, then renders the semantic Footer after `<main>`
 - Homepage order: `Home` -> `WhatIDo` -> `AboutMe` -> `Experience` -> `TechStack` -> `Projects` -> `Contact`
 - Client components marked with `'use client'` directive
 
@@ -121,7 +121,21 @@ arribajudemichael/
 - Navigation and public contact destinations are centralized in `lib/site.ts`; empty contact URLs must render as non-interactive content, never empty anchors.
 - The Contact form is a static client-side preview until Supabase integration. Keep field names stable and do not imply that submissions were delivered or persisted.
 
-### 3. Styling Approach
+### 3. Analytics Architecture
+- Public analytics orchestration lives in `components/analytics/`: `AnalyticsSessionBootstrap.tsx` observes throttled interaction and refreshes the anonymous session, `AnalyticsEngagementTracker.tsx` owns section visibility/dwell state, and `AnalyticsEngagementBatcher.tsx` sends buffered deltas about every 30 seconds plus best-effort hidden/pagehide flushes.
+- `features/analytics/` owns the shared limits/activity signal, client delta buffer, server-only visitor/session persistence, and authentication/enable checks. Visitor and session UUIDs are generated and validated on the server and remain in `HttpOnly`, `SameSite=Lax`, path `/` cookies; the visitor cookie lasts one year and session activity expires after approximately 30 minutes without meaningful browser interaction.
+- Session bootstrap uses a same-origin Web Lock when the browser supports it to serialize concurrent tabs, but this is only a client-side mitigation. The current database boundary does not provide an atomic reuse-or-create session operation; do not claim global exactly-once session creation.
+- `POST /api/analytics/session` is the only public session bootstrap route. `POST /api/analytics/engagement` accepts bounded section deltas only; it never accepts visitor/session IDs from the browser, validates cookie ownership server-side, rate-limits before the privileged write, and invokes the atomic `record_analytics_engagement` RPC through `lib/supabase/system.ts`.
+- Public analytics writes are server-mediated. Client Components must never import the system Supabase client, read `SUPABASE_SECRET_KEY`, or query/write analytics tables directly. The system client is restricted to trusted server-only ingestion code; Admin reporting uses the authenticated cookie client, reporting RPCs, and RLS.
+- Analytics rate limits use persistent Upstash state with analytics-specific prefixes. Source identification is an HMAC of a trusted platform IP using `CONTACT_IP_HASH_SECRET`; raw IPs and source hashes are never stored in analytics tables or returned to clients.
+- Only explicitly marked `[data-analytics-section]` elements are tracked. `home` is prohibited in the client, API, and database constraints. A section requires at least one second of meaningful visibility, hidden tabs pause timing, and inactivity pauses visible-time accumulation.
+- Engagement buffering follows snapshot -> send -> acknowledge on HTTP 204. New deltas may accumulate during the single in-flight request; successful snapshots are subtracted without removing newer activity, while network/429/503 failures remain pending. The additive RPC makes delivery at-least-once, not exactly-once; do not change retry or delta semantics casually.
+- Admin reporting lives in `features/admin/analytics/{types,queries}.ts`, is server-only, and uses `Asia/Manila` boundaries: local day, Monday-based week, calendar month, and calendar year. `components/admin/analytics/` owns the detailed `/dashboard/analytics` report and Recharts components. `/dashboard` is only the weekly four-card summary plus one compact Visitor Activity chart and a link to the detailed report.
+- Traffic RPCs currently attribute visitors and sessions by `analytics_sessions.started_at`. Changing cross-midnight or cross-period attribution requires an owner-managed RPC/schema decision, not a client-side workaround.
+- Analytics is non-critical: public failures stay silent, ingestion fails closed without blocking the portfolio, and Admin query failures render explicit unavailable states distinct from valid zero-data states.
+- **Database ownership:** the repository owner manually manages Supabase schema, migrations, RPCs, RLS, and indexes. Agents must report database mismatches and must not create, edit, or push analytics database changes unless explicitly directed by the owner.
+
+### 4. Styling Approach
 - **Tailwind CSS 4 is mandatory for standard styling** - Use utility classes for layout, spacing, sizing, typography, colors, borders, shadows, responsive states, and simple hover/focus states.
 - **Use Tailwind even when a CSS file already exists** - Keep or add native CSS only for rules that Tailwind would make fragile, unreadable, or less correct.
 - **Native CSS is protected only when necessary** for:
@@ -135,18 +149,18 @@ arribajudemichael/
 - Global styles in `app/globals.css` are for Tailwind directives, CSS variables, scrollbar, reduced-motion, and true global utilities.
 - Tailwind arbitrary values (`className="text-[#5227FF]"`) are preferred for one-off exact design values.
 - Empty or unused CSS files must be removed after conversion.
-### 4. Animation & Effects
+### 5. Animation & Effects
 - **GSAP 3.15** for complex animations (@gsap/react)
 - **Three.js/OGL** for WebGL effects such as FloatingLines
 - Custom hooks for animation logic (`useRoleCycle`, etc.)
 - Performance-focused: animations isolated, lazy-loaded when heavy
 
-### 5. Typography
+### 6. Typography
 - **Next Font** optimization for Google Fonts (Geist, Geist Mono)
 - Custom fonts loaded via `lib/fonts.ts` (Bricolage Grotesque)
 - Font variables applied via CSS custom properties
 
-### 6. UI Components
+### 7. UI Components
 - **Button component** (`components/ui/Button.tsx`):
   - Variants: `default`, `specular`, `ghost`
   - Sizes: `sm`, `md`, `lg`
@@ -284,6 +298,8 @@ export default function Component({ title, onAction }: ComponentProps) {
 - Template in `.env.example`
 - Access via `process.env.NEXT_PUBLIC_*` for client-side
 - **Never commit `.env` or expose secrets in code**
+- Analytics requires server-only `ANALYTICS_ENABLED`, `SUPABASE_SECRET_KEY`, `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`, and `CONTACT_IP_HASH_SECRET`; only the existing Supabase URL/publishable key are public.
+- `ANALYTICS_ENABLED=true` enables public collection. Missing privileged/rate-limit configuration must fail closed and must not fall back to anonymous table writes.
 
 ## Dependencies Reference
 
@@ -355,6 +371,7 @@ See `.github/workflows/test.yml` for the complete workflow configuration.
 5. Check console for warnings/errors
 6. Verify responsive design
 7. For CSS-to-Tailwind conversions, verify no design changes, preserved reduced-motion behavior, preserved GSAP/query selector hooks, and no stale CSS imports
+8. For analytics changes, run `npm run build` and manually verify cookie/session reuse, admin and Home exclusion, hidden/inactive timing, 30-second batching, retry retention, zero/unavailable reporting states, and both Admin charts without mutating the database
 
 ## Notes for AI Agents
 
@@ -384,5 +401,5 @@ See `.github/workflows/test.yml` for the complete workflow configuration.
 
 ---
 
-**Last Updated:** 2026-08-10
+**Last Updated:** 2026-08-12
 **Maintained by:** AI Agents working on this project

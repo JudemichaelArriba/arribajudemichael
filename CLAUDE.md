@@ -21,10 +21,14 @@ app/
   (public)/              -> Public pages (Preloader + Navbar + semantic Footer)
     layout.tsx           -> Public layout
     page.tsx             -> Home page composition
+  api/analytics/         -> Server-only session bootstrap and engagement ingestion
+  (protected)/dashboard/analytics/ -> Detailed authenticated analytics report
   layout.tsx             -> Root layout (fonts, metadata)
   globals.css            -> Global styles, scrollbar, Tailwind directives
 
 components/
+  analytics/             -> Client session activity, section observer, and delta batcher
+  admin/analytics/       -> Admin report UI, formatting, and Recharts visualizations
   sections/              -> Page sections and page-level section scenes
     home/                -> Home.tsx (Tailwind CSS only)
     WhatIDo/             -> WhatIDo.tsx (Tailwind CSS only)
@@ -48,6 +52,10 @@ lib/
   site.ts                -> Shared typed navigation and contact destinations
   useActiveSection.ts    -> Scroll detection hook
   animations/            -> Animation logic (useRoleCycle, preloader)
+
+features/
+  analytics/             -> Shared limits/activity, client delta state, server session logic
+  admin/analytics/       -> Authenticated reporting DTOs and server RPC queries
 
 public/
   profile.jpeg           -> About/profile image
@@ -73,6 +81,21 @@ public/
 - **Local PDF.js runtime** - `pdfjs-dist` worker and WASM assets are synchronized into ignored `public/vendor/pdfjs/` before `dev` and `build`. Never add CDN workers or duplicate preview images.
 - **Shared site configuration** - `lib/site.ts` owns navigation and contact destinations used by Navbar, Contact, and Footer.
 - **Static contact boundary** - The current form validates locally and reports that no message was sent; replace only its submission boundary when Supabase is introduced.
+
+### Analytics Safety Boundary
+- `app/(public)/layout.tsx` mounts three client entry points: `AnalyticsSessionBootstrap` detects throttled interaction and requests or refreshes anonymous cookies, `AnalyticsEngagementTracker` observes only marked sections, and `AnalyticsEngagementBatcher` snapshots and sends deltas approximately every 30 seconds.
+- `features/analytics/activity.ts` and `constants.ts` keep the 30-minute inactivity window and payload constraints aligned. `engagement.ts` owns the in-memory additive buffer. `session.ts` and `request.ts` are server-only and own UUID/cookie validation, database session reuse, the enable flag, and Admin exclusion checks.
+- `AnalyticsSessionBootstrap` uses Web Locks where available to serialize same-browser tabs. This mitigates duplicate bootstrap requests but is not a database-level atomic reuse-or-create guarantee.
+- Visitor/session IDs are server-generated and stored only in `HttpOnly`, `SameSite=Lax`, path `/` cookies. Never add them to browser payloads, UI, logs, URLs, or client storage. Do not add fingerprinting, raw-IP analytics, geolocation, replay, mouse-coordinate, keystroke-content, or user-agent-history collection.
+- Track only explicit `data-analytics-section` markers. `home` must stay excluded. Preserve the one-second meaningful-entry qualification, tall-section engagement band, hidden-tab pause, interaction inactivity pause, one view per qualified entry, and leave/re-enter behavior.
+- The buffer contract is snapshot -> one in-flight POST -> subtract that exact snapshot only after HTTP 204. New activity may accumulate while the request is pending; failed requests remain retryable. The database RPC adds deltas, so this is at-least-once delivery and must not be treated as exactly-once without an owner-managed database idempotency design.
+- `/api/analytics/engagement` is the sole public engagement-write boundary. It accepts section deltas only, validates the `HttpOnly` cookies and session ownership, uses analytics-specific persistent Upstash limits, and calls the additive RPC through the server-only system client. Client Components must never import `lib/supabase/system.ts`, use `SUPABASE_SECRET_KEY`, or directly query or write analytics tables.
+- Admin reporting is server-only in `features/admin/analytics/queries.ts`. It calls authenticated reporting RPCs through the cookie client and RLS with fixed `Asia/Manila` boundaries: local today, Monday-based current week, calendar month, and calendar year. `VisitorTrendChart.tsx` and `SectionPerformanceChart.tsx` render DTOs only and must not fetch Supabase data.
+- Current traffic RPCs attribute periods using `analytics_sessions.started_at`; do not silently redefine cross-period attribution in client code.
+- `/dashboard` stays a weekly summary: four KPI cards, one compact Visitor Activity chart, and a link to `/dashboard/analytics?period=week`. `/dashboard/analytics` owns Today/Week/Month/Year selection, the full Visitor Traffic chart, Section Performance modes, highlights, and breakdown.
+- Analytics failures must never block public rendering or show public error notifications. Public ingestion fails closed; Admin query failures use explicit unavailable states, while real all-zero data uses the normal empty states.
+- `ANALYTICS_ENABLED`, `SUPABASE_SECRET_KEY`, Upstash credentials, and `CONTACT_IP_HASH_SECRET` are server-only. The IP-derived HMAC is a rate-limit identifier only and must never enter analytics tables or responses.
+- **Database ownership is manual:** Jude Michael Arriba owns Supabase schema, migrations, RPCs, RLS, and indexes. Report mismatches; do not create, edit, or push analytics database changes unless he explicitly requests them.
 
 ### Component Patterns to Follow
 
@@ -260,6 +283,7 @@ npm run dev         # Test in development
 - [ ] CSS-to-Tailwind conversions preserve the exact design, reduced-motion behavior, GSAP/query selector hooks, and remove stale CSS imports
 - [ ] Animations run smoothly
 - [ ] Accessibility maintained (keyboard nav, screen readers)
+- [ ] Analytics changes preserve visitor/session reuse, Admin and Home exclusion, inactive/hidden timing, 30-second delta batching, retry retention, Asia/Manila periods, real-data charts, and distinct zero/unavailable states
 
 #### Test Coverage
 This project has **235+ test cases** covering:
@@ -285,6 +309,7 @@ See `.github/workflows/test.yml` for workflow configuration.
 - Never read or expose `.env` file contents
 - Use `process.env.NEXT_PUBLIC_*` for client-side vars
 - Template provided in `.env.example`
+- Public analytics is enabled only when server-side `ANALYTICS_ENABLED=true`; missing system-client or Upstash configuration must fail closed.
 
 #### Data Safety
 - Don't modify `.env`, `.gitignore`, or security configs without explicit permission
@@ -419,6 +444,6 @@ When reviewing AI-generated code:
 
 ---
 
-**Last Updated:** 2026-08-10
+**Last Updated:** 2026-08-12
 **Primary Reference:** `AGENTS.md`  
 **Purpose:** AI assistant quick reference and context document

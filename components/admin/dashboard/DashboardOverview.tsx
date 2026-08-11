@@ -1,4 +1,5 @@
-import { BarChart3, CircleAlert } from 'lucide-react';
+import Link from 'next/link';
+import { ArrowUpRight, BarChart3, CircleAlert } from 'lucide-react';
 
 import {
     AdminPageHeader,
@@ -90,6 +91,14 @@ export default function DashboardOverview({
                             A concise view of portfolio traffic since Monday.
                         </p>
                     </div>
+
+                    <Link
+                        href="/dashboard/analytics?period=week"
+                        className="inline-flex min-h-11 w-fit items-center gap-2 rounded-lg px-2 text-xs font-bold text-[var(--muted)]/64 transition-colors duration-200 hover:bg-white/[0.035] hover:text-[var(--signal)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--signal)]/60 motion-reduce:transition-none"
+                    >
+                        View full analytics
+                        <ArrowUpRight aria-hidden="true" size={14} strokeWidth={1.8} />
+                    </Link>
                 </div>
 
                 {analyticsUnavailable || analyticsSummary === null ? (

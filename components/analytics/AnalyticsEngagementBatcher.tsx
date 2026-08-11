@@ -7,17 +7,20 @@ import {
     snapshotEngagementDeltas,
     type SectionEngagementDelta,
 } from '@/features/analytics/engagement';
+import { getLastAnalyticsActivityAt } from '@/features/analytics/activity';
+import { ANALYTICS_MAX_SECTIONS_PER_BATCH } from '@/features/analytics/constants';
 
 const BATCH_INTERVAL_MS = 30_000;
 const REQUEST_TIMEOUT_MS = 30_000;
-const MAX_BATCH_SECTIONS = 20;
 
 let flushInFlight: Promise<void> | null = null;
+let sessionActivityRequiredAfter: number | null = null;
 
 async function sendEngagementBatch(
     sections: readonly SectionEngagementDelta[],
     keepalive: boolean,
 ): Promise<void> {
+    const activityAtRequestStart = getLastAnalyticsActivityAt();
     const controller = new AbortController();
     const timeoutId = window.setTimeout(
         () => controller.abort(),
@@ -37,6 +40,12 @@ async function sendEngagementBatch(
 
         if (response.status === 204) {
             acknowledgeEngagementDeltas(sections);
+            sessionActivityRequiredAfter = null;
+        } else if (
+            response.status === 401 &&
+            getLastAnalyticsActivityAt() <= activityAtRequestStart
+        ) {
+            sessionActivityRequiredAfter = activityAtRequestStart;
         }
     } catch {
         // Analytics is best-effort; pending deltas remain for a later batch.
@@ -54,12 +63,17 @@ function flushEngagementDeltas({
 }): void {
     if (
         flushInFlight ||
+        (sessionActivityRequiredAfter !== null &&
+            getLastAnalyticsActivityAt() <= sessionActivityRequiredAfter) ||
         (!allowHidden && document.visibilityState !== 'visible')
     ) {
         return;
     }
 
-    const sections = snapshotEngagementDeltas().slice(0, MAX_BATCH_SECTIONS);
+    const sections = snapshotEngagementDeltas().slice(
+        0,
+        ANALYTICS_MAX_SECTIONS_PER_BATCH,
+    );
     if (sections.length === 0) return;
 
     const request = sendEngagementBatch(sections, keepalive);
