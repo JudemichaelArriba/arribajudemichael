@@ -27,7 +27,9 @@ export const runtime = 'nodejs';
 
 const MAX_REQUEST_BYTES = 16 * 1024;
 const DATABASE_TIMEOUT_MS = 5_000;
-const REQUEST_KEYS = new Set(['sections']);
+const UUID_PATTERN =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const REQUEST_KEYS = new Set(['batchId', 'sections']);
 const SECTION_KEYS = new Set([
     'sectionKey',
     'viewCount',
@@ -40,6 +42,11 @@ interface ValidatedEngagementSection {
     viewCount: number;
     visibleMs: number;
     maxVisibility: number;
+}
+
+interface ValidatedEngagementPayload {
+    batchId: string;
+    sections: ValidatedEngagementSection[];
 }
 
 type BoundedJsonResult =
@@ -138,11 +145,14 @@ async function readBoundedJson(request: Request): Promise<BoundedJsonResult> {
     }
 }
 
-function validatePayload(value: unknown): ValidatedEngagementSection[] | null {
+function validatePayload(value: unknown): ValidatedEngagementPayload | null {
     if (!isRecord(value) || !hasExactKeys(value, REQUEST_KEYS)) return null;
 
+    const batchId = value.batchId;
     const sections = value.sections;
     if (
+        typeof batchId !== 'string' ||
+        !UUID_PATTERN.test(batchId) ||
         !Array.isArray(sections) ||
         sections.length < 1 ||
         sections.length > MAX_SECTIONS
@@ -193,7 +203,10 @@ function validatePayload(value: unknown): ValidatedEngagementSection[] | null {
         });
     }
 
-    return validatedSections;
+    return {
+        batchId: batchId.toLowerCase(),
+        sections: validatedSections,
+    };
 }
 
 export async function POST(request: Request): Promise<Response> {
@@ -208,8 +221,8 @@ export async function POST(request: Request): Promise<Response> {
         return emptyResponse(bodyResult.status === 'oversized' ? 413 : 400);
     }
 
-    const sections = validatePayload(bodyResult.value);
-    if (!sections) return emptyResponse(400);
+    const payload = validatePayload(bodyResult.value);
+    if (!payload) return emptyResponse(400);
 
     const rateLimit = await checkAnalyticsEngagementRateLimit(request);
     if (!rateLimit.allowed) {
@@ -242,7 +255,7 @@ export async function POST(request: Request): Promise<Response> {
         return emptyResponse(503);
     }
 
-    const rpcSections: Json = sections.map((section) => ({
+    const rpcSections: Json = payload.sections.map((section) => ({
         sectionKey: section.sectionKey,
         viewCount: section.viewCount,
         visibleMs: section.visibleMs,
@@ -255,8 +268,9 @@ export async function POST(request: Request): Promise<Response> {
     );
 
     try {
-        const { error } = await supabase
-            .rpc('record_analytics_engagement', {
+        const { data: wasApplied, error } = await supabase
+            .rpc('record_analytics_engagement_idempotent', {
+                p_batch_id: payload.batchId,
                 p_session_id: session.sessionId,
                 p_sections: rpcSections,
             })
@@ -266,6 +280,13 @@ export async function POST(request: Request): Promise<Response> {
             console.error('[api/analytics/engagement] RPC failed.', {
                 operation: 'record',
                 code: error.code || 'unknown',
+            });
+            return emptyResponse(503);
+        }
+
+        if (typeof wasApplied !== 'boolean') {
+            console.error('[api/analytics/engagement] RPC returned an invalid result.', {
+                operation: 'record',
             });
             return emptyResponse(503);
         }

@@ -4,22 +4,40 @@ import { useEffect } from 'react';
 
 import {
     acknowledgeEngagementDeltas,
+    discardEngagementDeltas,
     snapshotEngagementDeltas,
     type SectionEngagementDelta,
 } from '@/features/analytics/engagement';
-import { getLastAnalyticsActivityAt } from '@/features/analytics/activity';
+import {
+    ANALYTICS_SESSION_INACTIVITY_MS,
+    getLastAnalyticsActivityAt,
+    subscribeToAnalyticsActivity,
+} from '@/features/analytics/activity';
 import { ANALYTICS_MAX_SECTIONS_PER_BATCH } from '@/features/analytics/constants';
 
 const BATCH_INTERVAL_MS = 30_000;
 const REQUEST_TIMEOUT_MS = 30_000;
 
+interface PendingEngagementBatch {
+    assignedAt: number;
+    batchId: string;
+    snapshot: readonly SectionEngagementDelta[];
+}
+
+type EngagementDeliveryResult =
+    | 'acknowledged'
+    | 'invalid-session'
+    | 'retry'
+    | 'terminal';
+
 let flushInFlight: Promise<void> | null = null;
+let pendingBatch: PendingEngagementBatch | null = null;
 let sessionActivityRequiredAfter: number | null = null;
 
 async function sendEngagementBatch(
-    sections: readonly SectionEngagementDelta[],
+    batch: PendingEngagementBatch,
     keepalive: boolean,
-): Promise<void> {
+): Promise<EngagementDeliveryResult> {
     const activityAtRequestStart = getLastAnalyticsActivityAt();
     const controller = new AbortController();
     const timeoutId = window.setTimeout(
@@ -33,24 +51,92 @@ async function sendEngagementBatch(
             cache: 'no-store',
             credentials: 'same-origin',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ sections }),
+            body: JSON.stringify({
+                batchId: batch.batchId,
+                sections: batch.snapshot,
+            }),
             keepalive,
             signal: controller.signal,
         });
 
         if (response.status === 204) {
-            acknowledgeEngagementDeltas(sections);
             sessionActivityRequiredAfter = null;
-        } else if (
+            return 'acknowledged';
+        }
+
+        if (
             response.status === 401 &&
             getLastAnalyticsActivityAt() <= activityAtRequestStart
         ) {
             sessionActivityRequiredAfter = activityAtRequestStart;
         }
+
+        if (response.status === 401) return 'invalid-session';
+        if (response.status === 400 || response.status === 413) {
+            return 'terminal';
+        }
+
+        return 'retry';
     } catch {
-        // Analytics is best-effort; pending deltas remain for a later batch.
+        return 'retry';
     } finally {
         window.clearTimeout(timeoutId);
+    }
+}
+
+function acknowledgePendingBatch(batch: PendingEngagementBatch): void {
+    if (pendingBatch !== batch) return;
+
+    acknowledgeEngagementDeltas(batch.snapshot);
+    pendingBatch = null;
+}
+
+function discardPendingBatch(batch: PendingEngagementBatch): void {
+    if (pendingBatch !== batch) return;
+
+    discardEngagementDeltas(batch.snapshot);
+    pendingBatch = null;
+}
+
+function getPendingBatch(): PendingEngagementBatch | null {
+    if (
+        pendingBatch &&
+        Date.now() - pendingBatch.assignedAt >=
+            ANALYTICS_SESSION_INACTIVITY_MS
+    ) {
+        discardPendingBatch(pendingBatch);
+    }
+
+    if (pendingBatch) return pendingBatch;
+
+    const snapshot = snapshotEngagementDeltas().slice(
+        0,
+        ANALYTICS_MAX_SECTIONS_PER_BATCH,
+    );
+    if (snapshot.length === 0) return null;
+
+    try {
+        pendingBatch = {
+            assignedAt: Date.now(),
+            batchId: crypto.randomUUID(),
+            snapshot,
+        };
+    } catch {
+        return null;
+    }
+
+    return pendingBatch;
+}
+
+async function deliverPendingBatch(
+    batch: PendingEngagementBatch,
+    keepalive: boolean,
+): Promise<void> {
+    const result = await sendEngagementBatch(batch, keepalive);
+
+    if (result === 'acknowledged') acknowledgePendingBatch(batch);
+    if (result === 'invalid-session' || result === 'terminal') {
+        discardPendingBatch(batch);
     }
 }
 
@@ -70,13 +156,10 @@ function flushEngagementDeltas({
         return;
     }
 
-    const sections = snapshotEngagementDeltas().slice(
-        0,
-        ANALYTICS_MAX_SECTIONS_PER_BATCH,
-    );
-    if (sections.length === 0) return;
+    const batch = getPendingBatch();
+    if (!batch) return;
 
-    const request = sendEngagementBatch(sections, keepalive);
+    const request = deliverPendingBatch(batch, keepalive);
     flushInFlight = request;
 
     void request.finally(() => {
@@ -86,6 +169,22 @@ function flushEngagementDeltas({
 
 export default function AnalyticsEngagementBatcher() {
     useEffect(() => {
+        let previousActivityAt = getLastAnalyticsActivityAt();
+
+        const unsubscribeFromAnalyticsActivity =
+            subscribeToAnalyticsActivity((activityAt) => {
+                if (
+                    previousActivityAt > 0 &&
+                    activityAt - previousActivityAt >=
+                        ANALYTICS_SESSION_INACTIVITY_MS &&
+                    pendingBatch
+                ) {
+                    discardPendingBatch(pendingBatch);
+                }
+
+                previousActivityAt = activityAt;
+            });
+
         const intervalId = window.setInterval(() => {
             flushEngagementDeltas({ allowHidden: false, keepalive: false });
         }, BATCH_INTERVAL_MS);
@@ -105,6 +204,7 @@ export default function AnalyticsEngagementBatcher() {
 
         return () => {
             window.clearInterval(intervalId);
+            unsubscribeFromAnalyticsActivity();
             document.removeEventListener(
                 'visibilitychange',
                 handleVisibilityChange,

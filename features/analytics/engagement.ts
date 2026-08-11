@@ -218,29 +218,41 @@ export function snapshotEngagementDeltas(): SectionEngagementDelta[] {
         );
 }
 
-export function acknowledgeEngagementDeltas(
-    acknowledgedDeltas: readonly SectionEngagementDelta[],
+function removeEngagementDeltas(
+    removedDeltas: readonly SectionEngagementDelta[],
 ): void {
-    acknowledgedDeltas.forEach((acknowledged) => {
-        const pending = engagementDeltas.get(acknowledged.sectionKey);
+    removedDeltas.forEach((removed) => {
+        const pending = engagementDeltas.get(removed.sectionKey);
         if (!pending) return;
 
         pending.viewCount = Math.max(
             0,
-            pending.viewCount - acknowledged.viewCount,
+            pending.viewCount - removed.viewCount,
         );
         pending.visibleMs = Math.max(
             0,
-            pending.visibleMs - acknowledged.visibleMs,
+            pending.visibleMs - removed.visibleMs,
         );
 
         const hasNewMaximum =
-            pending.maxVisibility > acknowledged.maxVisibility;
+            pending.maxVisibility > removed.maxVisibility;
         const hasUsefulDelta =
             pending.viewCount > 0 || Math.round(pending.visibleMs) > 0;
 
         if (!hasUsefulDelta && !hasNewMaximum) {
-            engagementDeltas.delete(acknowledged.sectionKey);
+            engagementDeltas.delete(removed.sectionKey);
         }
     });
+}
+
+export function acknowledgeEngagementDeltas(
+    acknowledgedDeltas: readonly SectionEngagementDelta[],
+): void {
+    removeEngagementDeltas(acknowledgedDeltas);
+}
+
+export function discardEngagementDeltas(
+    discardedDeltas: readonly SectionEngagementDelta[],
+): void {
+    removeEngagementDeltas(discardedDeltas);
 }
