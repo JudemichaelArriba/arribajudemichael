@@ -18,6 +18,7 @@ import type {
 import {
     deriveMessageSummary,
     formatInboxTimestamp,
+    getSenderInitials,
 } from './messageFormatting';
 
 export type MessageListEmptyState = MessageFilter | 'search' | 'unavailable';
@@ -151,21 +152,26 @@ export default function MessageList({
             inert={isInert ? true : undefined}
             className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden"
         >
-            <header className="flex min-h-16 shrink-0 items-center justify-between gap-4 border-b border-white/[0.07] px-4 sm:px-5">
+            <header className="flex min-h-16 shrink-0 items-center justify-between gap-4 border-b border-white/[0.07] bg-[#050607] px-4 sm:px-5">
                 <div className="min-w-0">
                     <h2
                         id="portfolio-inbox-heading"
                         className="truncate text-sm font-extrabold tracking-normal text-[var(--text)]"
                     >
-                        Portfolio inbox
+                        Message queue
                     </h2>
                     <p className="mt-1 font-mono text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--muted)]/42">
-                        Contact submissions
+                        Portfolio contact
                     </p>
                 </div>
-                <span className="shrink-0 font-mono text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--signal)]/70">
-                    {String(resultCount).padStart(2, '0')} messages
-                </span>
+                <div className="shrink-0 text-right">
+                    <span className="block font-display text-lg font-extrabold tabular-nums leading-none text-[var(--signal)]/78">
+                        {String(resultCount).padStart(2, '0')}
+                    </span>
+                    <span className="mt-1 block font-mono text-[8px] font-bold uppercase tracking-[0.1em] text-[var(--muted)]/36">
+                        Results
+                    </span>
+                </div>
             </header>
 
             {messages.length === 0 ? (
@@ -190,24 +196,35 @@ export default function MessageList({
                                     onClick={(event) => onSelect(message.id, event.currentTarget)}
                                     aria-current={isSelected ? 'true' : undefined}
                                     aria-label={`${message.isRead ? 'Read' : 'Unread'} message from ${message.senderName}: ${summary}`}
-                                    className={`group relative grid min-h-[7rem] w-full min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-x-3 px-4 py-3.5 text-left transition-[background-color,color] duration-200 focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--signal)]/60 motion-reduce:transition-none sm:px-5 ${
+                                    className={`group relative grid min-h-[6.5rem] w-full min-w-0 grid-cols-[2.25rem_minmax(0,1fr)_auto] gap-x-3 px-4 py-3.5 text-left transition-[background-color,color] duration-200 focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--signal)]/60 motion-reduce:transition-none sm:px-5 ${
                                         isSelected
-                                            ? 'bg-[var(--signal)]/[0.075]'
+                                            ? 'bg-[var(--signal)]/[0.08]'
                                             : message.isRead
                                                 ? 'bg-transparent hover:bg-white/[0.025]'
-                                                : 'bg-white/[0.035] hover:bg-white/[0.055]'
+                                                : 'bg-white/[0.032] hover:bg-white/[0.052]'
                                     }`}
                                 >
                                     <span
                                         aria-hidden="true"
-                                        className={`absolute inset-y-3 left-0 w-0.5 rounded-full bg-[var(--signal)] shadow-[0_0_10px_rgba(195,109,252,0.4)] transition-opacity duration-200 motion-reduce:transition-none ${isSelected ? 'opacity-100' : 'opacity-0'}`}
+                                        className={`absolute inset-y-0 left-0 w-0.5 bg-[var(--signal)] transition-opacity duration-200 motion-reduce:transition-none ${isSelected ? 'opacity-100' : 'opacity-0'}`}
                                     />
+
+                                    <span
+                                        aria-hidden="true"
+                                        className={`mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-md border font-mono text-[10px] font-extrabold tracking-normal ${
+                                            message.isRead
+                                                ? 'border-white/[0.075] bg-black/35 text-[var(--muted)]/50'
+                                                : 'border-[var(--signal)]/22 bg-[var(--signal)]/[0.07] text-[var(--signal)]/82'
+                                        }`}
+                                    >
+                                        {getSenderInitials(message.senderName)}
+                                    </span>
 
                                     <span className="min-w-0">
                                         <span className="flex min-w-0 items-center gap-2">
                                             <span
                                                 aria-hidden="true"
-                                                className={`size-1.5 shrink-0 rounded-full ${message.isRead ? 'bg-white/15' : 'bg-[var(--signal)] shadow-[0_0_8px_rgba(195,109,252,0.45)]'}`}
+                                                className={`size-1.5 shrink-0 rounded-full ${message.isRead ? 'bg-white/14' : 'bg-[var(--signal)]'}`}
                                             />
                                             <span
                                                 className={`truncate text-sm tracking-normal ${message.isRead ? 'font-semibold text-[var(--muted)]/64' : 'font-extrabold text-[var(--text)]'}`}
@@ -229,7 +246,7 @@ export default function MessageList({
                                         </span>
 
                                         <span
-                                            className={`mt-1.5 block truncate text-sm tracking-normal ${message.isRead ? 'font-semibold text-[var(--muted)]/58' : 'font-bold text-[var(--text)]/90'}`}
+                                            className={`mt-2 block truncate text-sm tracking-normal ${message.isRead ? 'font-semibold text-[var(--muted)]/58' : 'font-bold text-[var(--text)]/90'}`}
                                         >
                                             {summary}
                                         </span>
@@ -238,26 +255,34 @@ export default function MessageList({
                                         </span>
                                     </span>
 
-                                    <span className="flex shrink-0 flex-col items-end gap-3 pl-1">
+                                    <span className="flex shrink-0 flex-col items-end justify-between gap-3 pl-1">
                                         <time
                                             dateTime={message.receivedAt}
                                             className={`whitespace-nowrap font-mono text-[9px] font-bold uppercase tracking-[0.08em] ${message.isRead ? 'text-[var(--muted)]/38' : 'text-[var(--signal)]/70'}`}
                                         >
                                             {formatInboxTimestamp(message.receivedAt, referenceTime)}
                                         </time>
-                                        <span
-                                            title={message.isStarred ? 'Starred' : 'Not starred'}
-                                            className={message.isStarred ? 'text-[var(--signal)]/78' : 'text-[var(--muted)]/22'}
-                                        >
-                                            <span className="sr-only">
-                                                {message.isStarred ? 'Starred message' : 'Not starred'}
+                                        <span className="flex items-center gap-2">
+                                            {message.isArchived ? (
+                                                <span title="Archived" className="text-[var(--muted)]/34">
+                                                    <span className="sr-only">Archived message</span>
+                                                    <Archive aria-hidden="true" size={14} strokeWidth={1.8} />
+                                                </span>
+                                            ) : null}
+                                            <span
+                                                title={message.isStarred ? 'Starred' : 'Not starred'}
+                                                className={message.isStarred ? 'text-[var(--signal)]/78' : 'text-[var(--muted)]/20'}
+                                            >
+                                                <span className="sr-only">
+                                                    {message.isStarred ? 'Starred message' : 'Not starred'}
+                                                </span>
+                                                <Star
+                                                    aria-hidden="true"
+                                                    size={15}
+                                                    strokeWidth={1.8}
+                                                    fill={message.isStarred ? 'currentColor' : 'none'}
+                                                />
                                             </span>
-                                            <Star
-                                                aria-hidden="true"
-                                                size={15}
-                                                strokeWidth={1.8}
-                                                fill={message.isStarred ? 'currentColor' : 'none'}
-                                            />
                                         </span>
                                     </span>
                                 </button>

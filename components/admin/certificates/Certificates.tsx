@@ -14,6 +14,9 @@ import { useCallback, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 
 import {
+    AdminPageHeader,
+    AdminPageStat,
+    AdminPageStats,
     ManagementPage,
 } from '@/components/admin/layout/ManagementPage';
 import { useDialog } from '@/components/dialog/Dialog';
@@ -258,20 +261,11 @@ export default function Certificates({
 
     return (
         <ManagementPage>
-            <header className="border-b border-white/[0.07] pb-7">
-                <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
-                    <div className="min-w-0">
-                        <p className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--signal)]/78">
-                            Content registry / Certificates
-                        </p>
-                        <h1 className="mt-2 font-display text-3xl font-extrabold leading-tight tracking-normal text-[var(--text)] sm:text-4xl">
-                            Certificates
-                        </h1>
-                        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[var(--muted)]/62 sm:text-base">
-                            Curate credential records, source PDFs, and their public portfolio order.
-                        </p>
-                    </div>
-
+            <AdminPageHeader
+                eyebrow="Content registry / Certificates"
+                title="Certificates"
+                description="Curate credential records, source PDFs, and their public portfolio order."
+                action={
                     <button
                         type="button"
                         onClick={() => setEditor({ mode: 'create' })}
@@ -280,43 +274,30 @@ export default function Certificates({
                         <Plus aria-hidden="true" size={17} strokeWidth={2} />
                         Add certificate
                     </button>
-                </div>
-
-                <dl className="mt-6 flex flex-wrap items-center gap-x-8 gap-y-3 border-y border-white/[0.06] py-3.5">
-                    <div className="flex items-baseline gap-2">
-                        <dt className="font-mono text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--muted)]/42">
-                            Total
-                        </dt>
-                        <dd className="text-sm font-extrabold tabular-nums text-[var(--text)]">
-                            {unavailable ? '--' : String(certificates.length).padStart(2, '0')}
-                        </dd>
-                    </div>
-                    <div className="flex items-baseline gap-2">
-                        <dt className="font-mono text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--muted)]/42">
-                            Published
-                        </dt>
-                        <dd className="text-sm font-extrabold tabular-nums text-emerald-200/72">
-                            {unavailable ? '--' : String(publishedCount).padStart(2, '0')}
-                        </dd>
-                    </div>
-                    <div className="flex items-baseline gap-2">
-                        <dt className="font-mono text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--muted)]/42">
-                            Drafts
-                        </dt>
-                        <dd className="text-sm font-extrabold tabular-nums text-amber-100/68">
-                            {unavailable ? '--' : String(draftCount).padStart(2, '0')}
-                        </dd>
-                    </div>
-                    <div className="flex items-baseline gap-2">
-                        <dt className="font-mono text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--muted)]/42">
-                            PDFs ready
-                        </dt>
-                        <dd className="text-sm font-extrabold tabular-nums text-[var(--text)]/72">
-                            {unavailable ? '--' : String(fileReadyCount).padStart(2, '0')}
-                        </dd>
-                    </div>
-                </dl>
-            </header>
+                }
+            >
+                <AdminPageStats>
+                    <AdminPageStat
+                        label="Total"
+                        value={unavailable ? '--' : String(certificates.length).padStart(2, '0')}
+                    />
+                    <AdminPageStat
+                        label="Published"
+                        value={unavailable ? '--' : String(publishedCount).padStart(2, '0')}
+                        valueClassName="text-emerald-200/72"
+                    />
+                    <AdminPageStat
+                        label="Drafts"
+                        value={unavailable ? '--' : String(draftCount).padStart(2, '0')}
+                        valueClassName="text-amber-100/68"
+                    />
+                    <AdminPageStat
+                        label="PDFs ready"
+                        value={unavailable ? '--' : String(fileReadyCount).padStart(2, '0')}
+                        valueClassName="text-[var(--text)]/72"
+                    />
+                </AdminPageStats>
+            </AdminPageHeader>
 
             <section aria-labelledby="certificate-list-heading" className="mt-8">
                 <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">

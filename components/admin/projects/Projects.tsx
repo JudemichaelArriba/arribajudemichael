@@ -15,7 +15,12 @@ import {
     Trash2,
 } from 'lucide-react';
 
-import { ManagementPage } from '@/components/admin/layout/ManagementPage';
+import {
+    AdminPageHeader,
+    AdminPageStat,
+    AdminPageStats,
+    ManagementPage,
+} from '@/components/admin/layout/ManagementPage';
 import { useDialog } from '@/components/dialog/Dialog';
 import { deleteProject } from '@/features/admin/projects/actions';
 import type {
@@ -254,20 +259,11 @@ export default function Projects({ projects, unavailable = false }: ProjectsProp
 
     return (
         <ManagementPage>
-            <header className="border-b border-white/[0.07] pb-7">
-                <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
-                    <div className="min-w-0">
-                        <p className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--signal)]/78">
-                            Content registry / Projects
-                        </p>
-                        <h1 className="mt-2 font-display text-3xl font-extrabold leading-tight tracking-normal text-[var(--text)] sm:text-4xl">
-                            Projects
-                        </h1>
-                        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[var(--muted)]/62 sm:text-base">
-                            Control the work, ordering, and publication details presented in your portfolio.
-                        </p>
-                    </div>
-
+            <AdminPageHeader
+                eyebrow="Content registry / Projects"
+                title="Projects"
+                description="Control the work, ordering, and publication details presented in your portfolio."
+                action={
                     <button
                         type="button"
                         onClick={() => setEditor({ mode: 'create' })}
@@ -276,41 +272,31 @@ export default function Projects({ projects, unavailable = false }: ProjectsProp
                         <Plus aria-hidden="true" size={17} strokeWidth={2} />
                         Add project
                     </button>
-                </div>
-
-                <dl className="mt-6 flex flex-wrap items-center gap-x-8 gap-y-3 border-y border-white/[0.06] py-3.5">
-                    <div className="flex items-baseline gap-2">
-                        <dt className="font-mono text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--muted)]/42">
-                            Total
-                        </dt>
-                        <dd className="text-sm font-extrabold tabular-nums text-[var(--text)]">
-                            {unavailable ? '--' : String(projects.length).padStart(2, '0')}
-                        </dd>
-                    </div>
-                    <div className="flex items-baseline gap-2">
-                        <dt className="font-mono text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--muted)]/42">
-                            Published
-                        </dt>
-                        <dd className="text-sm font-extrabold tabular-nums text-emerald-200/72">
-                            {unavailable ? '--' : String(publishedCount).padStart(2, '0')}
-                        </dd>
-                    </div>
-                    <div className="flex items-baseline gap-2">
-                        <dt className="font-mono text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--muted)]/42">
-                            Drafts
-                        </dt>
-                        <dd className="text-sm font-extrabold tabular-nums text-amber-100/68">
-                            {unavailable ? '--' : String(draftCount).padStart(2, '0')}
-                        </dd>
-                    </div>
-                </dl>
-            </header>
+                }
+            >
+                <AdminPageStats>
+                    <AdminPageStat
+                        label="Total"
+                        value={unavailable ? '--' : String(projects.length).padStart(2, '0')}
+                    />
+                    <AdminPageStat
+                        label="Published"
+                        value={unavailable ? '--' : String(publishedCount).padStart(2, '0')}
+                        valueClassName="text-emerald-200/72"
+                    />
+                    <AdminPageStat
+                        label="Drafts"
+                        value={unavailable ? '--' : String(draftCount).padStart(2, '0')}
+                        valueClassName="text-amber-100/68"
+                    />
+                </AdminPageStats>
+            </AdminPageHeader>
 
             {statusMessage ? (
                 <div
                     role="status"
                     aria-live="polite"
-                    className="mt-5 flex items-start gap-2.5 border-y border-emerald-300/10 bg-emerald-300/[0.025] px-3.5 py-3 text-sm text-emerald-200/72"
+                    className="mt-5 flex items-start gap-2.5 rounded-lg border border-emerald-300/10 bg-emerald-300/[0.025] px-3.5 py-3 text-sm text-emerald-200/72"
                 >
                     <CheckCircle2 aria-hidden="true" size={16} strokeWidth={1.8} className="mt-0.5 shrink-0" />
                     <p className="leading-relaxed">{statusMessage}</p>

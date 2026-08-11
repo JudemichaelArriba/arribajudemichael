@@ -5,7 +5,6 @@ import {
     MailCheck,
     MailOpen,
     MessageSquareText,
-    Reply,
     ShieldAlert,
     ShieldBan,
     ShieldCheck,
@@ -17,13 +16,16 @@ import {
 import type { RefObject } from 'react';
 
 import type { AdminMessageDto } from '@/features/admin/messages/types';
-import { formatMessageTimestamp } from './messageFormatting';
+import {
+    deriveMessageSummary,
+    formatMessageTimestamp,
+    getSenderInitials,
+} from './messageFormatting';
 
 interface MessageDetailProps {
     message: AdminMessageDto | null;
     isInert: boolean;
     backButtonRef: RefObject<HTMLButtonElement | null>;
-    replyDescriptionId: string;
     isActionPending: boolean;
     onBack: () => void;
     onToggleRead: () => void;
@@ -82,21 +84,6 @@ function MessageAction({
     );
 }
 
-function DisabledReply({ descriptionId }: { descriptionId: string }) {
-    return (
-        <button
-            type="button"
-            disabled
-            aria-label="Reply to message"
-            aria-describedby={descriptionId}
-            title="Reply requires an email service"
-            className="inline-flex size-10 shrink-0 cursor-not-allowed items-center justify-center rounded-lg border border-transparent text-[var(--muted)]/28"
-        >
-            <Reply aria-hidden="true" size={17} strokeWidth={1.8} />
-        </button>
-    );
-}
-
 function NoSelectedMessage() {
     return (
         <div className="flex min-h-[28rem] flex-1 flex-col items-center justify-center px-6 py-12 text-center">
@@ -117,7 +104,6 @@ export default function MessageDetail({
     message,
     isInert,
     backButtonRef,
-    replyDescriptionId,
     isActionPending,
     onBack,
     onToggleRead,
@@ -128,6 +114,7 @@ export default function MessageDetail({
     onDelete,
 }: MessageDetailProps) {
     const headingId = message ? `message-detail-${message.id}` : undefined;
+    const subject = message ? deriveMessageSummary(message.message) : '';
 
     return (
         <article
@@ -141,7 +128,7 @@ export default function MessageDetail({
                 <NoSelectedMessage />
             ) : (
                 <>
-                    <div className="flex shrink-0 flex-col border-b border-white/[0.07] px-3 py-2 sm:min-h-16 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:px-5 sm:py-0">
+                    <div className="flex shrink-0 flex-col border-b border-white/[0.07] bg-[#050607] px-3 py-2 sm:min-h-16 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:px-5 sm:py-0">
                         <button
                             ref={backButtonRef}
                             type="button"
@@ -153,7 +140,7 @@ export default function MessageDetail({
                         </button>
 
                         <p className="hidden font-mono text-[9px] font-bold uppercase tracking-[0.11em] text-[var(--muted)]/42 xl:block">
-                            Message detail
+                            Correspondence detail
                         </p>
 
                         <div
@@ -198,42 +185,56 @@ export default function MessageDetail({
                                 onClick={onDelete}
                                 danger
                             />
-                            <DisabledReply descriptionId={replyDescriptionId} />
                         </div>
                     </div>
 
                     <div className="min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-7 sm:py-8 lg:px-9 xl:px-10">
-                        <header className="border-b border-white/[0.07] pb-6">
-                            <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
-                                <div className="min-w-0">
-                                    <p className="font-mono text-[9px] font-bold uppercase tracking-[0.12em] text-[var(--signal)]/72">
-                                        From
-                                    </p>
-                                    <h2
-                                        id={headingId}
-                                        className="mt-2 text-xl font-extrabold leading-tight tracking-normal text-[var(--text)] sm:text-2xl"
+                        <header className="border-b border-white/[0.07] pb-6 sm:pb-7">
+                            <p className="font-mono text-[9px] font-bold uppercase tracking-[0.12em] text-[var(--signal)]/70">
+                                Message subject
+                            </p>
+                            <h2
+                                id={headingId}
+                                className="mt-3 max-w-4xl break-words text-2xl font-extrabold leading-tight tracking-normal text-[var(--text)] sm:text-3xl"
+                            >
+                                {subject}
+                            </h2>
+
+                            <div className="mt-6 flex min-w-0 flex-col gap-4 border-y border-white/[0.06] py-4 sm:flex-row sm:items-center sm:justify-between">
+                                <div className="flex min-w-0 items-center gap-3">
+                                    <span
+                                        aria-hidden="true"
+                                        className="flex size-10 shrink-0 items-center justify-center rounded-md border border-[var(--signal)]/20 bg-[var(--signal)]/[0.065] font-mono text-[10px] font-extrabold text-[var(--signal)]/82"
                                     >
-                                        {message.senderName}
-                                    </h2>
-                                    <p className="mt-1 break-all text-sm text-[var(--muted)]/58">
-                                        {message.senderEmail}
-                                    </p>
+                                        {getSenderInitials(message.senderName)}
+                                    </span>
+                                    <div className="min-w-0">
+                                        <p className="font-mono text-[8px] font-bold uppercase tracking-[0.1em] text-[var(--muted)]/36">
+                                            Sender
+                                        </p>
+                                        <p className="mt-1 truncate text-sm font-extrabold text-[var(--text)]">
+                                            {message.senderName}
+                                        </p>
+                                        <p className="mt-0.5 break-all text-xs text-[var(--muted)]/54">
+                                            {message.senderEmail}
+                                        </p>
+                                    </div>
                                 </div>
 
                                 <div className="shrink-0 sm:text-right">
-                                    <p className="font-mono text-[9px] font-bold uppercase tracking-[0.12em] text-[var(--muted)]/42">
+                                    <p className="font-mono text-[8px] font-bold uppercase tracking-[0.1em] text-[var(--muted)]/36">
                                         Received
                                     </p>
                                     <time
                                         dateTime={message.receivedAt}
-                                        className="mt-2 block font-mono text-[10px] font-semibold leading-relaxed text-[var(--muted)]/60"
+                                        className="mt-1.5 block font-mono text-[10px] font-semibold leading-relaxed text-[var(--muted)]/60"
                                     >
                                         {formatMessageTimestamp(message.receivedAt)}
                                     </time>
                                 </div>
                             </div>
 
-                            <div className="mt-5 flex flex-wrap items-center gap-2 font-mono text-[9px] font-bold uppercase tracking-[0.1em]">
+                            <div className="mt-4 flex flex-wrap items-center gap-2 font-mono text-[9px] font-bold uppercase tracking-[0.1em]">
                                 <span
                                     className={message.isRead
                                         ? 'rounded-md border border-white/[0.07] bg-white/[0.025] px-2 py-1 text-[var(--muted)]/42'
@@ -273,9 +274,9 @@ export default function MessageDetail({
                                 id={`${headingId}-body`}
                                 className="font-mono text-[9px] font-bold uppercase tracking-[0.12em] text-[var(--muted)]/42"
                             >
-                                Message
+                                Message body
                             </h3>
-                            <p className="mt-5 whitespace-pre-wrap break-words text-[0.9375rem] leading-[1.8] tracking-normal text-[var(--text)]/82 [overflow-wrap:anywhere] sm:text-base">
+                            <p className="mt-5 max-w-4xl whitespace-pre-wrap break-words text-[0.9375rem] leading-[1.85] tracking-normal text-[var(--text)]/82 [overflow-wrap:anywhere] sm:text-base">
                                 {message.message}
                             </p>
                         </section>

@@ -51,6 +51,20 @@ function getCalendarYear(value: string): number {
     return Number(year);
 }
 
+export function getSenderInitials(senderName: string): string {
+    const parts = senderName
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean);
+
+    if (parts.length === 0) return '?';
+
+    return parts
+        .slice(0, 2)
+        .map((part) => part.charAt(0).toUpperCase())
+        .join('');
+}
+
 export function deriveMessageSummary(message: string): string {
     const normalizedMessage = message.replace(/\s+/g, ' ').trim();
     const firstSentence = normalizedMessage.match(/^.*?[.!?](?:\s|$)/)?.[0].trim()

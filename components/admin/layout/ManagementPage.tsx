@@ -1,137 +1,96 @@
-import { Info, Pencil, Plus, Trash2 } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 interface ManagementPageProps {
     children: ReactNode;
 }
 
-interface ManagementPageChromeProps {
-    eyebrow: string;
-    title: string;
-    description: string;
-    count: number;
-    countLabel: string;
-    actionLabel: string;
-    noticeId: string;
+interface AdminPageHeaderProps {
     action?: ReactNode;
-    notice?: ReactNode;
-    showNotice?: boolean;
+    children?: ReactNode;
+    description: string;
+    eyebrow: string;
+    headingId?: string;
+    title: string;
 }
 
-interface StaticItemActionsProps {
-    itemLabel: string;
-    noticeId: string;
-    className?: string;
+interface AdminPageStatsProps {
+    children: ReactNode;
 }
 
-const DISABLED_ACTION_CLASS =
-    'inline-flex min-h-11 cursor-not-allowed items-center justify-center gap-2 rounded-lg border px-3 text-xs font-bold opacity-60';
+interface AdminPageStatProps {
+    label: string;
+    value: ReactNode;
+    valueClassName?: string;
+}
 
 export function ManagementPage({ children }: ManagementPageProps) {
     return (
-        <div className="mx-auto min-h-svh w-full max-w-[96rem] px-4 pb-12 pt-5 sm:px-6 sm:pb-16 sm:pt-7 md:px-8 md:pt-8 xl:px-10">
+        <div className="mx-auto min-h-svh w-full max-w-[92rem] px-4 pb-12 pt-5 sm:px-5 sm:pb-16 sm:pt-6 md:px-6 md:py-7 lg:px-8 xl:px-10">
             {children}
         </div>
     );
 }
 
-export function ManagementPageChrome({
-    eyebrow,
-    title,
-    description,
-    count,
-    countLabel,
-    actionLabel,
-    noticeId,
+export function AdminPageHeader({
     action,
-    notice,
-    showNotice = true,
-}: ManagementPageChromeProps) {
+    children,
+    description,
+    eyebrow,
+    headingId,
+    title,
+}: AdminPageHeaderProps) {
     return (
-        <>
-            <header className="flex flex-col gap-6 border-b border-white/[0.07] pb-7 sm:flex-row sm:items-end sm:justify-between">
+        <header className="relative overflow-hidden rounded-lg border border-white/[0.085] bg-[#07080a] px-5 py-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] sm:px-6 sm:py-6 lg:px-7">
+            <span
+                aria-hidden="true"
+                className="absolute bottom-5 left-0 top-5 w-0.5 bg-[var(--signal)]/72"
+            />
+
+            <div className="flex min-w-0 flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
                     <p className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--signal)]/78">
                         {eyebrow}
                     </p>
-                    <div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-2">
-                        <h1 className="font-display text-3xl font-extrabold leading-tight tracking-normal text-[var(--text)] sm:text-4xl">
-                            {title}
-                        </h1>
-                        <span className="font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--muted)]/48">
-                            {String(count).padStart(2, '0')} {countLabel}
-                        </span>
-                    </div>
-                    <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[var(--muted)]/62 sm:text-base">
+                    <h1
+                        id={headingId}
+                        className="mt-2 font-display text-3xl font-extrabold leading-tight tracking-normal text-[var(--text)] sm:text-4xl"
+                    >
+                        {title}
+                    </h1>
+                    <p className="mt-2.5 max-w-2xl text-sm leading-relaxed text-[var(--muted)]/62 sm:text-[0.95rem]">
                         {description}
                     </p>
                 </div>
 
-                {action ?? (
-                    <button
-                        type="button"
-                        disabled
-                        aria-describedby={noticeId}
-                        title="Available after database integration"
-                        className="inline-flex min-h-11 w-full shrink-0 cursor-not-allowed items-center justify-center gap-2 rounded-lg border border-[var(--signal)]/18 bg-[var(--signal)]/10 px-4 text-sm font-bold text-[var(--signal)]/55 sm:w-auto"
-                    >
-                        <Plus aria-hidden="true" size={17} strokeWidth={2} />
-                        {actionLabel}
-                    </button>
-                )}
-            </header>
+                {action ? <div className="shrink-0 sm:self-center">{action}</div> : null}
+            </div>
 
-            {showNotice ? (
-                notice ?? (
-                    <div
-                        id={noticeId}
-                        className="mt-6 flex items-start gap-3 border-y border-[var(--signal)]/12 bg-[var(--signal)]/[0.035] px-3.5 py-3 text-sm text-[var(--muted)]/62 sm:px-4"
-                    >
-                        <Info
-                            aria-hidden="true"
-                            size={17}
-                            strokeWidth={1.8}
-                            className="mt-0.5 shrink-0 text-[var(--signal)]/75"
-                        />
-                        <p className="leading-relaxed">
-                            Static preview mode. Management controls are visible for review, but changes are not saved or published.
-                        </p>
-                    </div>
-                )
-            ) : null}
-        </>
+            {children ? <div className="mt-6">{children}</div> : null}
+        </header>
     );
 }
 
-export function StaticItemActions({
-    itemLabel,
-    noticeId,
-    className = '',
-}: StaticItemActionsProps) {
+export function AdminPageStats({ children }: AdminPageStatsProps) {
     return (
-        <div className={`flex flex-wrap items-center gap-2 ${className}`}>
-            <button
-                type="button"
-                disabled
-                aria-label={`Edit ${itemLabel}`}
-                aria-describedby={noticeId}
-                title="Available after database integration"
-                className={`${DISABLED_ACTION_CLASS} border-white/[0.09] bg-white/[0.025] text-[var(--muted)]/58`}
-            >
-                <Pencil aria-hidden="true" size={15} strokeWidth={1.8} />
-                Edit
-            </button>
-            <button
-                type="button"
-                disabled
-                aria-label={`Delete ${itemLabel}`}
-                aria-describedby={noticeId}
-                title="Available after database integration"
-                className={`${DISABLED_ACTION_CLASS} border-red-400/10 bg-red-400/[0.025] text-red-300/45`}
-            >
-                <Trash2 aria-hidden="true" size={15} strokeWidth={1.8} />
-                Delete
-            </button>
+        <dl className="grid grid-cols-2 gap-x-6 gap-y-4 sm:flex sm:flex-wrap sm:gap-x-10">
+            {children}
+        </dl>
+    );
+}
+
+export function AdminPageStat({
+    label,
+    value,
+    valueClassName = 'text-[var(--text)]',
+}: AdminPageStatProps) {
+    return (
+        <div className="min-w-0">
+            <dt className="font-mono text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--muted)]/42">
+                {label}
+            </dt>
+            <dd className={`mt-1 text-base font-extrabold tabular-nums ${valueClassName}`}>
+                {value}
+            </dd>
         </div>
     );
 }

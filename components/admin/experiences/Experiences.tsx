@@ -11,7 +11,12 @@ import {
     Trash2,
 } from 'lucide-react';
 
-import { ManagementPage } from '@/components/admin/layout/ManagementPage';
+import {
+    AdminPageHeader,
+    AdminPageStat,
+    AdminPageStats,
+    ManagementPage,
+} from '@/components/admin/layout/ManagementPage';
 import { useDialog } from '@/components/dialog/Dialog';
 import { useSnackbar } from '@/components/snackbar/Snackbar';
 import { deleteExperience } from '@/features/admin/experiences/actions';
@@ -233,20 +238,11 @@ export default function Experiences({
 
     return (
         <ManagementPage>
-            <header className="border-b border-white/[0.07] pb-7">
-                <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
-                    <div className="min-w-0">
-                        <p className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--signal)]/78">
-                            Content registry / Experiences
-                        </p>
-                        <h1 className="mt-2 font-display text-3xl font-extrabold leading-tight tracking-normal text-[var(--text)] sm:text-4xl">
-                            Experiences
-                        </h1>
-                        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[var(--muted)]/62 sm:text-base">
-                            Shape the roles, organizations, dates, and order presented in your public career timeline.
-                        </p>
-                    </div>
-
+            <AdminPageHeader
+                eyebrow="Content registry / Experiences"
+                title="Experiences"
+                description="Shape the roles, organizations, dates, and order presented in your public career timeline."
+                action={
                     <button
                         type="button"
                         onClick={() => setEditor({ mode: 'create' })}
@@ -255,43 +251,30 @@ export default function Experiences({
                         <Plus aria-hidden="true" size={17} strokeWidth={2} />
                         Add experience
                     </button>
-                </div>
-
-                <dl className="mt-6 flex flex-wrap items-center gap-x-8 gap-y-3 border-y border-white/[0.06] py-3.5">
-                    <div className="flex items-baseline gap-2">
-                        <dt className="font-mono text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--muted)]/42">
-                            Total
-                        </dt>
-                        <dd className="text-sm font-extrabold tabular-nums text-[var(--text)]">
-                            {unavailable ? '--' : String(experiences.length).padStart(2, '0')}
-                        </dd>
-                    </div>
-                    <div className="flex items-baseline gap-2">
-                        <dt className="font-mono text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--muted)]/42">
-                            Active
-                        </dt>
-                        <dd className="text-sm font-extrabold tabular-nums text-[var(--signal)]/78">
-                            {unavailable ? '--' : String(activeCount).padStart(2, '0')}
-                        </dd>
-                    </div>
-                    <div className="flex items-baseline gap-2">
-                        <dt className="font-mono text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--muted)]/42">
-                            Complete
-                        </dt>
-                        <dd className="text-sm font-extrabold tabular-nums text-[var(--text)]/68">
-                            {unavailable ? '--' : String(completedCount).padStart(2, '0')}
-                        </dd>
-                    </div>
-                    <div className="flex items-baseline gap-2">
-                        <dt className="font-mono text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--muted)]/42">
-                            Published
-                        </dt>
-                        <dd className="text-sm font-extrabold tabular-nums text-emerald-200/72">
-                            {unavailable ? '--' : String(publishedCount).padStart(2, '0')}
-                        </dd>
-                    </div>
-                </dl>
-            </header>
+                }
+            >
+                <AdminPageStats>
+                    <AdminPageStat
+                        label="Total"
+                        value={unavailable ? '--' : String(experiences.length).padStart(2, '0')}
+                    />
+                    <AdminPageStat
+                        label="Active"
+                        value={unavailable ? '--' : String(activeCount).padStart(2, '0')}
+                        valueClassName="text-[var(--signal)]/78"
+                    />
+                    <AdminPageStat
+                        label="Complete"
+                        value={unavailable ? '--' : String(completedCount).padStart(2, '0')}
+                        valueClassName="text-[var(--text)]/68"
+                    />
+                    <AdminPageStat
+                        label="Published"
+                        value={unavailable ? '--' : String(publishedCount).padStart(2, '0')}
+                        valueClassName="text-emerald-200/72"
+                    />
+                </AdminPageStats>
+            </AdminPageHeader>
 
             <section aria-labelledby="experience-list-heading" className="mt-8">
                 <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">

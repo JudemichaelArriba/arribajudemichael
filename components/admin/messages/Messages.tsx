@@ -11,7 +11,10 @@ import {
     useTransition,
 } from 'react';
 
-import { ManagementPage } from '@/components/admin/layout/ManagementPage';
+import {
+    AdminPageHeader,
+    ManagementPage,
+} from '@/components/admin/layout/ManagementPage';
 import { useDialog } from '@/components/dialog/Dialog';
 import { useSnackbar } from '@/components/snackbar/Snackbar';
 import {
@@ -40,7 +43,6 @@ interface MessagesProps {
 }
 
 const SPLIT_VIEW_QUERY = '(min-width: 1280px)';
-const REPLY_DESCRIPTION_ID = 'messages-reply-description';
 const SEARCH_DEBOUNCE_MS = 350;
 const DIALOG_FOCUS_RETURN_DELAY_MS = 320;
 const MESSAGE_FILTERS = [
@@ -384,36 +386,58 @@ export default function Messages({
             ? 'search'
             : pageData.filter;
     const isDetailOpen = selectedMessage !== null;
+    const activeFilterLabel = MESSAGE_FILTERS.find((filter) => filter.id === activeFilter)?.label
+        ?? 'Inbox';
 
     return (
         <ManagementPage>
             <section aria-labelledby="messages-page-heading">
-                <p id={REPLY_DESCRIPTION_ID} className="sr-only">
-                    Reply requires an email delivery service and is not available yet.
-                </p>
-
                 <div className={isDetailOpen ? 'hidden xl:block' : 'block'}>
-                    <header className="border-b border-white/[0.07] pb-7">
-                        <p className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--signal)]/78">
-                            Communication / Inbox
-                        </p>
-                        <div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-2">
-                            <h1
-                                id="messages-page-heading"
-                                className="font-display text-3xl font-extrabold leading-tight tracking-normal text-[var(--text)] sm:text-4xl"
-                            >
-                                Email / Messages
-                            </h1>
-                            <span className="font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--muted)]/48">
-                                {String(pageData.counts.total).padStart(2, '0')} messages
-                            </span>
-                        </div>
-                        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[var(--muted)]/62 sm:text-base">
-                            Review conversations started through your public portfolio contact form.
-                        </p>
-                    </header>
+                    <AdminPageHeader
+                        eyebrow="Communication registry / Inbox"
+                        title="Messages"
+                        headingId="messages-page-heading"
+                        description="Review and manage correspondence received through your public portfolio contact form."
+                        action={
+                            <div className="min-w-24 sm:text-right">
+                                <span className="block font-display text-2xl font-extrabold tabular-nums leading-none text-[var(--text)]">
+                                    {String(pageData.counts.total).padStart(2, '0')}
+                                </span>
+                                <span className="mt-1.5 block font-mono text-[8px] font-bold uppercase tracking-[0.11em] text-[var(--muted)]/38">
+                                    Total messages
+                                </span>
+                            </div>
+                        }
+                    >
+                        <nav
+                            aria-label="Message filters"
+                            className="grid grid-cols-2 gap-2 sm:grid-cols-4"
+                        >
+                            {MESSAGE_FILTERS.map((filter) => {
+                                const isActive = filter.id === activeFilter;
 
-                    <div className="mt-6 flex flex-col gap-3 border-y border-white/[0.07] py-4 lg:flex-row lg:items-center lg:justify-between">
+                                return (
+                                    <button
+                                        key={filter.id}
+                                        type="button"
+                                        onClick={() => handleFilterChange(filter.id)}
+                                        disabled={unavailable}
+                                        aria-pressed={isActive}
+                                        className={`flex min-h-12 items-center justify-between gap-3 rounded-md border px-3.5 py-2.5 text-left transition-[border-color,background-color,color] duration-200 focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--signal)]/60 disabled:cursor-not-allowed disabled:opacity-35 motion-reduce:transition-none ${isActive ? 'border-[var(--signal)]/24 bg-[var(--signal)]/[0.075]' : 'border-white/[0.065] bg-black/35 hover:border-white/[0.11] hover:bg-white/[0.025]'}`}
+                                    >
+                                        <span className={`font-mono text-[9px] font-bold uppercase tracking-[0.1em] ${isActive ? 'text-[var(--signal)]/78' : 'text-[var(--muted)]/46'}`}>
+                                            {filter.label}
+                                        </span>
+                                        <span className={`text-sm font-extrabold tabular-nums ${isActive ? 'text-[var(--text)]' : 'text-[var(--muted)]/62'}`}>
+                                            {String(filterCounts[filter.id]).padStart(2, '0')}
+                                        </span>
+                                    </button>
+                                );
+                            })}
+                        </nav>
+                    </AdminPageHeader>
+
+                    <div className="mt-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                         <div
                             role="search"
                             aria-busy={isNavigating}
@@ -446,7 +470,7 @@ export default function Messages({
                                 disabled={unavailable}
                                 onChange={(event) => setSearchValue(event.target.value)}
                                 placeholder="Search sender, email, or message"
-                                className="min-h-11 w-full appearance-none rounded-lg border border-white/[0.08] bg-white/[0.025] py-2.5 pl-10 pr-11 text-sm text-[var(--text)] outline-none transition-[border-color,background-color] duration-200 placeholder:text-[var(--muted)]/34 focus:border-[var(--signal)]/30 focus:bg-white/[0.035] focus:ring-2 focus:ring-[var(--signal)]/16 disabled:cursor-not-allowed disabled:opacity-45 [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden motion-reduce:transition-none"
+                                className="min-h-11 w-full appearance-none rounded-lg border border-white/[0.085] bg-[#07080a] py-2.5 pl-10 pr-11 text-sm text-[var(--text)] outline-none transition-[border-color,background-color] duration-200 placeholder:text-[var(--muted)]/34 focus:border-[var(--signal)]/30 focus:bg-white/[0.025] focus:ring-2 focus:ring-[var(--signal)]/16 disabled:cursor-not-allowed disabled:opacity-45 [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden motion-reduce:transition-none"
                             />
                             {searchValue ? (
                                 <button
@@ -461,30 +485,9 @@ export default function Messages({
                             ) : null}
                         </div>
 
-                        <nav
-                            aria-label="Message filters"
-                            className="grid grid-cols-2 gap-1 rounded-lg border border-white/[0.08] bg-black/35 p-1 sm:grid-cols-4 sm:w-fit"
-                        >
-                            {MESSAGE_FILTERS.map((filter) => {
-                                const isActive = filter.id === activeFilter;
-
-                                return (
-                                    <button
-                                        key={filter.id}
-                                        type="button"
-                                        onClick={() => handleFilterChange(filter.id)}
-                                        disabled={unavailable}
-                                        aria-pressed={isActive}
-                                        className={`inline-flex min-h-10 items-center justify-center gap-2 rounded-md px-3 text-xs font-bold tracking-normal transition-[color,background-color] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--signal)]/60 disabled:cursor-not-allowed disabled:opacity-35 motion-reduce:transition-none ${isActive ? 'bg-[var(--signal)]/[0.09] text-[var(--signal)]/78' : 'text-[var(--muted)]/52 hover:bg-white/[0.04] hover:text-[var(--text)]'}`}
-                                    >
-                                        {filter.label}
-                                        <span className="font-mono text-[9px] tabular-nums opacity-70">
-                                            {filterCounts[filter.id]}
-                                        </span>
-                                    </button>
-                                );
-                            })}
-                        </nav>
+                        <p className="shrink-0 font-mono text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--muted)]/38">
+                            {activeFilterLabel} / Page {pageData.page}
+                        </p>
                     </div>
                 </div>
 
@@ -492,7 +495,7 @@ export default function Messages({
                     <p
                         role="alert"
                         aria-live="polite"
-                        className="mt-3 text-sm font-semibold text-red-300/82"
+                        className="mt-3 rounded-lg border border-red-300/12 bg-red-300/[0.025] px-3.5 py-3 text-sm font-semibold leading-relaxed text-red-300/82"
                     >
                         {actionError}
                     </p>
@@ -500,7 +503,7 @@ export default function Messages({
 
                 <div
                     aria-label="Portfolio inbox workspace"
-                    className={`relative grid min-w-0 overflow-hidden rounded-lg border border-white/[0.085] bg-white/[0.018] shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] xl:h-[clamp(32rem,calc(100dvh-15rem),52rem)] xl:grid-cols-[minmax(20rem,0.42fr)_minmax(0,1fr)] ${isDetailOpen ? (actionError ? 'mt-3 xl:mt-6' : 'mt-0 xl:mt-6') : 'mt-6'}`}
+                    className={`relative grid min-w-0 overflow-hidden rounded-lg border border-white/[0.085] bg-[#07080a] shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] xl:h-[clamp(32rem,calc(100dvh-18rem),54rem)] xl:grid-cols-[minmax(21rem,0.4fr)_minmax(0,1fr)] ${isDetailOpen ? (actionError ? 'mt-3 xl:mt-5' : 'mt-0 xl:mt-5') : 'mt-5'}`}
                 >
                     <div
                         className={`min-h-[32rem] min-w-0 transition-[opacity,transform] duration-200 ease-out motion-reduce:transition-none xl:relative xl:inset-auto xl:h-full xl:translate-x-0 xl:border-r xl:border-white/[0.07] xl:opacity-100 ${
@@ -537,7 +540,6 @@ export default function Messages({
                             message={selectedMessage}
                             isInert={!isDetailOpen && !isSplitView}
                             backButtonRef={backButtonRef}
-                            replyDescriptionId={REPLY_DESCRIPTION_ID}
                             isActionPending={isActionPending || isNavigating}
                             onBack={handleBackToInbox}
                             onToggleRead={handleToggleRead}

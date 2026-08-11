@@ -109,7 +109,7 @@ const MESSAGE_ITEM: DirectNavigationItem = {
 };
 
 const INTERACTIVE_ITEM_CLASS =
-    'group relative flex min-h-11 w-full items-center gap-3 rounded-lg border px-3 text-sm font-semibold tracking-normal transition-[color,border-color,background-color,transform] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--signal)]/65 active:scale-[0.985] motion-reduce:transition-none motion-reduce:active:scale-100';
+    'group relative flex min-h-11 w-full items-center gap-3 rounded-md px-3 text-sm font-semibold tracking-normal transition-[color,background-color,transform] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--signal)]/65 active:scale-[0.985] motion-reduce:transition-none motion-reduce:active:scale-100';
 
 function formatUnreadMessageCount(count: number): string {
     return count > 99 ? '99+' : String(count);
@@ -131,7 +131,7 @@ function PlaceholderButton({
             aria-disabled="true"
             aria-label={!showLabel ? item.label : undefined}
             title={!showLabel ? item.label : undefined}
-            className={`flex min-h-11 w-full cursor-not-allowed items-center gap-3 rounded-lg border border-transparent px-3 text-sm font-semibold tracking-normal text-[var(--muted)]/35 ${showLabel ? 'justify-start' : 'justify-center px-0'}`}
+            className={`flex min-h-11 w-full cursor-not-allowed items-center gap-3 rounded-md px-3 text-sm font-semibold tracking-normal text-[var(--muted)]/35 ${showLabel ? 'justify-start' : 'justify-center px-0'}`}
         >
             <Icon aria-hidden="true" size={18} strokeWidth={1.8} />
             {showLabel ? <span className="min-w-0 truncate">{item.label}</span> : null}
@@ -171,6 +171,11 @@ function NavigationContent({
             aria-label={isMobile ? 'Admin mobile navigation' : 'Admin navigation'}
             className="space-y-1"
         >
+            {showLabels ? (
+                <p className="px-3 pb-2 font-mono text-[8px] font-bold uppercase tracking-[0.12em] text-[var(--muted)]/30">
+                    Workspace
+                </p>
+            ) : null}
             <Link
                 href="/dashboard"
                 onClick={onDashboardNavigate}
@@ -178,15 +183,15 @@ function NavigationContent({
                 aria-label={!showLabels ? 'Dashboard' : undefined}
                 title={!showLabels ? 'Dashboard' : undefined}
                 data-mobile-first={isMobile ? 'true' : undefined}
-                className={`group relative flex min-h-11 w-full items-center gap-3 overflow-hidden rounded-lg border px-3 text-sm font-semibold tracking-normal transition-[color,border-color,background-color,transform,box-shadow] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--signal)]/65 active:scale-[0.985] motion-reduce:transition-none motion-reduce:active:scale-100 ${showLabels ? 'justify-start' : 'justify-center px-0'} ${
+                className={`group relative flex min-h-11 w-full items-center gap-3 overflow-hidden rounded-md px-3 text-sm font-semibold tracking-normal transition-[color,background-color,transform] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--signal)]/65 active:scale-[0.985] motion-reduce:transition-none motion-reduce:active:scale-100 ${showLabels ? 'justify-start' : 'justify-center px-0'} ${
                     isDashboardActive
-                        ? 'border-[rgba(195,109,252,0.2)] bg-[rgba(195,109,252,0.09)] text-[var(--signal)] shadow-[inset_0_0_18px_rgba(195,109,252,0.035)]'
-                        : 'border-transparent text-[var(--muted)]/65 hover:border-white/[0.07] hover:bg-white/[0.045] hover:text-[var(--text)]'
+                        ? 'bg-white/[0.055] text-[var(--text)]'
+                        : 'text-[var(--muted)]/65 hover:bg-white/[0.035] hover:text-[var(--text)]'
                 }`}
             >
                 <span
                     aria-hidden="true"
-                    className={`absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-[var(--signal)] shadow-[0_0_12px_rgba(195,109,252,0.55)] transition-opacity duration-200 motion-reduce:transition-none ${isDashboardActive ? 'opacity-100' : 'opacity-0'}`}
+                    className={`absolute bottom-2 left-0 top-2 w-0.5 bg-[var(--signal)] transition-opacity duration-200 motion-reduce:transition-none ${isDashboardActive ? 'opacity-100' : 'opacity-0'}`}
                 />
                 <LayoutDashboard aria-hidden="true" size={18} strokeWidth={1.8} />
                 {showLabels ? <span>Dashboard</span> : null}
@@ -199,7 +204,7 @@ function NavigationContent({
                 aria-controls={sectionsId}
                 aria-label={!showLabels ? 'Open Sections' : undefined}
                 title={!showLabels ? 'Sections' : undefined}
-                className={`${INTERACTIVE_ITEM_CLASS} ${showLabels ? 'justify-start' : 'justify-center px-0'} ${isSectionRouteActive ? 'border-[rgba(195,109,252,0.16)] bg-[rgba(195,109,252,0.055)] text-[var(--signal)]' : 'border-transparent text-[var(--muted)]/65 hover:border-white/[0.07] hover:bg-white/[0.045] hover:text-[var(--text)]'}`}
+                className={`${INTERACTIVE_ITEM_CLASS} ${showLabels ? 'justify-start' : 'justify-center px-0'} ${isSectionRouteActive ? 'bg-white/[0.045] text-[var(--signal)]' : 'text-[var(--muted)]/65 hover:bg-white/[0.035] hover:text-[var(--text)]'}`}
             >
                 <Layers3 aria-hidden="true" size={18} strokeWidth={1.8} />
                 {showLabels ? (
@@ -233,7 +238,7 @@ function NavigationContent({
                                     href={item.href}
                                     onClick={onSectionNavigate}
                                     aria-current={isActive ? 'page' : undefined}
-                                    className={`group relative flex min-h-11 w-full items-center gap-3 rounded-lg border px-3 text-sm font-semibold tracking-normal transition-[color,border-color,background-color,transform] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--signal)]/65 active:scale-[0.985] motion-reduce:transition-none motion-reduce:active:scale-100 ${isActive ? 'border-[rgba(195,109,252,0.18)] bg-[rgba(195,109,252,0.075)] text-[var(--signal)]' : 'border-transparent text-[var(--muted)]/58 hover:border-white/[0.07] hover:bg-white/[0.04] hover:text-[var(--text)]'}`}
+                                    className={`group relative flex min-h-11 w-full items-center gap-3 rounded-md px-3 text-sm font-semibold tracking-normal transition-[color,background-color,transform] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--signal)]/65 active:scale-[0.985] motion-reduce:transition-none motion-reduce:active:scale-100 ${isActive ? 'bg-[var(--signal)]/[0.075] text-[var(--signal)]' : 'text-[var(--muted)]/58 hover:bg-white/[0.035] hover:text-[var(--text)]'}`}
                                 >
                                     <span
                                         aria-hidden="true"
@@ -247,6 +252,14 @@ function NavigationContent({
                     </div>
                 </div>
             </div>
+
+            {showLabels ? (
+                <p className="px-3 pb-2 pt-4 font-mono text-[8px] font-bold uppercase tracking-[0.12em] text-[var(--muted)]/30">
+                    Operations
+                </p>
+            ) : (
+                <div aria-hidden="true" className="mx-3 my-3 h-px bg-white/[0.055]" />
+            )}
 
             {STATIC_ITEMS.map((item) => (
                 <PlaceholderButton
@@ -264,13 +277,13 @@ function NavigationContent({
                 title={!showLabels ? collapsedMessageLabel : undefined}
                 className={`${INTERACTIVE_ITEM_CLASS} overflow-hidden ${showLabels ? 'justify-start' : 'justify-center px-0'} ${
                     isMessageActive
-                        ? 'border-[rgba(195,109,252,0.2)] bg-[rgba(195,109,252,0.09)] text-[var(--signal)] shadow-[inset_0_0_18px_rgba(195,109,252,0.035)]'
-                        : 'border-transparent text-[var(--muted)]/65 hover:border-white/[0.07] hover:bg-white/[0.045] hover:text-[var(--text)]'
+                        ? 'bg-white/[0.055] text-[var(--text)]'
+                        : 'text-[var(--muted)]/65 hover:bg-white/[0.035] hover:text-[var(--text)]'
                 }`}
             >
                 <span
                     aria-hidden="true"
-                    className={`absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-[var(--signal)] shadow-[0_0_12px_rgba(195,109,252,0.55)] transition-opacity duration-200 motion-reduce:transition-none ${isMessageActive ? 'opacity-100' : 'opacity-0'}`}
+                    className={`absolute bottom-2 left-0 top-2 w-0.5 bg-[var(--signal)] transition-opacity duration-200 motion-reduce:transition-none ${isMessageActive ? 'opacity-100' : 'opacity-0'}`}
                 />
                 <MessageIcon aria-hidden="true" size={18} strokeWidth={1.8} />
                 {showLabels ? (
@@ -305,7 +318,7 @@ function LogoutButton({ showLabel, onClick }: LogoutButtonProps) {
             onClick={onClick}
             aria-label="Sign out"
             title={!showLabel ? 'Sign out' : undefined}
-            className={`group flex min-h-11 w-full items-center gap-3 rounded-lg border border-transparent px-3 text-sm font-semibold tracking-normal text-[var(--muted)]/55 transition-[color,border-color,background-color] duration-200 hover:border-red-400/15 hover:bg-red-400/[0.055] hover:text-red-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300/55 motion-reduce:transition-none ${showLabel ? 'justify-start' : 'justify-center px-0'}`}
+            className={`group flex min-h-11 w-full items-center gap-3 rounded-md px-3 text-sm font-semibold tracking-normal text-[var(--muted)]/55 transition-[color,background-color] duration-200 hover:bg-red-400/[0.055] hover:text-red-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300/55 motion-reduce:transition-none ${showLabel ? 'justify-start' : 'justify-center px-0'}`}
         >
             <LogOut
                 aria-hidden="true"
@@ -456,9 +469,9 @@ function AdminShellContent({
     };
 
     return (
-        <div className="relative min-h-svh overflow-x-hidden bg-black text-[var(--text)]">
+        <div className="relative min-h-svh overflow-x-hidden bg-[#020203] text-[var(--text)]">
             <aside
-                className={`fixed bottom-4 left-4 top-4 z-40 hidden flex-col overflow-visible rounded-lg border border-white/[0.085] bg-black/[0.72] shadow-[0_20px_70px_rgba(0,0,0,0.48),inset_0_1px_0_rgba(255,255,255,0.025)] backdrop-blur-xl transition-[width] duration-300 ease-out motion-reduce:transition-none md:flex ${isDesktopExpanded ? 'w-64' : 'w-[4.5rem]'}`}
+                className={`fixed bottom-4 left-4 top-4 z-40 hidden flex-col overflow-visible rounded-lg border border-white/[0.075] bg-[#050607]/96 shadow-[0_18px_52px_rgba(0,0,0,0.38),inset_0_1px_0_rgba(255,255,255,0.02)] backdrop-blur-md transition-[width] duration-300 ease-out motion-reduce:transition-none md:flex ${isDesktopExpanded ? 'w-64' : 'w-[4.5rem]'}`}
             >
                 <button
                     type="button"
@@ -469,7 +482,7 @@ function AdminShellContent({
                             : 'Expand admin navigation'
                     }
                     title={isDesktopExpanded ? 'Collapse sidebar' : 'Expand sidebar'}
-                    className="absolute -right-3 top-12 z-10 flex h-10 w-6 items-center justify-center rounded-full border border-white/[0.1] bg-black/90 text-[var(--muted)]/60 shadow-[0_8px_24px_rgba(0,0,0,0.4)] transition-[color,border-color,background-color] duration-200 hover:border-[var(--signal)]/35 hover:bg-[#09060c] hover:text-[var(--signal)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--signal)]/65 motion-reduce:transition-none"
+                    className="absolute -right-4 top-12 z-10 flex size-8 items-center justify-center rounded-md border border-white/[0.1] bg-[#07080a] text-[var(--muted)]/60 shadow-[0_8px_22px_rgba(0,0,0,0.38)] transition-[color,border-color,background-color] duration-200 hover:border-[var(--signal)]/30 hover:bg-[#0b0a0d] hover:text-[var(--signal)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--signal)]/65 motion-reduce:transition-none"
                 >
                     {isDesktopExpanded ? (
                         <PanelLeftClose aria-hidden="true" size={15} strokeWidth={1.8} />
@@ -484,7 +497,7 @@ function AdminShellContent({
                     <Link
                         href="/dashboard"
                         aria-label="Admin dashboard"
-                        className="group flex min-w-0 items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--signal)]/65 focus-visible:ring-offset-4 focus-visible:ring-offset-black"
+                        className="group flex min-w-0 items-center gap-3 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--signal)]/65 focus-visible:ring-offset-4 focus-visible:ring-offset-[#050607]"
                     >
                         <span className="flex h-10 w-10 shrink-0 items-center justify-center font-name text-xl font-extrabold tracking-normal text-white">
                             J<span className="text-[var(--signal)]">M</span>
@@ -502,7 +515,7 @@ function AdminShellContent({
                     </Link>
                 </div>
 
-                <div className="scrollbar-hide flex-1 overflow-y-auto px-2.5 py-4">
+                <div className="scrollbar-hide flex-1 overflow-y-auto px-2.5 py-5">
                     <NavigationContent
                         isExpanded={isDesktopExpanded}
                         onToggleSections={handleDesktopSectionsToggle}
@@ -526,13 +539,8 @@ function AdminShellContent({
 
             <header className="fixed inset-x-3 top-[calc(env(safe-area-inset-top)+0.75rem)] z-[60] md:hidden">
                 <div
-                    className={`relative flex h-14 items-center justify-between rounded-lg border px-2.5 backdrop-blur-xl transition-[border-color,background-color,box-shadow] duration-300 motion-reduce:transition-none ${isMobileMenuOpen ? 'border-[var(--signal)]/25 bg-black/[0.78] shadow-[0_18px_55px_rgba(0,0,0,0.55),0_0_24px_rgba(195,109,252,0.07)]' : 'border-white/[0.1] bg-black/[0.58] shadow-[0_14px_45px_rgba(0,0,0,0.42)]'}`}
+                    className={`flex h-14 items-center justify-between rounded-lg border px-2.5 backdrop-blur-xl transition-[border-color,background-color,box-shadow] duration-300 motion-reduce:transition-none ${isMobileMenuOpen ? 'border-[var(--signal)]/22 bg-[#050607]/95 shadow-[0_18px_48px_rgba(0,0,0,0.5)]' : 'border-white/[0.09] bg-[#050607]/88 shadow-[0_12px_36px_rgba(0,0,0,0.38)]'}`}
                 >
-                    <span
-                        aria-hidden="true"
-                        className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent"
-                    />
-
                     <Link
                         href="/dashboard"
                         onClick={() => closeMobileMenu()}
@@ -585,7 +593,7 @@ function AdminShellContent({
                 aria-label="Admin navigation"
                 aria-hidden={!isMobileMenuOpen}
                 inert={!isMobileMenuOpen ? true : undefined}
-                className={`fixed inset-x-3 top-[calc(env(safe-area-inset-top)+5rem)] z-50 max-h-[calc(100dvh-env(safe-area-inset-top)-6rem)] overflow-y-auto rounded-lg border bg-black/[0.88] shadow-[0_26px_80px_rgba(0,0,0,0.62)] backdrop-blur-xl transition-[opacity,transform,border-color] duration-300 ease-out motion-reduce:transition-none md:hidden ${isMobileMenuOpen ? 'pointer-events-auto translate-y-0 border-white/[0.1] opacity-100' : 'pointer-events-none -translate-y-2 border-white/[0.05] opacity-0'}`}
+                className={`fixed inset-x-3 top-[calc(env(safe-area-inset-top)+5rem)] z-50 max-h-[calc(100dvh-env(safe-area-inset-top)-6rem)] overflow-y-auto rounded-lg border bg-[#050607]/96 shadow-[0_24px_64px_rgba(0,0,0,0.58)] backdrop-blur-xl transition-[opacity,transform,border-color] duration-300 ease-out motion-reduce:transition-none md:hidden ${isMobileMenuOpen ? 'pointer-events-auto translate-y-0 border-white/[0.1] opacity-100' : 'pointer-events-none -translate-y-2 border-white/[0.05] opacity-0'}`}
             >
                 <div className="p-2.5">
                     <NavigationContent
@@ -608,7 +616,7 @@ function AdminShellContent({
 
             <main
                 inert={isMobileMenuOpen ? true : undefined}
-                className={`min-h-svh min-w-0 pt-[calc(env(safe-area-inset-top)+5.75rem)] transition-[padding] duration-300 ease-out motion-reduce:transition-none md:pt-0 ${isDesktopExpanded ? 'md:pl-[18rem]' : 'md:pl-[6.5rem]'}`}
+                className={`min-h-svh min-w-0 pt-[calc(env(safe-area-inset-top)+5.75rem)] transition-[padding] duration-300 ease-out motion-reduce:transition-none md:pt-0 ${isDesktopExpanded ? 'md:pl-[17rem]' : 'md:pl-[5.5rem]'}`}
             >
                 {children}
             </main>
