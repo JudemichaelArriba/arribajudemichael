@@ -27,6 +27,10 @@ interface RecordAnalyticsSessionInput {
     visitorCookieValue?: string;
 }
 
+export type AnalyticsSessionValidationResult =
+    | { valid: true; sessionId: string }
+    | { valid: false; reason: 'invalid' | 'service' };
+
 export interface RecordedAnalyticsSession {
     sessionId: string;
     shouldSetVisitorCookie: boolean;
@@ -69,6 +73,67 @@ function logDatabaseError(operation: DatabaseOperation, code: string): void {
         operation,
         code: code || 'unknown',
     });
+}
+
+export async function validateAnalyticsSession({
+    sessionCookieValue,
+    visitorCookieValue,
+}: RecordAnalyticsSessionInput): Promise<AnalyticsSessionValidationResult> {
+    const visitorId = parseUuid(visitorCookieValue);
+    const sessionId = parseUuid(sessionCookieValue);
+
+    if (!visitorId || !sessionId) {
+        return { valid: false, reason: 'invalid' };
+    }
+
+    let supabase: ReturnType<typeof createSystemClient>;
+
+    try {
+        supabase = createSystemClient();
+    } catch (error) {
+        console.error('[analytics/session] System client is unavailable.', {
+            name:
+                error instanceof SupabaseSystemConfigurationError
+                    ? error.name
+                    : error instanceof Error
+                        ? error.name
+                        : 'UnknownError',
+        });
+        return { valid: false, reason: 'service' };
+    }
+
+    try {
+        const { data: existingSession, error: lookupError } =
+            await withDatabaseTimeout(async (signal) =>
+                supabase
+                    .from('analytics_sessions')
+                    .select('last_seen_at')
+                    .eq('id', sessionId)
+                    .eq('visitor_id', visitorId)
+                    .abortSignal(signal)
+                    .maybeSingle(),
+            );
+
+        if (lookupError) {
+            logDatabaseError('lookup', lookupError.code);
+            return { valid: false, reason: 'service' };
+        }
+
+        if (
+            !existingSession ||
+            !isSessionActive(existingSession.last_seen_at, new Date())
+        ) {
+            return { valid: false, reason: 'invalid' };
+        }
+
+        return { valid: true, sessionId };
+    } catch (error) {
+        console.error('[analytics/session] Database request failed.', {
+            operation: 'lookup',
+            name: error instanceof Error ? error.name : 'UnknownError',
+        });
+        return { valid: false, reason: 'service' };
+    }
 }
 
 export async function recordAnalyticsSession({

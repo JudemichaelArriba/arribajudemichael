@@ -5,19 +5,16 @@ import {
     ANALYTICS_VISITOR_COOKIE,
     recordAnalyticsSession,
 } from '@/features/analytics/session';
+import {
+    getAnalyticsAuthenticationState,
+    isAnalyticsEnabled,
+} from '@/features/analytics/request';
 import { checkAnalyticsSessionRateLimit } from '@/lib/security/analyticsSessionRateLimit';
-import { createClient as createSupabaseServerClient } from '@/lib/supabase/server';
 
 export const runtime = 'nodejs';
 
 const VISITOR_COOKIE_MAX_AGE_SECONDS = 365 * 24 * 60 * 60;
 const SESSION_COOKIE_MAX_AGE_SECONDS = 30 * 60;
-
-type AuthenticationState = 'anonymous' | 'authenticated' | 'unavailable';
-
-function isAnalyticsEnabled(): boolean {
-    return process.env.ANALYTICS_ENABLED?.trim().toLowerCase() === 'true';
-}
 
 function noContentResponse(): Response {
     return new Response(null, {
@@ -28,30 +25,10 @@ function noContentResponse(): Response {
     });
 }
 
-async function getAuthenticationState(): Promise<AuthenticationState> {
-    try {
-        const supabase = await createSupabaseServerClient();
-        const { data, error } = await supabase.auth.getClaims();
-
-        if (!error && data?.claims?.sub) return 'authenticated';
-        if (!error || error.name === 'AuthSessionMissingError') return 'anonymous';
-
-        console.error('[api/analytics/session] Authentication check failed.', {
-            name: error.name || 'UnknownError',
-        });
-        return 'unavailable';
-    } catch (error) {
-        console.error('[api/analytics/session] Authentication check failed.', {
-            name: error instanceof Error ? error.name : 'UnknownError',
-        });
-        return 'unavailable';
-    }
-}
-
 export async function POST(request: Request): Promise<Response> {
     if (!isAnalyticsEnabled()) return noContentResponse();
 
-    const authenticationState = await getAuthenticationState();
+    const authenticationState = await getAnalyticsAuthenticationState();
 
     if (authenticationState !== 'anonymous') return noContentResponse();
 

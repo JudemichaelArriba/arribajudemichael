@@ -9,6 +9,13 @@ export interface SectionEngagementMetric {
     lastSeenAt: string;
 }
 
+export interface SectionEngagementDelta {
+    sectionKey: string;
+    viewCount: number;
+    visibleMs: number;
+    maxVisibility: number;
+}
+
 interface EngagementRecord extends SectionEngagementMetric {
     activeStartedAt: number | null;
     visitActive: boolean;
@@ -206,13 +213,44 @@ export function snapshotEngagement(): SectionEngagementMetric[] {
     );
 }
 
-export function consumeEngagementDeltas(): SectionEngagementMetric[] {
+export function snapshotEngagementDeltas(): SectionEngagementDelta[] {
     flushAllActiveRecords();
 
-    const deltas = Array.from(engagementDeltas.values(), serializeMetric).sort(
-        (first, second) => first.sectionKey.localeCompare(second.sectionKey),
-    );
-    engagementDeltas.clear();
+    return Array.from(engagementDeltas.values(), (delta) => ({
+        sectionKey: delta.sectionKey,
+        viewCount: delta.viewCount,
+        visibleMs: Math.max(0, Math.round(delta.visibleMs)),
+        maxVisibility: clampVisibility(delta.maxVisibility),
+    }))
+        .filter((delta) => delta.viewCount > 0 || delta.visibleMs > 0)
+        .sort((first, second) =>
+            first.sectionKey.localeCompare(second.sectionKey),
+        );
+}
 
-    return deltas;
+export function acknowledgeEngagementDeltas(
+    acknowledgedDeltas: readonly SectionEngagementDelta[],
+): void {
+    acknowledgedDeltas.forEach((acknowledged) => {
+        const pending = engagementDeltas.get(acknowledged.sectionKey);
+        if (!pending) return;
+
+        pending.viewCount = Math.max(
+            0,
+            pending.viewCount - acknowledged.viewCount,
+        );
+        pending.visibleMs = Math.max(
+            0,
+            pending.visibleMs - acknowledged.visibleMs,
+        );
+
+        const hasNewMaximum =
+            pending.maxVisibility > acknowledged.maxVisibility;
+        const hasUsefulDelta =
+            pending.viewCount > 0 || Math.round(pending.visibleMs) > 0;
+
+        if (!hasUsefulDelta && !hasNewMaximum) {
+            engagementDeltas.delete(acknowledged.sectionKey);
+        }
+    });
 }
