@@ -41,11 +41,6 @@ export function AdminPageHeader({
 }: AdminPageHeaderProps) {
     return (
         <header className="relative overflow-hidden rounded-lg border border-white/[0.085] bg-[#07080a] px-5 py-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] sm:px-6 sm:py-6 lg:px-7">
-            <span
-                aria-hidden="true"
-                className="absolute bottom-5 left-0 top-5 w-0.5 bg-[var(--signal)]/72"
-            />
-
             <div className="flex min-w-0 flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
                     <p className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--signal)]/78">

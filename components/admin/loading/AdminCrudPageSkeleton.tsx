@@ -41,8 +41,6 @@ function AdminHeaderSkeleton({
 }: AdminHeaderSkeletonProps) {
     return (
         <header className="relative overflow-hidden rounded-lg border border-white/[0.085] bg-[#07080a] px-5 py-5 sm:px-6 sm:py-6 lg:px-7">
-            <div className="absolute bottom-5 left-0 top-5 w-0.5 bg-[var(--signal)]/26" />
-
             <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0 flex-1">
                     <SkeletonBlock className="h-2.5 w-36" />
