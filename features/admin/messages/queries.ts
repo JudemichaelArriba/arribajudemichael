@@ -145,6 +145,24 @@ function requireExactCount(
     return count;
 }
 
+export async function getUnreadMessageCount(): Promise<number> {
+    await requireUser();
+
+    const supabase = await createClient();
+    const { count, error } = await supabase
+        .from('messages')
+        .select('id', { count: 'exact', head: true })
+        .eq('is_read', false)
+        .eq('is_archived', false);
+
+    if (error) {
+        logQueryFailure('sidebar-unread-count', error);
+        throw new Error('Admin unread message count is unavailable.');
+    }
+
+    return requireExactCount('sidebar-unread-count', count);
+}
+
 export async function getAdminMessages(
     query: AdminMessageQuery,
 ): Promise<AdminMessagesPageDto> {

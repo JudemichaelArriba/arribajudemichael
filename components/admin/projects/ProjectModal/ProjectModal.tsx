@@ -57,7 +57,7 @@ const ACCEPTED_IMAGE_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp']);
 const CLOSE_ANIMATION_MS = 220;
 
 const FIELD_CLASS =
-    'min-h-11 w-full rounded-lg border border-white/[0.09] bg-black/30 px-3.5 text-sm text-[var(--text)] outline-none transition-[border-color,background-color,box-shadow] duration-200 placeholder:text-[var(--muted)]/32 focus:border-[var(--signal)]/45 focus:bg-black/45 focus:ring-2 focus:ring-[var(--signal)]/12 disabled:cursor-not-allowed disabled:opacity-55 motion-reduce:transition-none';
+    'min-h-11 w-full rounded-lg border border-white/[0.09] bg-[#050608] px-3.5 text-sm text-[var(--text)] outline-none transition-[border-color,background-color,box-shadow] duration-200 placeholder:text-[var(--muted)]/30 focus:border-[var(--signal)]/45 focus:bg-[#07080b] focus:ring-2 focus:ring-[var(--signal)]/12 disabled:cursor-not-allowed disabled:opacity-55 motion-reduce:transition-none';
 
 const LABEL_CLASS =
     'font-mono text-[10px] font-bold uppercase tracking-[0.08em] text-[var(--muted)]/68';
@@ -483,28 +483,29 @@ export default function ProjectModal({
                 onMouseDown={(event) => {
                     if (event.target === event.currentTarget) animateClose();
                 }}
-                className={`flex h-full w-full items-center justify-center bg-black/76 p-3 backdrop-blur-sm transition-opacity duration-200 ease-out sm:p-6 motion-reduce:transition-none ${isVisible ? 'opacity-100' : 'opacity-0'}`}
+                className={`flex h-full w-full items-center justify-center bg-black/82 p-3 transition-opacity duration-200 ease-out sm:p-6 motion-reduce:transition-none ${isVisible ? 'opacity-100' : 'opacity-0'}`}
             >
                 <div
                     onMouseDown={(event) => event.stopPropagation()}
-                    className={`flex h-[92dvh] max-h-[54rem] w-full max-w-5xl min-w-0 flex-col overflow-hidden rounded-lg border border-white/[0.1] bg-[#09090c]/98 shadow-[0_32px_100px_rgba(0,0,0,0.72)] transition-[opacity,transform] duration-200 ease-out motion-reduce:transition-none ${isVisible ? 'translate-y-0 scale-100 opacity-100' : 'translate-y-3 scale-[0.985] opacity-0'}`}
+                    className={`flex h-[94dvh] max-h-[58rem] w-full max-w-6xl min-w-0 flex-col overflow-hidden rounded-lg border border-white/[0.1] bg-[#090a0d] shadow-[0_32px_100px_rgba(0,0,0,0.72)] transition-[opacity,transform] duration-200 ease-out motion-reduce:transition-none ${isVisible ? 'translate-y-0 scale-100 opacity-100' : 'translate-y-3 scale-[0.985] opacity-0'}`}
                 >
-                    <header className="flex shrink-0 items-center justify-between gap-4 border-b border-white/[0.08] px-4 py-4 sm:px-6 sm:py-5">
-                        <div className="flex min-w-0 items-center gap-3.5">
-                            <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-lg border border-[var(--signal)]/18 bg-[var(--signal)]/[0.07] text-[var(--signal)] sm:size-11">
-                                <FolderKanban aria-hidden="true" size={19} strokeWidth={1.8} />
-                            </span>
-                            <div className="min-w-0">
-                                <p className="font-mono text-[9px] font-bold uppercase tracking-[0.12em] text-[var(--signal)]/72">
-                                    Content / Projects
-                                </p>
-                                <h2
-                                    id="project-modal-title"
-                                    className="mt-1 truncate font-display text-xl font-extrabold tracking-normal text-[var(--text)] sm:text-2xl"
-                                >
-                                    {mode === 'create' ? 'Add project' : 'Edit project'}
-                                </h2>
+                    <header className="flex shrink-0 items-start justify-between gap-4 border-b border-white/[0.08] px-4 py-4 sm:px-6 sm:py-5">
+                        <div className="min-w-0">
+                            <div className="flex items-center gap-2 font-mono text-[9px] font-bold uppercase tracking-[0.11em] text-[var(--signal)]/72">
+                                <FolderKanban aria-hidden="true" size={14} strokeWidth={1.8} />
+                                <span>{mode === 'create' ? 'New project record' : 'Project record'}</span>
                             </div>
+                            <h2
+                                id="project-modal-title"
+                                className="mt-1.5 truncate font-display text-xl font-extrabold tracking-normal text-[var(--text)] sm:text-2xl"
+                            >
+                                {mode === 'create' ? 'Add project' : 'Edit project'}
+                            </h2>
+                            <p className="mt-1 hidden text-xs text-[var(--muted)]/44 sm:block">
+                                {mode === 'create'
+                                    ? 'Build the record first, then decide when it is ready for the portfolio.'
+                                    : `Editing ${project?.title ?? 'project details'}`}
+                            </p>
                         </div>
                         <button
                             type="button"
@@ -524,12 +525,15 @@ export default function ProjectModal({
                     >
                         <fieldset
                             disabled={isPending}
-                            className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6 sm:py-6"
+                            className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6 sm:py-7"
                         >
-                            <div className="grid min-w-0 gap-7 lg:grid-cols-[minmax(0,1.08fr)_minmax(19rem,0.92fr)] lg:gap-8">
+                            <div className="grid min-w-0 gap-8 lg:grid-cols-[minmax(0,1.08fr)_minmax(19rem,0.92fr)] lg:gap-10">
                                 <section aria-labelledby="project-details-heading" className="min-w-0">
-                                    <div className="mb-5 flex items-center gap-3">
-                                        <div>
+                                    <div className="mb-6 grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3">
+                                        <span aria-hidden="true" className="font-display text-xl font-extrabold tabular-nums text-[var(--signal)]/58">
+                                            01
+                                        </span>
+                                        <div className="min-w-0 border-b border-white/[0.07] pb-3">
                                             <h3
                                                 id="project-details-heading"
                                                 className="text-sm font-extrabold tracking-normal text-[var(--text)]"
@@ -540,11 +544,10 @@ export default function ProjectModal({
                                                 Core content and portfolio ordering.
                                             </p>
                                         </div>
-                                        <span aria-hidden="true" className="h-px flex-1 bg-white/[0.07]" />
                                     </div>
 
                                     <div className="grid gap-4 sm:grid-cols-2">
-                                        <label className="block min-w-0">
+                                        <label className="block min-w-0 sm:col-span-2">
                                             <span className={LABEL_CLASS}>Title</span>
                                             <input
                                                 data-initial-focus
@@ -560,7 +563,7 @@ export default function ProjectModal({
                                             {renderError('title')}
                                         </label>
 
-                                        <label className="block min-w-0">
+                                        <label className="block min-w-0 sm:col-span-2">
                                             <span className={LABEL_CLASS}>Slug</span>
                                             <input
                                                 name="slug"
@@ -629,7 +632,7 @@ export default function ProjectModal({
                                     <div className="mt-4">
                                         <label htmlFor="project-tags" className={LABEL_CLASS}>Tags</label>
                                         <div
-                                            className={`mt-2 min-h-12 rounded-lg border bg-black/30 px-2.5 py-2 transition-[border-color,background-color,box-shadow] duration-200 focus-within:bg-black/45 focus-within:ring-2 focus-within:ring-[var(--signal)]/12 motion-reduce:transition-none ${getFieldError('tags') ? 'border-red-300/35' : 'border-white/[0.09] focus-within:border-[var(--signal)]/45'}`}
+                                            className={`mt-2 min-h-12 rounded-lg border bg-[#050608] px-2.5 py-2 transition-[border-color,background-color,box-shadow] duration-200 focus-within:bg-[#07080b] focus-within:ring-2 focus-within:ring-[var(--signal)]/12 motion-reduce:transition-none ${getFieldError('tags') ? 'border-red-300/35' : 'border-white/[0.09] focus-within:border-[var(--signal)]/45'}`}
                                         >
                                             <div className="flex min-w-0 flex-wrap items-center gap-1.5">
                                                 {tags.map((tag) => (
@@ -675,10 +678,13 @@ export default function ProjectModal({
 
                                 <section
                                     aria-labelledby="project-media-heading"
-                                    className="min-w-0 border-t border-white/[0.08] pt-7 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0"
+                                    className="min-w-0 border-t border-white/[0.08] pt-8 lg:border-l lg:border-t-0 lg:pl-10 lg:pt-0"
                                 >
-                                    <div className="mb-5 flex items-center gap-3">
-                                        <div>
+                                    <div className="mb-6 grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3">
+                                        <span aria-hidden="true" className="font-display text-xl font-extrabold tabular-nums text-[var(--signal)]/58">
+                                            02
+                                        </span>
+                                        <div className="min-w-0 border-b border-white/[0.07] pb-3">
                                             <h3
                                                 id="project-media-heading"
                                                 className="text-sm font-extrabold tracking-normal text-[var(--text)]"
@@ -689,7 +695,6 @@ export default function ProjectModal({
                                                 Preview image and public destination.
                                             </p>
                                         </div>
-                                        <span aria-hidden="true" className="h-px flex-1 bg-white/[0.07]" />
                                     </div>
 
                                     <div
@@ -723,14 +728,6 @@ export default function ProjectModal({
                                                     sizes="(max-width: 1023px) calc(100vw - 3rem), 380px"
                                                     className="object-contain p-3"
                                                 />
-                                                <div
-                                                    aria-hidden="true"
-                                                    className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/75 to-transparent"
-                                                />
-                                                <span className="absolute bottom-3 left-3 inline-flex items-center gap-1.5 font-mono text-[9px] font-bold uppercase tracking-[0.08em] text-white/68">
-                                                    <FileImage aria-hidden="true" size={12} strokeWidth={1.8} />
-                                                    {selectedImage ? 'New selection' : 'Current image'}
-                                                </span>
                                             </div>
                                         ) : (
                                             <div className="flex min-h-48 flex-col items-center justify-center px-5 py-8 text-center">
@@ -747,15 +744,20 @@ export default function ProjectModal({
                                         )}
 
                                         <div className="flex min-w-0 items-center justify-between gap-3 border-t border-white/[0.07] px-3 py-3">
-                                            <div className="min-w-0">
-                                                <p className="truncate text-xs font-bold text-[var(--muted)]/66">
-                                                    {selectedImage?.name ?? (project?.hasImage ? 'Stored project image' : 'No image selected')}
-                                                </p>
-                                                {selectedImage ? (
-                                                    <p className="mt-0.5 font-mono text-[9px] uppercase text-[var(--muted)]/38">
-                                                        {formatFileSize(selectedImage.size)}
+                                            <div className="flex min-w-0 items-center gap-2.5">
+                                                <FileImage aria-hidden="true" size={16} strokeWidth={1.7} className="shrink-0 text-[var(--signal)]/62" />
+                                                <div className="min-w-0">
+                                                    <p className="truncate text-xs font-bold text-[var(--muted)]/66">
+                                                        {selectedImage?.name ?? (project?.hasImage ? 'Stored project image' : 'No image selected')}
                                                     </p>
-                                                ) : null}
+                                                    <p className="mt-0.5 font-mono text-[9px] uppercase tracking-[0.06em] text-[var(--muted)]/38">
+                                                        {selectedImage
+                                                            ? `${formatFileSize(selectedImage.size)} / New selection`
+                                                            : previewUrl
+                                                                ? 'Current portfolio media'
+                                                                : 'PNG, JPEG, or WebP'}
+                                                    </p>
+                                                </div>
                                             </div>
                                             <div className="flex shrink-0 items-center gap-1.5">
                                                 {selectedImage ? (

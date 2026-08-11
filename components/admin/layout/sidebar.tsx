@@ -28,11 +28,13 @@ import {
 } from 'react';
 
 import { DialogProvider, useDialog } from '@/components/dialog/Dialog';
+import { useMessageRealtime } from '@/components/admin/messages/useMessageRealtime';
 import { SnackbarProvider } from '@/components/snackbar/Snackbar';
 import { logout } from '@/lib/auth/logoutActions';
 
 interface AdminShellProps {
     children: ReactNode;
+    initialUnreadMessageCount?: number | null;
 }
 
 interface PlaceholderNavigationItem {
@@ -59,6 +61,7 @@ interface NavigationContentProps {
     pathname: string;
     sectionsId: string;
     sectionsOpen: boolean;
+    unreadMessageCount: number;
 }
 
 interface LogoutControlProps {
@@ -108,6 +111,10 @@ const MESSAGE_ITEM: DirectNavigationItem = {
 const INTERACTIVE_ITEM_CLASS =
     'group relative flex min-h-11 w-full items-center gap-3 rounded-lg border px-3 text-sm font-semibold tracking-normal transition-[color,border-color,background-color,transform] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--signal)]/65 active:scale-[0.985] motion-reduce:transition-none motion-reduce:active:scale-100';
 
+function formatUnreadMessageCount(count: number): string {
+    return count > 99 ? '99+' : String(count);
+}
+
 function PlaceholderButton({
     item,
     showLabel,
@@ -142,6 +149,7 @@ function NavigationContent({
     pathname,
     sectionsId,
     sectionsOpen,
+    unreadMessageCount,
 }: NavigationContentProps) {
     const showLabels = isMobile || isExpanded;
     const isSectionsVisible = showLabels && sectionsOpen;
@@ -151,6 +159,12 @@ function NavigationContent({
     );
     const isMessageActive = pathname === MESSAGE_ITEM.href;
     const MessageIcon = MESSAGE_ITEM.icon;
+    const unreadMessageLabel = unreadMessageCount === 1
+        ? '1 unread message'
+        : `${unreadMessageCount} unread messages`;
+    const collapsedMessageLabel = unreadMessageCount > 0
+        ? `${MESSAGE_ITEM.label}, ${unreadMessageLabel}`
+        : MESSAGE_ITEM.label;
 
     return (
         <nav
@@ -246,8 +260,8 @@ function NavigationContent({
                 href={MESSAGE_ITEM.href}
                 onClick={onMessageNavigate}
                 aria-current={isMessageActive ? 'page' : undefined}
-                aria-label={!showLabels ? MESSAGE_ITEM.label : undefined}
-                title={!showLabels ? MESSAGE_ITEM.label : undefined}
+                aria-label={!showLabels ? collapsedMessageLabel : undefined}
+                title={!showLabels ? collapsedMessageLabel : undefined}
                 className={`${INTERACTIVE_ITEM_CLASS} overflow-hidden ${showLabels ? 'justify-start' : 'justify-center px-0'} ${
                     isMessageActive
                         ? 'border-[rgba(195,109,252,0.2)] bg-[rgba(195,109,252,0.09)] text-[var(--signal)] shadow-[inset_0_0_18px_rgba(195,109,252,0.035)]'
@@ -260,7 +274,24 @@ function NavigationContent({
                 />
                 <MessageIcon aria-hidden="true" size={18} strokeWidth={1.8} />
                 {showLabels ? (
-                    <span className="min-w-0 truncate">{MESSAGE_ITEM.label}</span>
+                    <>
+                        <span className="min-w-0 flex-1 truncate">{MESSAGE_ITEM.label}</span>
+                        {unreadMessageCount > 0 ? (
+                            <span
+                                aria-label={unreadMessageLabel}
+                                className="inline-flex min-h-5 min-w-5 shrink-0 items-center justify-center rounded-full border border-[var(--signal)]/25 bg-[var(--signal)]/[0.1] px-1.5 font-mono text-[9px] font-bold tabular-nums text-[var(--signal)]"
+                            >
+                                {formatUnreadMessageCount(unreadMessageCount)}
+                            </span>
+                        ) : null}
+                    </>
+                ) : unreadMessageCount > 0 ? (
+                    <span
+                        aria-hidden="true"
+                        className="absolute right-1 top-1 inline-flex min-h-4 min-w-4 items-center justify-center rounded-full border border-[var(--signal)]/25 bg-[var(--signal)]/[0.12] px-1 font-mono text-[8px] font-bold tabular-nums text-[var(--signal)]"
+                    >
+                        {formatUnreadMessageCount(unreadMessageCount)}
+                    </span>
                 ) : null}
             </Link>
         </nav>
@@ -312,8 +343,12 @@ function LogoutControl({ showLabel }: LogoutControlProps) {
     );
 }
 
-function AdminShellContent({ children }: AdminShellProps) {
+function AdminShellContent({
+    children,
+    initialUnreadMessageCount = null,
+}: AdminShellProps) {
     const pathname = usePathname();
+    const unreadMessageCount = useMessageRealtime(initialUnreadMessageCount);
     const [isDesktopExpanded, setIsDesktopExpanded] = useState(true);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [sectionsOpen, setSectionsOpen] = useState(() =>
@@ -474,6 +509,7 @@ function AdminShellContent({ children }: AdminShellProps) {
                         pathname={pathname}
                         sectionsId={desktopSectionsId}
                         sectionsOpen={sectionsOpen}
+                        unreadMessageCount={unreadMessageCount}
                     />
                 </div>
 
@@ -562,6 +598,7 @@ function AdminShellContent({ children }: AdminShellProps) {
                         pathname={pathname}
                         sectionsId={mobileSectionsId}
                         sectionsOpen={sectionsOpen}
+                        unreadMessageCount={unreadMessageCount}
                     />
                 </div>
                 <div className="border-t border-white/[0.055] p-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))]">
