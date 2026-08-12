@@ -196,7 +196,7 @@ export default function Turnstile({
                 ref={containerRef}
                 role="group"
                 aria-label="Security verification"
-                className="flex min-h-[65px] w-full min-w-0 items-start justify-start max-[399px]:min-h-[140px] max-[399px]:justify-center"
+                className="flex min-h-[65px] w-full min-w-0 items-center justify-center max-[399px]:min-h-[140px] [&>div]:!w-full [&_iframe]:!w-full"
             />
         </div>
     );

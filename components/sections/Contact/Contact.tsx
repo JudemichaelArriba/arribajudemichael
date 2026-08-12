@@ -18,7 +18,6 @@ import {
     Send,
     type LucideIcon,
 } from 'lucide-react';
-import Button from '@/components/ui/Button';
 import Turnstile, {
     type TurnstileStatus,
 } from '@/components/ui/Turnstile/Turnstile';
@@ -556,44 +555,36 @@ export default function Contact() {
                                 </div>
                             </div>
 
-                            <div data-contact-field className="mt-8 flex flex-col items-center gap-4">
-                                <Button
+                            <div data-contact-field className="mt-8 flex flex-col gap-4 sm:col-span-2">
+                                <button
                                     type="submit"
-                                    variant="specular"
-                                    size="lg"
-                                    radius={999}
-                                    tint="#490058"
-                                    baseColor="#7C3AED"
-                                    lineColor="#E945F5"
-                                    glowProximity={60}
-                                    className="!min-h-16 !w-full !max-w-[22rem] !px-7 !text-lg sm:!px-12"
+                                    disabled={isSubmitting}
+                                    className="group inline-flex min-h-14 w-full items-center justify-center gap-2.5 rounded-lg border border-[var(--signal)]/28 bg-[var(--signal)]/12 px-5 py-3 font-mono text-base font-bold uppercase tracking-[0.08em] text-[var(--signal)] transition-[border-color,background-color,color,transform] duration-200 hover:border-[var(--signal)]/46 hover:bg-[var(--signal)]/18 hover:text-[var(--text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--signal)]/60 active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-55 motion-reduce:transition-none motion-reduce:active:scale-100"
                                 >
-                                    <span className="inline-flex items-center gap-2.5">
-                                        {isSubmitting ? (
-                                            <>
-                                                <LoaderCircle
-                                                    aria-hidden="true"
-                                                    size={20}
-                                                    strokeWidth={2.2}
-                                                    className="animate-spin motion-reduce:animate-none"
-                                                />
-                                                Sending...
-                                            </>
-                                        ) : (
-                                            <>
-                                                Send message
-                                                <Send aria-hidden="true" size={20} strokeWidth={2.2} />
-                                            </>
-                                        )}
-                                    </span>
-                                </Button>
+                                    {isSubmitting ? (
+                                        <>
+                                            <LoaderCircle
+                                                aria-hidden="true"
+                                                size={18}
+                                                strokeWidth={2}
+                                                className="animate-spin motion-reduce:animate-none"
+                                            />
+                                            Sending...
+                                        </>
+                                    ) : (
+                                        <>
+                                            Send message
+                                            <Send aria-hidden="true" size={18} strokeWidth={2} />
+                                        </>
+                                    )}
+                                </button>
 
                                 <p
                                     id="contact-form-status"
                                     role="status"
                                     aria-live="polite"
                                     aria-atomic="true"
-                                    className="min-h-5 max-w-md text-center text-xs leading-relaxed text-[var(--muted)]/62"
+                                    className="min-h-5 text-center text-xs leading-relaxed text-[var(--muted)]/62"
                                 >
                                     {submitStatus}
                                 </p>
