@@ -16,6 +16,14 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Jude Michael Arriba",
   description: "Full-Stack Developer",
+  icons: {
+    icon: [
+      { url: "/profile.jpeg" },
+      { url: "/icon.png", type: "image/png" },
+    ],
+    apple: "/profile.jpeg",
+    shortcut: "/profile.jpeg",
+  },
 };
 
 export default function RootLayout({

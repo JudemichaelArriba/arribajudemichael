@@ -30,7 +30,7 @@ export const SITE_NAVIGATION: readonly SiteNavigationItem[] = [
 
 
 export const CONTACT_CHANNELS: readonly ContactChannel[] = [
-    { id: 'github', label: 'GitHub', href: '' },
-    { id: 'linkedin', label: 'LinkedIn', href: '' },
-    { id: 'email', label: 'Email', href: '' },
+    { id: 'github', label: 'GitHub', href: 'https://github.com/JudemichaelArriba' },
+    { id: 'linkedin', label: 'LinkedIn', href: 'https://www.linkedin.com/in/jude-michael-t-arriba-a70b103b9' },
+    { id: 'email', label: 'Email', href: 'mailto:arribajudemichael@gmail.com' },
 ];
