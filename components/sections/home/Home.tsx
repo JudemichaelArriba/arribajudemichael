@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import Button from '@/components/ui/Button';
-import { Download, GitFork } from 'lucide-react';
+import { GitFork } from 'lucide-react';
 
 const FloatingLines = dynamic(() => import('@/components/effects/FloatingLines/FloatingLines'), {
     ssr: false,
@@ -66,25 +66,6 @@ export default function Home() {
                     <span className="inline-flex items-center gap-2">
                         GitHub Repo
                         <GitFork size={18} strokeWidth={2.5} />
-                    </span>
-                </Button>
-
-
-                <Button
-                    href="/cv.pdf"
-                    variant="specular"
-                    size="lg"
-                    radius={999}
-                    magnetic
-                    tint="#490058"
-                    baseColor="#7C3AED"
-                    lineColor="#E945F5"
-                    magnetPadding={15}
-                    glowProximity={60}
-                >
-                    <span className="inline-flex items-center gap-2">
-                        Download CV
-                        <Download size={18} strokeWidth={2.5} />
                     </span>
                 </Button>
             </div>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Menu, X } from 'lucide-react';
+import { Download, Menu, X } from 'lucide-react';
 import { useActiveSection } from '@/lib/useActiveSection';
 import { SITE_NAVIGATION } from '@/lib/site';
 import { NAV_LINK_UNDERLINE_CLASS } from '@/components/ui/navigationStyles';
@@ -182,6 +182,17 @@ export default function Navbar() {
                                 </li>
                             );
                         })}
+                        <li className="ml-1 flex h-full shrink-0 items-center">
+                            <a
+                                href="/cv.pdf"
+                                aria-label="Download resume"
+                                title="Download resume"
+                                className="group inline-flex h-9 items-center justify-center gap-1.5 rounded-full border border-[var(--signal)]/28 bg-[var(--signal)]/[0.075] px-3 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-bold uppercase tracking-normal text-[var(--signal)] transition-[border-color,background-color,color,transform] duration-300 ease-out hover:border-[var(--signal)]/48 hover:bg-[var(--signal)]/[0.13] hover:text-[var(--text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--signal)]/65 active:scale-[0.98] motion-reduce:transition-none motion-reduce:active:scale-100"
+                            >
+                                <Download aria-hidden="true" size={14} strokeWidth={1.9} />
+                                <span>Resume</span>
+                            </a>
+                        </li>
                     </ul>
 
                     <button
@@ -273,6 +284,28 @@ export default function Navbar() {
                                 </li>
                             );
                         })}
+                        <li
+                            style={{
+                                transitionDelay: menuOpen
+                                    ? `${45 + SITE_NAVIGATION.length * 35}ms`
+                                    : '0ms',
+                            }}
+                            className={`relative mt-1 transition-[opacity,transform] duration-300 ease-out motion-reduce:translate-y-0 motion-reduce:opacity-100 motion-reduce:transition-none ${menuOpen ? 'translate-y-0 opacity-100' : '-translate-y-1.5 opacity-0'}`}
+                        >
+                            <a
+                                href="/cv.pdf"
+                                onClick={() => setMenuOpen(false)}
+                                className="group flex min-h-12 w-full items-center justify-between rounded-[0.9rem] border border-[var(--signal)]/22 bg-[var(--signal)]/[0.075] px-4 py-3 font-[family-name:var(--font-jetbrains-mono)] text-sm font-bold uppercase tracking-normal text-[var(--signal)] transition-[color,border-color,background-color,transform] duration-300 ease-out hover:border-[var(--signal)]/40 hover:bg-[var(--signal)]/[0.12] hover:text-[var(--text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--signal)]/60 focus-visible:ring-offset-1 focus-visible:ring-offset-black active:scale-[0.985] motion-reduce:transition-none motion-reduce:active:scale-100"
+                            >
+                                <span>Download resume</span>
+                                <Download
+                                    aria-hidden="true"
+                                    size={17}
+                                    strokeWidth={1.9}
+                                    className="shrink-0 transition-transform duration-300 group-hover:translate-y-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-y-0"
+                                />
+                            </a>
+                        </li>
                     </ul>
                 </div>
             </div>
