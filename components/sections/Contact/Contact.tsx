@@ -26,6 +26,7 @@ import {
     type ContactChannel,
     type ContactChannelId,
 } from '@/lib/site';
+import { rearmOnExitBelow } from '@/lib/animations/rearmOnExitBelow';
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
@@ -48,9 +49,9 @@ const MESSAGE_SERVICE_MESSAGE =
 const MESSAGE_SENT_MESSAGE = 'Message sent successfully.';
 const VALIDATION_MESSAGE = 'Please check the information you entered.';
 const FIELD_CLASS =
-    'min-h-12 w-full rounded-lg border border-white/[0.09] bg-black/25 px-4 py-3 text-base leading-relaxed tracking-normal text-[var(--text)] outline-none transition-[border-color,background-color,box-shadow] duration-300 placeholder:text-[var(--muted)]/30 hover:border-white/[0.15] focus:border-[var(--signal)]/55 focus:bg-white/[0.035] focus:shadow-[0_0_0_3px_rgba(195,109,252,0.09)] motion-reduce:transition-none';
+    'min-h-12 w-full border border-[var(--hairline)] bg-[var(--field-bg)] px-4 py-3 text-base leading-relaxed tracking-normal text-[var(--text)] outline-none transition-[border-color,box-shadow] duration-300 placeholder:text-[var(--faint)] hover:border-[var(--hairline-strong)] focus:border-[var(--text)] focus:shadow-[0_0_0_2px_var(--hairline)] motion-reduce:transition-none';
 const FIELD_ERROR_CLASS =
-    'border-red-400/45 focus:border-red-300/70 focus:shadow-[0_0_0_3px_rgba(248,113,113,0.08)]';
+    'border-[var(--danger)] focus:border-[var(--danger)] focus:shadow-[0_0_0_2px_var(--hairline)]';
 const CONTACT_FIELD_NAMES = ['username', 'email', 'message'] as const;
 
 type ContactFieldName = (typeof CONTACT_FIELD_NAMES)[number];
@@ -100,7 +101,7 @@ function ContactChannelItem({ channel }: { channel: ContactChannel }) {
     const isWebLink = /^https?:\/\//.test(channel.href);
     const content = (
         <>
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[6px] border border-white/[0.09] bg-white/[0.025] text-[var(--signal)]">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center border border-[var(--hairline)] text-[var(--text)] transition-colors duration-300 group-hover:border-[var(--text)] motion-reduce:transition-none">
                 <Icon aria-hidden="true" size={18} strokeWidth={1.8} />
             </span>
             <span className="min-w-0 flex-1 font-mono text-xs font-bold uppercase tracking-normal text-[var(--text)]">
@@ -111,10 +112,10 @@ function ContactChannelItem({ channel }: { channel: ContactChannel }) {
                     aria-hidden="true"
                     size={16}
                     strokeWidth={1.8}
-                    className="shrink-0 text-[var(--muted)]/45 transition-[color,transform] duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[var(--signal)] motion-reduce:transition-none"
+                    className="shrink-0 text-[var(--faint)] transition-[color,transform] duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[var(--text)] motion-reduce:transition-none"
                 />
             ) : (
-                <span aria-hidden="true" className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--signal)]/45" />
+                <span aria-hidden="true" className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--faint)]" />
             )}
         </>
     );
@@ -126,12 +127,12 @@ function ContactChannelItem({ channel }: { channel: ContactChannel }) {
                     href={channel.href}
                     target={isWebLink ? '_blank' : undefined}
                     rel={isWebLink ? 'noopener noreferrer' : undefined}
-                    className="group flex min-h-16 w-full items-center gap-3 border-b border-white/[0.075] px-1 transition-colors duration-300 hover:border-[var(--signal)]/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--signal)]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black motion-reduce:transition-none"
+                    className="group flex min-h-16 w-full items-center gap-3 border-b border-[var(--hairline)] px-1 transition-colors duration-300 hover:border-[var(--text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--text)]/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--site-bg)] motion-reduce:transition-none"
                 >
                     {content}
                 </a>
             ) : (
-                <div className="flex min-h-16 w-full items-center gap-3 border-b border-white/[0.075] px-1">
+                <div className="flex min-h-16 w-full items-center gap-3 border-b border-[var(--hairline)] px-1">
                     {content}
                 </div>
             )}
@@ -182,12 +183,7 @@ export default function Contact() {
                 gsap.set(channels, { autoAlpha: 0, x: -16, y: 8 });
                 gsap.set(formPanel, { autoAlpha: 0, y: 26 });
                 gsap.set(fields, { autoAlpha: 0, y: 14 });
-                lines.forEach((line, index) => {
-                    gsap.set(line, {
-                        scaleX: 0,
-                        transformOrigin: index === 0 ? 'right center' : 'left center',
-                    });
-                });
+                gsap.set(lines, { scaleX: 0, transformOrigin: 'left center' });
             };
 
             setInitialState();
@@ -263,7 +259,10 @@ export default function Contact() {
                 onLeaveBack: resetReveal,
             });
 
+            const disconnectRearm = rearmOnExitBelow(section, resetReveal);
+
             return () => {
+                disconnectRearm();
                 window.cancelAnimationFrame(refreshFrame);
                 trigger.kill(false);
                 timeline.kill();
@@ -386,27 +385,17 @@ export default function Contact() {
             aria-labelledby="contact-heading"
             className="relative w-full scroll-mt-[calc(var(--nav-height,80px)+2rem)] px-5 py-24 md:px-8 md:py-32"
         >
-            <div
-                aria-hidden="true"
-                className="pointer-events-none absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-[var(--signal)]/20 to-transparent md:inset-x-8"
-            />
-
             <div className="mx-auto max-w-7xl">
                 <div className="contact-heading flex w-full items-center gap-4">
-                    <span
-                        data-contact-line
-                        aria-hidden="true"
-                        className="h-px w-8 shrink-0 bg-gradient-to-r from-transparent to-[var(--signal)]/55 sm:w-12"
-                    />
-                    <p className="shrink-0 font-mono text-xs font-extrabold uppercase leading-none tracking-normal text-[color-mix(in_srgb,var(--signal)_82%,#ffffff_18%)]">
+                    <p className="shrink-0 font-display text-xs font-bold uppercase leading-none tracking-[0.14em] text-[var(--text)]">
                         Contact
                     </p>
                     <span
                         data-contact-line
                         aria-hidden="true"
-                        className="h-px min-w-8 flex-1 bg-gradient-to-r from-[var(--signal)]/45 via-white/10 to-transparent"
+                        className="h-px min-w-8 flex-1 bg-[var(--hairline)]"
                     />
-                    <span className="hidden shrink-0 font-mono text-[10px] uppercase tracking-normal text-[var(--muted)]/48 sm:inline">
+                    <span className="hidden shrink-0 font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--faint)] sm:inline">
                         07 / Connect
                     </span>
                 </div>
@@ -416,15 +405,15 @@ export default function Contact() {
                         <div className="contact-intro max-w-2xl">
                             <h2
                                 id="contact-heading"
-                                className="font-display text-4xl font-extrabold leading-[1.05] tracking-normal text-[var(--text)] sm:text-5xl lg:text-[3.5rem]"
+                                className="font-display text-4xl font-bold leading-[1.05] tracking-[-0.025em] text-[var(--text)] sm:text-5xl lg:text-[3.4rem]"
                             >
                                 Let&apos;s build something reliable.
                             </h2>
-                            <p className="mt-5 max-w-xl text-base leading-[1.75] text-[var(--muted)]/68 sm:text-lg">
+                            <p className="mt-5 max-w-xl text-base leading-[1.75] text-[var(--muted)] sm:text-lg">
                                 Have a project, role, or collaboration in mind? Share the context and start the conversation.
                             </p>
 
-                            <p className="mt-10 font-mono text-[10px] font-bold uppercase tracking-normal text-[var(--signal)]/72 sm:mt-12">
+                            <p className="mt-10 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--faint)] sm:mt-12">
                                 Direct channels
                             </p>
                         </div>
@@ -436,12 +425,12 @@ export default function Contact() {
                         </ul>
                     </div>
 
-                    <div className="contact-form-panel min-w-0 rounded-lg border border-white/[0.085] bg-white/[0.025] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] sm:p-7 lg:p-8">
-                        <div className="flex flex-wrap items-end justify-between gap-3 border-b border-white/[0.07] pb-5">
-                            <h3 className="font-display text-xl font-extrabold tracking-normal text-[var(--text)] sm:text-2xl">
+                    <div className="contact-form-panel min-w-0 border border-[var(--hairline)] bg-[var(--surface)] p-5 shadow-[var(--shadow-card)] sm:p-7 lg:p-8">
+                        <div className="flex flex-wrap items-end justify-between gap-3 border-b border-[var(--hairline)] pb-5">
+                            <h3 className="font-display text-xl font-bold tracking-[-0.02em] text-[var(--text)] sm:text-2xl">
                                 Message details
                             </h3>
-                            <span className="font-mono text-[9px] font-bold uppercase tracking-normal text-[var(--muted)]/45">
+                            <span className="border border-[var(--hairline)] px-2 py-1 font-mono text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--faint)]">
                                 All fields required
                             </span>
                         </div>
@@ -460,7 +449,7 @@ export default function Contact() {
                                 <div data-contact-field className="min-w-0">
                                     <label
                                         htmlFor="contact-username"
-                                        className="mb-2 block font-mono text-[10px] font-bold uppercase tracking-normal text-[var(--muted)]/65"
+                                        className="mb-2 block font-mono text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--faint)]"
                                     >
                                         Username
                                     </label>
@@ -480,7 +469,7 @@ export default function Contact() {
                                     {fieldErrors.username ? (
                                         <p
                                             id="contact-username-error"
-                                            className="mt-1.5 text-xs leading-relaxed text-red-300/90"
+                                            className="mt-1.5 text-xs leading-relaxed text-[var(--danger)]"
                                         >
                                             {fieldErrors.username}
                                         </p>
@@ -490,7 +479,7 @@ export default function Contact() {
                                 <div data-contact-field className="min-w-0">
                                     <label
                                         htmlFor="contact-email"
-                                        className="mb-2 block font-mono text-[10px] font-bold uppercase tracking-normal text-[var(--muted)]/65"
+                                        className="mb-2 block font-mono text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--faint)]"
                                     >
                                         Email
                                     </label>
@@ -510,7 +499,7 @@ export default function Contact() {
                                     {fieldErrors.email ? (
                                         <p
                                             id="contact-email-error"
-                                            className="mt-1.5 text-xs leading-relaxed text-red-300/90"
+                                            className="mt-1.5 text-xs leading-relaxed text-[var(--danger)]"
                                         >
                                             {fieldErrors.email}
                                         </p>
@@ -520,7 +509,7 @@ export default function Contact() {
                                 <div data-contact-field className="min-w-0 sm:col-span-2">
                                     <label
                                         htmlFor="contact-message"
-                                        className="mb-2 block font-mono text-[10px] font-bold uppercase tracking-normal text-[var(--muted)]/65"
+                                        className="mb-2 block font-mono text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--faint)]"
                                     >
                                         Message
                                     </label>
@@ -539,7 +528,7 @@ export default function Contact() {
                                     {fieldErrors.message ? (
                                         <p
                                             id="contact-message-error"
-                                            className="mt-1.5 text-xs leading-relaxed text-red-300/90"
+                                            className="mt-1.5 text-xs leading-relaxed text-[var(--danger)]"
                                         >
                                             {fieldErrors.message}
                                         </p>
@@ -559,7 +548,7 @@ export default function Contact() {
                                 <button
                                     type="submit"
                                     disabled={isSubmitting}
-                                    className="group inline-flex min-h-14 w-full items-center justify-center gap-2.5 rounded-lg border border-[var(--signal)]/28 bg-[var(--signal)]/12 px-5 py-3 font-mono text-base font-bold uppercase tracking-[0.08em] text-[var(--signal)] transition-[border-color,background-color,color,transform] duration-200 hover:border-[var(--signal)]/46 hover:bg-[var(--signal)]/18 hover:text-[var(--text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--signal)]/60 active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-55 motion-reduce:transition-none motion-reduce:active:scale-100"
+                                    className="group inline-flex min-h-14 w-full items-center justify-center gap-2.5 bg-[var(--inverse-bg)] px-5 py-3 font-mono text-base font-bold uppercase tracking-[0.08em] text-[var(--inverse-text)] transition-[opacity,transform] duration-200 hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--text)]/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface)] active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-55 motion-reduce:transition-none motion-reduce:active:scale-100"
                                 >
                                     {isSubmitting ? (
                                         <>
@@ -584,7 +573,7 @@ export default function Contact() {
                                     role="status"
                                     aria-live="polite"
                                     aria-atomic="true"
-                                    className="min-h-5 text-center text-xs leading-relaxed text-[var(--muted)]/62"
+                                    className="min-h-5 text-center text-xs leading-relaxed text-[var(--muted)]"
                                 >
                                     {submitStatus}
                                 </p>

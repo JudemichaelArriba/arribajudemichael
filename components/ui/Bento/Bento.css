@@ -3,6 +3,7 @@
   --glow-y: 50%;
   --glow-intensity: 0;
   --glow-radius: 260px;
+  --glow-color: 140, 140, 140;
 }
 
 .about-bento-card--border-glow::after {
@@ -13,8 +14,8 @@
   border-radius: inherit;
   padding: 1px;
   background: radial-gradient(var(--glow-radius) circle at var(--glow-x) var(--glow-y),
-      rgba(195, 109, 252, calc(var(--glow-intensity) * 0.42)) 0%,
-      rgba(195, 109, 252, calc(var(--glow-intensity) * 0.18)) 34%,
+      rgba(var(--glow-color), calc(var(--glow-intensity) * 0.42)) 0%,
+      rgba(var(--glow-color), calc(var(--glow-intensity) * 0.18)) 34%,
       transparent 62%);
   -webkit-mask:
       linear-gradient(#fff 0 0) content-box,

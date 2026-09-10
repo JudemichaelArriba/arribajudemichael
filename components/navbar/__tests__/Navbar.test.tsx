@@ -1,5 +1,6 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render as rtlRender, screen } from '@testing-library/react';
 
+import { ThemeProvider } from '@/components/theme/ThemeProvider';
 import Navbar from '../Navbar';
 
 const useActiveSection = jest.fn(() => 'home');
@@ -7,6 +8,8 @@ const useActiveSection = jest.fn(() => 'home');
 jest.mock('@/lib/useActiveSection', () => ({
   useActiveSection: (...args: unknown[]) => useActiveSection(...args),
 }));
+
+const render = (ui: React.ReactElement) => rtlRender(<ThemeProvider>{ui}</ThemeProvider>);
 
 describe('Navbar', () => {
   let queuedFrame: FrameRequestCallback | null;

@@ -38,18 +38,18 @@ export interface BentoSpotlightProps {
 
 export const DEFAULT_PARTICLE_COUNT = 12;
 export const DEFAULT_SPOTLIGHT_RADIUS = 320;
-export const DEFAULT_GLOW_COLOR = '195, 109, 252';
+export const DEFAULT_GLOW_COLOR = '140, 140, 140';
 export const BENTO_GRID_CLASS = 'about-bento-section grid w-full grid-cols-1 gap-3';
 export const BENTO_CARD_BASE_CLASS =
-  'about-bento-card relative flex min-h-[104px] flex-col justify-center gap-[0.72em] overflow-hidden rounded-lg border border-white/[0.07] bg-white/[0.04] px-[1.25em] py-[1.2em] max-sm:min-h-0 max-sm:p-[1.05em]';
+  'about-bento-card relative flex min-h-[104px] flex-col justify-center gap-[0.72em] overflow-hidden border border-[var(--hairline)] bg-[var(--surface)] px-[1.25em] py-[1.2em] max-sm:min-h-0 max-sm:p-[1.05em]';
 export const BENTO_DEFAULT_ELEVATION_CLASS =
-  'transition-[transform,border-color,background] duration-[220ms] ease-[ease] hover:-translate-y-0.5 hover:border-[rgba(195,109,252,0.18)] hover:bg-white/[0.055] motion-reduce:transition-none motion-reduce:hover:translate-y-0 [@media(hover:none)]:hover:translate-y-0';
+  'transition-[transform,border-color] duration-[220ms] ease-[ease] hover:-translate-y-0.5 hover:border-[var(--hairline-strong)] motion-reduce:transition-none motion-reduce:hover:translate-y-0 [@media(hover:none)]:hover:translate-y-0';
 export const BENTO_SMOOTH_ELEVATION_CLASS =
-  'transform-gpu shadow-[0_8px_22px_rgba(0,0,0,0.14)] transition-[transform,border-color,background-color,box-shadow] duration-[420ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-1 hover:border-[rgba(195,109,252,0.2)] hover:bg-white/[0.055] hover:shadow-[0_24px_56px_rgba(0,0,0,0.38)] motion-reduce:transition-none motion-reduce:hover:translate-y-0 [@media(hover:none)]:hover:translate-y-0';
+  'transform-gpu shadow-[var(--shadow-card)] transition-[transform,border-color,box-shadow] duration-[420ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-1 hover:border-[var(--text)] hover:shadow-[var(--shadow-lift)] motion-reduce:transition-none motion-reduce:hover:translate-y-0 [@media(hover:none)]:hover:translate-y-0';
 export const BENTO_CARD_CLASS = `${BENTO_CARD_BASE_CLASS} ${BENTO_DEFAULT_ELEVATION_CLASS}`;
 export const BENTO_META_CLASS = 'flex items-baseline gap-[0.6em]';
-export const BENTO_CODE_CLASS = 'font-mono text-[10px] text-[var(--signal)] opacity-65';
-export const BENTO_LABEL_CLASS = 'font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--muted)] opacity-50';
+export const BENTO_CODE_CLASS = 'font-mono text-[10px] text-[var(--faint)]';
+export const BENTO_LABEL_CLASS = 'font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--faint)]';
 export const BENTO_VALUE_CLASS = 'text-[clamp(0.95rem,1.45vw,1.06rem)] font-[550] leading-[1.38] text-[var(--text)]';
 
 const cx = (...classes: Array<string | false | null | undefined>) => classes.filter(Boolean).join(' ');

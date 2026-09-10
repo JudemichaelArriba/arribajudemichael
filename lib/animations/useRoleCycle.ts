@@ -8,25 +8,40 @@ export function useRoleCycle(roles: string[], interval = 2800) {
     const textRef = useRef<HTMLSpanElement>(null);
 
     useEffect(() => {
-        const id = setInterval(() => {
-            if (!textRef.current) return;
-            gsap.to(textRef.current, {
-                yPercent: -100,
+        if (roles.length <= 1) return;
+
+        const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        const id = window.setInterval(() => {
+            const node = textRef.current;
+
+            if (!node || prefersReducedMotion) {
+                setIndex((prev) => (prev + 1) % roles.length);
+                return;
+            }
+
+            gsap.to(node, {
+                yPercent: -110,
                 opacity: 0,
-                duration: 0.4,
+                duration: 0.36,
                 ease: 'power2.in',
                 onComplete: () => {
                     setIndex((prev) => (prev + 1) % roles.length);
                     gsap.fromTo(
-                        textRef.current,
-                        { yPercent: 100, opacity: 0 },
-                        { yPercent: 0, opacity: 1, duration: 0.4, ease: 'power2.out' }
+                        node,
+                        { yPercent: 110, opacity: 0 },
+                        { yPercent: 0, opacity: 1, duration: 0.42, ease: 'power2.out' }
                     );
                 },
             });
         }, interval);
 
-        return () => clearInterval(id);
+        const node = textRef.current;
+
+        return () => {
+            window.clearInterval(id);
+            if (node) gsap.killTweensOf(node);
+        };
     }, [roles.length, interval]);
 
     return { textRef, current: roles[index] };

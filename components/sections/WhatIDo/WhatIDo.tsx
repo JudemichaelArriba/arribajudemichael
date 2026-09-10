@@ -5,8 +5,17 @@ import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import ScrollHighlight from '@/components/ui/ScrollHighlight/ScrollHighlight';
+import { useTheme } from '@/components/theme/ThemeProvider';
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
+
+// GSAP interpolates `color` numerically and cannot read `var(...)`, so the
+// scrub needs literals. Both `from` values stay legible against their own
+// ground — the sweep is a refinement, not what makes the statement readable.
+const HIGHLIGHT_COLORS = {
+    light: { from: '#9b9b98', to: '#141414' },
+    dark: { from: '#9a9a9a', to: '#ffffff' },
+} as const;
 
 interface WhatIDoProps {
     sentence?: string;
@@ -42,6 +51,8 @@ export default function WhatIDo({ sentence = DEFAULT_SENTENCE }: WhatIDoProps) {
     const sectionRef = useRef<HTMLElement>(null);
     const headerRef = useRef<HTMLDivElement>(null);
     const capabilityListRef = useRef<HTMLUListElement>(null);
+    const { theme } = useTheme();
+    const highlight = HIGHLIGHT_COLORS[theme];
 
     useGSAP(
         () => {
@@ -62,12 +73,7 @@ export default function WhatIDo({ sentence = DEFAULT_SENTENCE }: WhatIDoProps) {
 
             const setInitialState = () => {
                 gsap.set(header, { autoAlpha: 0, y: 10 });
-                headerLines.forEach((line, index) => {
-                    gsap.set(line, {
-                        scaleX: 0,
-                        transformOrigin: index === 0 ? 'right center' : 'left center',
-                    });
-                });
+                gsap.set(headerLines, { scaleX: 0, transformOrigin: 'left center' });
                 gsap.set(capabilityItems, { autoAlpha: 0, y: 14 });
             };
 
@@ -192,35 +198,30 @@ export default function WhatIDo({ sentence = DEFAULT_SENTENCE }: WhatIDoProps) {
         >
             <div className="inner relative z-[1] mx-auto w-full max-w-7xl text-left">
                 <div ref={headerRef} className="flex w-full items-center gap-4">
-                    <span
-                        data-what-line
-                        aria-hidden="true"
-                        className="h-px w-8 shrink-0 bg-gradient-to-r from-transparent to-[var(--signal)]/55 sm:w-12"
-                    />
-                    <p className="eyebrow shrink-0 font-mono text-xs font-extrabold uppercase leading-none tracking-[0.14em] text-[color-mix(in_srgb,var(--signal)_82%,#ffffff_18%)]">
+                    <p className="eyebrow shrink-0 font-display text-xs font-bold uppercase leading-none tracking-[0.14em] text-[var(--text)]">
                         What I do
                     </p>
                     <span
                         data-what-line
                         aria-hidden="true"
-                        className="h-px min-w-8 flex-1 bg-gradient-to-r from-[var(--signal)]/45 via-white/10 to-transparent"
+                        className="h-px min-w-8 flex-1 bg-[var(--hairline)]"
                     />
-                    <span className="hidden shrink-0 font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--muted)]/48 sm:inline">
+                    <span className="hidden shrink-0 font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--faint)] sm:inline">
                         02 / Disciplines
                     </span>
                 </div>
 
                 <ScrollHighlight
                     as="h2"
-                    containerClassName="statement mt-12 w-full max-w-6xl text-left font-display text-[2.15rem] font-extrabold tracking-normal text-[var(--text)] [text-wrap:balance] sm:mt-16 sm:text-5xl lg:text-[3.75rem]"
-                    textClassName="statementText text-left leading-[1.06]"
+                    containerClassName="statement mt-12 w-full max-w-6xl text-left font-display text-[2.15rem] font-bold tracking-[-0.02em] text-[var(--text)] [text-wrap:pretty] sm:mt-16 sm:text-5xl lg:text-[3.6rem]"
+                    textClassName="statementText text-left leading-[1.1]"
                     scrollStart="top 105%"
                     scrollEnd="bottom 70%"
                     scrub={0.1}
                     duration={0.18}
                     charStagger={0.025}
-                    fromColor="#454a52"
-                    toColor="var(--text)"
+                    fromColor={highlight.from}
+                    toColor={highlight.to}
                 >
                     {sentence}
                 </ScrollHighlight>
@@ -228,22 +229,22 @@ export default function WhatIDo({ sentence = DEFAULT_SENTENCE }: WhatIDoProps) {
                 <ul
                     ref={capabilityListRef}
                     aria-label="Core capabilities"
-                    className="mt-14 grid gap-5 border-y border-white/[0.08] py-6 sm:mt-16 sm:grid-cols-3 sm:gap-0 sm:py-7"
+                    className="mt-14 grid gap-5 border-y border-[var(--hairline)] py-6 sm:mt-16 sm:grid-cols-3 sm:gap-0 sm:py-7"
                 >
                     {CAPABILITIES.map((capability, index) => (
                         <li
                             key={capability.code}
                             data-what-capability
-                            className={`grid grid-cols-[2rem_minmax(0,1fr)] items-start gap-x-3 sm:block sm:border-l sm:border-white/[0.08] sm:px-6 sm:first:border-l-0 sm:first:pl-0 sm:last:pr-0 ${index > 0 ? 'max-sm:border-t max-sm:border-white/[0.07] max-sm:pt-5' : ''}`}
+                            className={`group grid grid-cols-[2rem_minmax(0,1fr)] items-start gap-x-3 transition-colors duration-300 ease-out motion-reduce:transition-none sm:block sm:border-l sm:border-[var(--hairline-soft)] sm:px-6 sm:first:border-l-0 sm:first:pl-0 sm:last:pr-0 ${index > 0 ? 'max-sm:border-t max-sm:border-[var(--hairline-soft)] max-sm:pt-5' : ''}`}
                         >
-                            <span className="pt-0.5 font-mono text-[10px] font-bold tabular-nums tracking-[0.12em] text-[var(--signal)]/70">
+                            <span className="pt-0.5 font-mono text-[10px] font-bold tabular-nums tracking-[0.12em] text-[var(--faint)] transition-colors duration-300 group-hover:text-[var(--text)] motion-reduce:transition-none">
                                 {capability.code}
                             </span>
                             <div>
                                 <h3 className="font-display text-base font-bold leading-snug text-[var(--text)] sm:text-lg">
                                     {capability.label}
                                 </h3>
-                                <p className="mt-1.5 max-w-[28ch] text-sm leading-relaxed text-[var(--muted)]/64">
+                                <p className="mt-1.5 max-w-[28ch] text-sm leading-relaxed text-[var(--muted)]">
                                     {capability.detail}
                                 </p>
                             </div>

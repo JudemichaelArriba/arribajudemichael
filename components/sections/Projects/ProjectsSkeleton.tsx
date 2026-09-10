@@ -1,7 +1,7 @@
 const SHOWCASE_CARDS = [0, 1, 2] as const;
 
 function SkeletonBlock({ className }: { className: string }) {
-    return <div className={`rounded-[6px] bg-white/[0.06] ${className}`} />;
+    return <div className={`bg-[var(--hairline)] ${className}`} />;
 }
 
 export default function ProjectsSkeleton() {
@@ -19,11 +19,8 @@ export default function ProjectsSkeleton() {
                 aria-hidden="true"
                 className="animate-pulse motion-reduce:animate-none"
             >
-                <div className="pointer-events-none absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-[var(--signal)]/20 to-transparent md:inset-x-8" />
-
                 <div className="mx-auto max-w-7xl">
                     <div className="flex w-full items-center gap-4">
-                        <SkeletonBlock className="h-px w-8 shrink-0 sm:w-12" />
                         <SkeletonBlock className="h-3 w-44 shrink-0" />
                         <SkeletonBlock className="h-px min-w-8 flex-1" />
                         <SkeletonBlock className="hidden h-2.5 w-20 shrink-0 sm:block" />
@@ -38,9 +35,9 @@ export default function ProjectsSkeleton() {
                                 <SkeletonBlock className="h-3.5 w-4/5 max-w-lg" />
                             </div>
                         </div>
-                        <div className="grid h-[3.25rem] w-full grid-cols-2 gap-1 rounded-lg border border-white/[0.085] bg-white/[0.025] p-1 sm:w-[22rem]">
+                        <div className="grid h-[3.25rem] w-full grid-cols-2 gap-1 border border-[var(--hairline)] p-1 sm:w-[22rem]">
                             <SkeletonBlock className="h-full w-full" />
-                            <SkeletonBlock className="h-full w-full bg-white/[0.035]" />
+                            <SkeletonBlock className="h-full w-full opacity-60" />
                         </div>
                     </div>
 
@@ -48,9 +45,9 @@ export default function ProjectsSkeleton() {
                         {SHOWCASE_CARDS.map((card) => (
                             <li
                                 key={card}
-                                className="flex min-w-0 flex-col overflow-hidden rounded-lg border border-white/[0.07] bg-white/[0.03]"
+                                className="flex min-w-0 flex-col overflow-hidden border border-[var(--hairline)] bg-[var(--surface)]"
                             >
-                                <div className="aspect-[2.1/1] w-full border-b border-white/[0.065] bg-white/[0.04]" />
+                                <div className="aspect-[2.1/1] w-full border-b border-[var(--hairline)] bg-[var(--surface-muted)]" />
                                 <div className="flex min-h-52 flex-1 flex-col p-4 sm:p-5">
                                     <div className="flex items-center gap-3">
                                         <SkeletonBlock className="h-2.5 w-7" />

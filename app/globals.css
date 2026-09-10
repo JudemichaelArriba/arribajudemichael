@@ -1,26 +1,65 @@
 @import "tailwindcss";
 
+/* Monochrome token set. `:root` is the light default; `[data-theme]` re-scopes
+   for the toggle and for any subtree that pins a theme (the admin area). */
+:root,
+[data-theme="light"] {
+  --site-bg: #f7f7f6;
+  --surface: #ffffff;
+  --surface-muted: #f1f1ee;
+  --text: #141414;
+  --muted: #565656;
+  --faint: #8f8f8f;
+  --signal: #141414;
+  --hairline: rgba(20, 20, 20, 0.14);
+  --hairline-soft: rgba(20, 20, 20, 0.08);
+  --hairline-strong: rgba(20, 20, 20, 0.3);
+  --inverse-bg: #141414;
+  --inverse-text: #f7f7f6;
+  --field-bg: #ffffff;
+  --danger: #b42318;
+  --shadow-card: 0 1px 2px rgba(20, 20, 20, 0.05);
+  --shadow-lift: 0 18px 40px rgba(20, 20, 20, 0.12);
+}
+
+[data-theme="dark"] {
+  --site-bg: #0b0b0b;
+  --surface: #141414;
+  --surface-muted: #191919;
+  --text: #ededed;
+  --muted: #a2a2a2;
+  --faint: #7c7c7c;
+  --signal: #ededed;
+  --hairline: rgba(255, 255, 255, 0.14);
+  --hairline-soft: rgba(255, 255, 255, 0.08);
+  --hairline-strong: rgba(255, 255, 255, 0.3);
+  --inverse-bg: #ededed;
+  --inverse-text: #0b0b0b;
+  --field-bg: #0f0f0f;
+  --danger: #ff9c92;
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-lift: 0 18px 40px rgba(0, 0, 0, 0.55);
+}
+
 :root {
-  --site-bg: #000000;
-  --bg: #0a0e14;
-  --surface: #131a24;
-  --text: #e7e9ec;
-  --muted: #e8eaec;
-  --signal: #c36dfc;
-  --cta: #ff6b4a;
   --nav-height: 80px;
   --rail-width: 72px;
-  --brand-purple: #4e1f6e;
-  --preloader-glow: rgba(110, 0, 255, 0.9);
 }
 
 html {
   scroll-padding-top: calc(var(--nav-height, 80px) + env(safe-area-inset-top) + 2rem);
+  color-scheme: light;
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
 }
 
 body {
   background: var(--site-bg);
   color: var(--text);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  transition: background-color 320ms ease, color 320ms ease;
 }
 
 .site-background {
@@ -28,30 +67,40 @@ body {
 }
 
 .font-display {
-  font-family: var(--font-space-grotesk), sans-serif;
+  font-family: var(--font-name), "Segoe UI", sans-serif;
 }
 
 .font-mono {
-  font-family: var(--font-jetbrains-mono), monospace;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
 }
 
+.font-name {
+  font-family: var(--font-name), "Segoe UI", sans-serif;
+}
+
+/* Preloader wordmark */
 .stroke-text {
   fill: none;
-  stroke: #ffffff;
+  stroke: var(--text);
   stroke-width: 1.2px;
 }
 
 .fill-text {
-  fill: #ffffff;
+  fill: var(--text);
 }
 
 .glow-text {
-  filter: drop-shadow(0 0 10px var(--preloader-glow));
+  filter: none;
 }
 
-/* Global scrollbar: restrained at rest, brighter and fuller on interaction. */
+/* Single-colour brand marks (e.g. the GitHub glyph) need flipping in dark mode.
+   Tailwind has no configured `data-theme` variant, so this stays native CSS. */
+[data-theme="dark"] .tech-icon-adaptive {
+  filter: brightness(0) invert(1);
+}
+
 html {
-  scrollbar-color: color-mix(in srgb, var(--signal) 72%, #7c3aed 28%) rgba(255, 255, 255, 0.025);
+  scrollbar-color: var(--hairline-strong) transparent;
   scrollbar-width: thin;
 }
 
@@ -62,28 +111,20 @@ html {
 
 ::-webkit-scrollbar-track {
   background: var(--site-bg);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.035);
 }
 
 ::-webkit-scrollbar-thumb {
   min-height: 56px;
-  border: 3px solid transparent;
+  border: 4px solid transparent;
   border-radius: 999px;
-  background: linear-gradient(180deg, #e945f5 0%, var(--signal) 34%, #7c3aed 68%, #760068 100%) padding-box;
-  box-shadow: 0 0 0 1px rgba(195, 109, 252, 0.12), 0 0 14px rgba(124, 58, 237, 0.12);
-  transition: border-width 180ms ease, filter 180ms ease, box-shadow 180ms ease;
+  background: var(--hairline-strong) padding-box;
+  transition: background-color 180ms ease, border-width 180ms ease;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  border-width: 2px;
-  filter: brightness(1.16) saturate(1.08);
-  box-shadow: 0 0 0 1px rgba(233, 69, 245, 0.2), 0 0 18px rgba(195, 109, 252, 0.24);
-}
-
+::-webkit-scrollbar-thumb:hover,
 ::-webkit-scrollbar-thumb:active {
-  border-width: 2px;
-  filter: brightness(0.94) saturate(1.12);
-  box-shadow: 0 0 0 1px rgba(195, 109, 252, 0.22), 0 0 12px rgba(124, 58, 237, 0.2);
+  border-width: 3px;
+  background: var(--text) padding-box;
 }
 
 ::-webkit-scrollbar-corner {
@@ -105,10 +146,6 @@ html {
     transition: none !important;
   }
 
-  ::-webkit-scrollbar-thumb {
-    transition: none;
-  }
-
   .scroll-float-char {
     opacity: 1 !important;
     transform: none !important;
@@ -116,11 +153,6 @@ html {
   }
 }
 
-
 .scroll-float-animating .scroll-float-char {
   will-change: opacity, transform;
-}
-
-.font-name {
-  font-family: var(--font-name), sans-serif;
 }

@@ -15,29 +15,30 @@ interface PreloaderCallbacks {
 export function buildPreloaderTimeline(refs: PreloaderRefs, { onComplete }: PreloaderCallbacks) {
     const tl = gsap.timeline({ onComplete });
 
+    // Kept deliberately short — the hero entrance only starts once this clears,
+    // so every extra second here is a second of blank screen.
     tl.to(refs.outline, {
         attr: { 'stroke-dashoffset': 0 },
-        duration: 1.5,
+        duration: 0.7,
         ease: 'power2.inOut',
     })
         .to(
             refs.color,
-            { opacity: 1, duration: 0.5, ease: 'power2.out' },
-            '-=0.6'
+            { opacity: 1, duration: 0.25, ease: 'power2.out' },
+            '-=0.3'
         )
-        .to({}, { duration: 0.35 })
+        .to({}, { duration: 0.1 })
         .to(refs.outline, {
             attr: { 'stroke-dashoffset': PRELOADER_DASH_LENGTH },
-            duration: 1.0,
+            duration: 0.42,
             ease: 'power2.inOut',
         })
         .to(
             refs.color,
-            { opacity: 0, duration: 0.9, ease: 'power2.inOut' },
+            { opacity: 0, duration: 0.4, ease: 'power2.inOut' },
             '<'
         )
-        .to({}, { duration: 0.15 })
-        .to(refs.overlay, { opacity: 0, duration: 0.7, ease: 'power2.out' });
+        .to(refs.overlay, { opacity: 0, duration: 0.4, ease: 'power2.out' }, '+=0.05');
 
     return tl;
 }

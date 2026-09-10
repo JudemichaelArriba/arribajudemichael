@@ -29,11 +29,12 @@ app/
 components/
   analytics/             -> Client session activity, section observer, and delta batcher
   admin/analytics/       -> Admin report UI, formatting, and Recharts visualizations
+  theme/                 -> ThemeProvider.tsx (data-theme store) + ThemeToggle.tsx
   sections/              -> Page sections and page-level section scenes
-    home/                -> Home.tsx (Tailwind CSS only)
+    home/                -> Home.tsx (stacked hero: name -> role loop -> bottom-anchored Profile 2)
     WhatIDo/             -> WhatIDo.tsx (Tailwind CSS only)
-    AboutMe/             -> AboutMe.tsx + AboutBento.tsx wrapper
-    Experience/          -> Experience.tsx (timeline + replayable GSAP)
+    AboutMe/             -> AboutMe.tsx (no portrait; hover-invert detail rows)
+    Experience/          -> Experience.tsx (minimal stacked list + replayable GSAP)
     TechStack/           -> TechStack.tsx (unframed icon/name lists + reversible scrubbed GSAP)
     Projects/            -> Projects.tsx (dynamic Supabase projects/certificates showcase)
     Contact/             -> Contact.tsx (static form + replayable GSAP reveal)
@@ -187,6 +188,11 @@ export default function Page({ params }: PageProps) {
 3. Create custom hooks in `lib/animations/` for reusable logic
 4. Always clean up animations in useEffect return
 5. For replayable reveals, reuse paused timelines, restart on `onEnter`, and reset only on `onLeaveBack`
+6. **Anything that reveals on mount must wait for the preloader.** `Preloader` covers the viewport
+   for ~3.5s and its children mount underneath it, so a mount-time timeline plays and finishes
+   before the visitor sees anything. Gate it on `usePreloaderReady()` from
+   `@/components/loader/Preloader` and pass the flag through `useGSAP`'s `dependencies`
+   (see `components/sections/home/Home.tsx`). Scroll-triggered sections are unaffected.
 
 ### Styling Guidelines
 
@@ -208,10 +214,38 @@ export default function Page({ params }: PageProps) {
 - **Naming:** `Component.module.css` co-located with component
 - **BEM-like naming inside modules:** `.container`, `.button`, `.button__icon`
 
-#### Brand Colors
-- Primary gradient: `#5227FF` → `#FF9FFC`
-- Use in effects and highlights
-- Maintain high contrast for accessibility
+#### Brand Colors — monochrome, theme-driven
+The site is **pure monochrome**: black, white and greys only. There is no accent hue.
+Never introduce a coloured accent (the old purple `--signal: #c36dfc` / magenta gradients are gone).
+
+All colour comes from CSS custom properties defined in `app/globals.css`, once for
+`:root, [data-theme="light"]` and again for `[data-theme="dark"]`:
+
+`--site-bg`, `--surface`, `--surface-muted`, `--text`, `--muted`, `--faint`, `--signal`
+(kept as an alias of `--text`), `--hairline`, `--hairline-soft`, `--hairline-strong`,
+`--inverse-bg`, `--inverse-text`, `--field-bg`, `--danger`, `--shadow-card`, `--shadow-lift`.
+
+Rules:
+- **Never** write theme-blind utilities in public UI — no `bg-white/[0.04]`, `border-white/10`,
+  `bg-black`, `text-white`, `ring-offset-black`, or raw hex. Use the tokens.
+- Solid buttons and hover-invert rows use `bg-[var(--inverse-bg)] text-[var(--inverse-text)]`.
+- Buttons are **square** (no pill radius).
+- GSAP tweens `color` numerically and cannot interpolate `var(...)`; where a colour is animated
+  (e.g. `ScrollHighlight` in `WhatIDo`), pass literal hex chosen from `useTheme()`.
+- Maintain high contrast for accessibility.
+
+#### Theme system (light default + dark toggle)
+- `lib/theme.ts` owns the storage key, the default (`light`), and `THEME_BOOTSTRAP_SCRIPT`,
+  an inline no-flash script injected in `app/layout.tsx`'s `<head>`.
+- `components/theme/ThemeProvider.tsx` reads `<html data-theme>` through `useSyncExternalStore`
+  (a `MutationObserver` subscription) — the document element is the source of truth, so there is
+  no `setState` in an effect and no hydration mismatch.
+- `components/theme/ThemeToggle.tsx` is the sun/moon segmented control in the navbar (desktop and
+  mobile menu).
+- Tokens are declared on bare `[data-theme]` selectors, so any subtree can pin a theme.
+  `app/(protected)/layout.tsx` and `app/(auth)/layout.tsx` pin `data-theme="dark"` so the admin
+  and login areas stay dark regardless of the public toggle.
+- No `next-themes`; no new dependency was added.
 
 ### Dependencies & Imports
 
@@ -376,11 +410,15 @@ The following components have been converted from CSS Modules to pure Tailwind C
 - **WhatIDo.tsx** - What I Do section (removed `WhatIDo.module.css`)
 
 #### Components That MUST Keep Native CSS
-The following components require CSS Modules for complex effects:
-- **Navbar.module.css** - Complex state transitions, backdrop filters, overlay animations
+The following require native CSS for effects Tailwind cannot express:
 - **LineSidebar.module.css** - Dynamic CSS custom properties for proximity effects
 - **SpecularButton.css** - Canvas effect styling
-- **components/ui/Bento/Bento.css** - Border-glow pseudo-element, glow CSS variables, and generated spotlight effect only
+- **components/ui/Bento/Bento.css** - Border-glow pseudo-element and generated spotlight only
+  (glow colour now comes from `--glow-color`; the glow is disabled in the public showcase)
+- **app/globals.css** - theme tokens and `[data-theme="dark"] .tech-icon-adaptive`
+  (inverts single-colour brand glyphs in dark mode)
+
+`Navbar.tsx` is **pure Tailwind** — there is no `Navbar.module.css`.
 
 #### What to Do
 ✅ Read `AGENTS.md` for comprehensive information  

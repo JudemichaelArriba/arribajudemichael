@@ -253,25 +253,16 @@ export default function TechStack() {
             data-analytics-section="techstack"
             className="relative mx-auto w-full max-w-7xl scroll-mt-[calc(var(--nav-height,80px)+2rem)] px-5 py-24 md:px-8 md:py-32"
         >
-            <div
-                aria-hidden="true"
-                className="pointer-events-none absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-[var(--signal)]/20 to-transparent md:inset-x-8"
-            />
-
             <div className="mb-14 md:mb-20">
                 <div className="tech-stack-heading-copy flex w-full items-center gap-4">
-                    <span
-                        aria-hidden="true"
-                        className="h-px w-8 shrink-0 bg-gradient-to-r from-transparent to-[var(--signal)]/55 sm:w-12"
-                    />
-                    <h2 className="shrink-0 font-mono text-xs font-extrabold uppercase leading-[1.2] tracking-[0.14em] text-[color-mix(in_srgb,var(--signal)_78%,#ffffff_22%)]">
+                    <h2 className="shrink-0 font-display text-xs font-bold uppercase leading-[1.2] tracking-[0.14em] text-[var(--text)]">
                         Tech Stack
                     </h2>
                     <span
                         aria-hidden="true"
-                        className="h-px min-w-8 flex-1 bg-gradient-to-r from-[var(--signal)]/45 via-white/10 to-transparent"
+                        className="h-px min-w-8 flex-1 bg-[var(--hairline)]"
                     />
-                    <span className="hidden shrink-0 font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--muted)]/48 sm:inline">
+                    <span className="hidden shrink-0 font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--faint)] sm:inline">
                         05 / Toolkit
                     </span>
                 </div>
@@ -281,21 +272,21 @@ export default function TechStack() {
                 {TECH_CATEGORIES.map((category, idx) => (
                     <article
                         key={category.name}
-                        className={`tech-stack-row grid grid-cols-1 gap-10 md:grid-cols-[minmax(180px,0.72fr)_minmax(0,2fr)] md:gap-20 ${idx > 0 ? 'border-t border-white/[0.06] pt-16 mt-16 md:pt-24 md:mt-24' : ''
+                        className={`tech-stack-row grid grid-cols-1 gap-10 md:grid-cols-[minmax(180px,0.72fr)_minmax(0,2fr)] md:gap-20 ${idx > 0 ? 'border-t border-[var(--hairline)] pt-16 mt-16 md:pt-24 md:mt-24' : ''
                             }`}
                     >
                         <div className="flex flex-col gap-3">
                             <div className="tech-stack-meta flex items-center gap-2.5">
-                                <span className="tech-stack-index font-mono text-[0.65rem] font-bold tabular-nums text-[var(--signal)]">
+                                <span className="tech-stack-index font-mono text-[0.65rem] font-bold tabular-nums text-[var(--faint)]">
                                     {String(idx + 1).padStart(2, '0')}
                                 </span>
-                                <span aria-hidden="true" className="tech-stack-meta-line h-px w-4 bg-[var(--signal)]/35" />
-                                <span className="tech-stack-count font-mono text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-[var(--signal)]">
+                                <span aria-hidden="true" className="tech-stack-meta-line h-px w-4 bg-[var(--hairline-strong)]" />
+                                <span className="tech-stack-count font-mono text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-[var(--faint)]">
                                     {category.technologies.length} {category.technologies.length === 1 ? 'tool' : 'tools'}
                                 </span>
                             </div>
 
-                            <h3 className="tech-stack-category font-display text-[clamp(2rem,5vw,4.25rem)] font-extrabold leading-none tracking-normal text-[var(--text)]">
+                            <h3 className="tech-stack-category font-display text-[clamp(2rem,5vw,4.25rem)] font-extrabold leading-none tracking-[-0.03em] text-[var(--text)]">
                                 {category.name}
                             </h3>
                         </div>
@@ -304,9 +295,9 @@ export default function TechStack() {
                             {category.technologies.map((technology) => (
                                 <li
                                     key={technology.name}
-                                    className="tech-stack-item group flex min-h-12 min-w-0 items-center gap-3.5 border-b border-white/[0.05] py-3.5 transition-colors duration-300 hover:border-white/15"
+                                    className="tech-stack-item group flex min-h-12 min-w-0 items-center gap-3.5 border-b border-[var(--hairline-soft)] py-3.5 transition-colors duration-300 hover:border-[var(--text)] motion-reduce:transition-none"
                                 >
-                                    <span className="tech-stack-icon flex size-11 shrink-0 items-center justify-center transition-transform duration-300 ease-out group-hover:-translate-y-0.5">
+                                    <span className="tech-stack-icon flex size-11 shrink-0 items-center justify-center transition-transform duration-300 ease-out group-hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-y-0">
                                         <Image
                                             src={technology.icon}
                                             alt=""
@@ -314,13 +305,13 @@ export default function TechStack() {
                                             height={36}
                                             sizes="36px"
                                             unoptimized
-                                            className={`size-9 object-contain opacity-75 transition-opacity duration-300 group-hover:opacity-100 ${technology.invertOnDark ? 'brightness-0 invert' : ''}`}
+                                            className={`size-9 object-contain opacity-80 transition-opacity duration-300 group-hover:opacity-100 motion-reduce:transition-none ${technology.invertOnDark ? 'tech-icon-adaptive' : ''}`}
                                         />
                                     </span>
-                                    <span className="tech-stack-label flex min-w-0 items-center gap-1 text-sm font-semibold leading-tight text-[var(--muted)] transition-colors duration-300 group-hover:text-[var(--text)] sm:text-[0.95rem]">
+                                    <span className="tech-stack-label flex min-w-0 items-center gap-1 text-sm font-semibold leading-tight text-[var(--muted)] transition-colors duration-300 group-hover:text-[var(--text)] motion-reduce:transition-none sm:text-[0.95rem]">
                                         <span
                                             aria-hidden="true"
-                                            className="font-mono text-[var(--signal)] opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                                            className="font-mono text-[var(--text)] opacity-0 transition-opacity duration-300 group-hover:opacity-100 motion-reduce:transition-none"
                                         >
                                             ›
                                         </span>

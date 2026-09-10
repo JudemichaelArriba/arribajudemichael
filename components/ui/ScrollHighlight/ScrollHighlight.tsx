@@ -128,6 +128,11 @@ export default function ScrollHighlight({
                 nextWordStart += Math.max(duration * 0.7, wordDuration * 0.72);
             });
 
+            // A freshly built scrubbed timeline sits at progress 0 until the next
+            // scroll event. Without this, rebuilding after a theme switch resets
+            // every character to `fromColor` and leaves it there until you scroll.
+            timeline.scrollTrigger?.refresh();
+
             return () => {
                 timeline.scrollTrigger?.kill(false);
                 timeline.kill();

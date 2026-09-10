@@ -16,8 +16,10 @@ export default async function ProtectedLayout({
     }
 
     return (
-        <AdminShell initialUnreadMessageCount={initialUnreadMessageCount}>
-            {children}
-        </AdminShell>
+        <div data-theme="dark" className="flex min-h-svh flex-col bg-[var(--site-bg)] text-[var(--text)]">
+            <AdminShell initialUnreadMessageCount={initialUnreadMessageCount}>
+                {children}
+            </AdminShell>
+        </div>
     );
 }
