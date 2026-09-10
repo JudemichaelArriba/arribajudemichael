@@ -42,10 +42,18 @@ export const DEFAULT_GLOW_COLOR = '140, 140, 140';
 export const BENTO_GRID_CLASS = 'about-bento-section grid w-full grid-cols-1 gap-3';
 export const BENTO_CARD_BASE_CLASS =
   'about-bento-card relative flex min-h-[104px] flex-col justify-center gap-[0.72em] overflow-hidden border border-[var(--hairline)] bg-[var(--surface)] px-[1.25em] py-[1.2em] max-sm:min-h-0 max-sm:p-[1.05em]';
+/**
+ * Card hover shares one duration and easing with everything animating inside it
+ * (media zoom, arrows, meta). Mismatched timings meant the image kept travelling
+ * after the card had settled, which read as lag rather than as one gesture.
+ */
+export const BENTO_HOVER_DURATION = 'duration-[520ms]';
+export const BENTO_HOVER_EASE = 'ease-[cubic-bezier(0.22,1,0.36,1)]';
+
 export const BENTO_DEFAULT_ELEVATION_CLASS =
-  'transition-[transform,border-color] duration-[220ms] ease-[ease] hover:-translate-y-0.5 hover:border-[var(--hairline-strong)] motion-reduce:transition-none motion-reduce:hover:translate-y-0 [@media(hover:none)]:hover:translate-y-0';
+  `transition-[transform,border-color] ${BENTO_HOVER_DURATION} ${BENTO_HOVER_EASE} hover:-translate-y-0.5 hover:border-[var(--hairline-strong)] motion-reduce:transition-none motion-reduce:hover:translate-y-0 [@media(hover:none)]:hover:translate-y-0`;
 export const BENTO_SMOOTH_ELEVATION_CLASS =
-  'transform-gpu shadow-[var(--shadow-card)] transition-[transform,border-color,box-shadow] duration-[420ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-1 hover:border-[var(--text)] hover:shadow-[var(--shadow-lift)] motion-reduce:transition-none motion-reduce:hover:translate-y-0 [@media(hover:none)]:hover:translate-y-0';
+  `transform-gpu shadow-[var(--shadow-card)] transition-[transform,border-color,box-shadow] ${BENTO_HOVER_DURATION} ${BENTO_HOVER_EASE} hover:-translate-y-1.5 hover:border-[var(--hairline-strong)] hover:shadow-[var(--shadow-lift)] motion-reduce:transition-none motion-reduce:hover:translate-y-0 [@media(hover:none)]:hover:translate-y-0`;
 export const BENTO_CARD_CLASS = `${BENTO_CARD_BASE_CLASS} ${BENTO_DEFAULT_ELEVATION_CLASS}`;
 export const BENTO_META_CLASS = 'flex items-baseline gap-[0.6em]';
 export const BENTO_CODE_CLASS = 'font-mono text-[10px] text-[var(--faint)]';

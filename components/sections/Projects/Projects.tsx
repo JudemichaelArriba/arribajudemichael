@@ -38,7 +38,7 @@ function ProjectCard({ project, index }: { project: PublicProjectDto; index: num
                             fill
                             loading="eager"
                             sizes="(max-width: 639px) calc(100vw - 2.5rem), (max-width: 1023px) calc(50vw - 2.5rem), (max-width: 1279px) calc(33vw - 2rem), 416px"
-                            className="object-cover object-top transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.035] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+                            className="object-cover object-top transition-transform duration-[520ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.045] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
                         />
                     ) : (
                         <div className="flex h-full items-center justify-center text-[var(--faint)]">
@@ -49,11 +49,11 @@ function ProjectCard({ project, index }: { project: PublicProjectDto; index: num
 
                 <div className="flex flex-1 flex-col p-4 sm:p-5">
                     <div className="flex items-center gap-3 font-mono text-[10px] font-bold uppercase tracking-normal">
-                        <span className="tabular-nums text-[var(--faint)]">
+                        <span className="tabular-nums text-[var(--faint)] transition-colors duration-[520ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:text-[var(--text)] motion-reduce:transition-none">
                             {String(index + 1).padStart(2, '0')}
                         </span>
-                        <span aria-hidden="true" className="h-px w-4 bg-[var(--hairline-strong)]" />
-                        <span className="text-[var(--faint)]">{project.category}</span>
+                        <span aria-hidden="true" className="h-px w-4 bg-[var(--hairline-strong)] transition-[background-color,width] duration-[520ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:w-6 group-hover:bg-[var(--text)] motion-reduce:transition-none motion-reduce:group-hover:w-4" />
+                        <span className="text-[var(--faint)] transition-colors duration-[520ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:text-[var(--text)] motion-reduce:transition-none">{project.category}</span>
                     </div>
 
                     <h3 className="mt-2.5 font-display text-xl font-bold leading-tight tracking-[-0.02em] text-[var(--text)] sm:text-[1.35rem]">
@@ -77,10 +77,17 @@ function ProjectCard({ project, index }: { project: PublicProjectDto; index: num
                                 href={project.githubUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex min-h-10 shrink-0 items-center gap-1.5 border-b border-[var(--hairline-strong)] font-mono text-[10px] font-bold uppercase tracking-normal text-[var(--text)] transition-[border-color,gap] duration-300 hover:border-[var(--text)] hover:gap-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--text)]/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--site-bg)] motion-reduce:transition-none"
+                                className="inline-flex min-h-10 shrink-0 items-center gap-1.5 border-b border-[var(--hairline-strong)] font-mono text-[10px] font-bold uppercase tracking-normal text-[var(--text)] transition-[border-color] duration-[520ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:border-[var(--text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--text)]/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--site-bg)] motion-reduce:transition-none"
                             >
                                 View repository
-                                <ArrowUpRight aria-hidden="true" size={14} strokeWidth={1.8} />
+                                {/* Sliding the arrow instead of the flex `gap`: animating
+                                    gap reflows the row and makes the hover judder. */}
+                                <ArrowUpRight
+                                    aria-hidden="true"
+                                    size={14}
+                                    strokeWidth={1.8}
+                                    className="transition-transform duration-[520ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:-translate-y-0.5 group-hover:translate-x-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0 motion-reduce:group-hover:translate-y-0"
+                                />
                             </a>
                         ) : null}
                     </div>
@@ -101,7 +108,7 @@ function CertificateCard({ certificate, index }: { certificate: PublicCertificat
                 className="block h-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--text)]/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--site-bg)]"
             >
                 <BentoCard elevation="smooth" enableBorderGlow={false} className={SHOWCASE_BENTO_CARD_CLASS}>
-                    <div className="aspect-[1.3/1] w-full overflow-hidden border-b border-[var(--hairline)] bg-white transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.018] motion-reduce:transition-none motion-reduce:group-hover:scale-100">
+                    <div className="aspect-[1.3/1] w-full overflow-hidden border-b border-[var(--hairline)] bg-white transition-transform duration-[520ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.03] motion-reduce:transition-none motion-reduce:group-hover:scale-100">
                         <CertificatePdfPreview
                             source={certificate.pdfUrl}
                             label={`${certificate.title} first-page preview`}
@@ -110,10 +117,10 @@ function CertificateCard({ certificate, index }: { certificate: PublicCertificat
 
                     <div className="flex flex-1 flex-col p-4 sm:p-5">
                         <div className="flex items-center gap-2.5 font-mono text-[9px] font-bold uppercase tracking-normal">
-                            <span className="tabular-nums text-[var(--faint)]">
+                            <span className="tabular-nums text-[var(--faint)] transition-colors duration-[520ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:text-[var(--text)] motion-reduce:transition-none">
                                 {String(index + 1).padStart(2, '0')}
                             </span>
-                            <span aria-hidden="true" className="h-px w-4 bg-[var(--hairline-strong)]" />
+                            <span aria-hidden="true" className="h-px w-4 bg-[var(--hairline-strong)] transition-[background-color,width] duration-[520ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:w-6 group-hover:bg-[var(--text)] motion-reduce:transition-none motion-reduce:group-hover:w-4" />
                             <span className="inline-flex items-center gap-1.5 text-[var(--faint)]">
                                 <FileText aria-hidden="true" size={12} strokeWidth={1.8} />
                                 PDF credential
@@ -135,7 +142,7 @@ function CertificateCard({ certificate, index }: { certificate: PublicCertificat
                                 aria-hidden="true"
                                 size={15}
                                 strokeWidth={1.8}
-                                className="text-[var(--faint)] transition-[color,transform] duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[var(--text)] motion-reduce:transition-none"
+                                className="text-[var(--faint)] transition-[color,transform] duration-[520ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[var(--text)] motion-reduce:transition-none motion-reduce:group-hover:translate-x-0 motion-reduce:group-hover:translate-y-0"
                             />
                         </div>
                     </div>
