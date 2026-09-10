@@ -11,10 +11,10 @@ import { PreloaderLogo } from './PreloaderLogo';
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
 /**
- * True once the intro overlay has cleared. Sections that reveal on mount must
- * wait for this, otherwise their entrance plays behind the overlay and is over
- * before the visitor sees the page. Defaults to true so a section rendered
- * outside the preloader still animates.
+ * True from the moment the curtain starts lifting. Sections that reveal on
+ * mount must wait for this, otherwise their entrance plays behind the overlay
+ * and is over before the visitor sees the page. Defaults to true so a section
+ * rendered outside the preloader still animates.
  */
 const PreloaderReadyContext = createContext(true);
 
@@ -24,6 +24,7 @@ export function usePreloaderReady() {
 
 export default function Preloader({ children }: { children: React.ReactNode }) {
     const [loading, setLoading] = useState(true);
+    const [ready, setReady] = useState(false);
     const overlayRef = useRef<HTMLDivElement>(null);
     const outlineRef = useRef<SVGTextElement>(null);
     const colorRef = useRef<SVGTextElement>(null);
@@ -38,14 +39,16 @@ export default function Preloader({ children }: { children: React.ReactNode }) {
         void document.fonts?.ready.then(() => ScrollTrigger.refresh());
 
         buildPreloaderTimeline(
-            { overlay: overlayRef.current, outline: outlineRef.current, color: colorRef.current },
             {
+                overlay: overlayRef.current,
+                outline: outlineRef.current,
+                color: colorRef.current,
+            },
+            {
+                onReveal: () => setReady(true),
                 onComplete: () => {
                     document.body.style.overflow = '';
                     setLoading(false);
-                    // Every section's ScrollTrigger measured itself while the body
-                    // was scroll-locked behind the overlay, so their start/end
-                    // positions are stale. Without this the scroll reveals never fire.
                     requestAnimationFrame(() => ScrollTrigger.refresh());
                 },
             }
@@ -53,13 +56,17 @@ export default function Preloader({ children }: { children: React.ReactNode }) {
     }, []);
 
     return (
-        <PreloaderReadyContext.Provider value={!loading}>
+        <PreloaderReadyContext.Provider value={ready}>
             {loading && (
                 <div
                     ref={overlayRef}
                     className="fixed inset-0 z-[100] flex items-center justify-center bg-[var(--site-bg)]"
                 >
-                    <PreloaderLogo outlineRef={outlineRef} colorRef={colorRef} fontFamily={urbanist.style.fontFamily} />
+                    <PreloaderLogo
+                        outlineRef={outlineRef}
+                        colorRef={colorRef}
+                        fontFamily={urbanist.style.fontFamily}
+                    />
                 </div>
             )}
             {children}

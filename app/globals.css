@@ -48,11 +48,11 @@
 
 html {
   scroll-padding-top: calc(var(--nav-height, 80px) + env(safe-area-inset-top) + 2rem);
-  color-scheme: light;
+  color-scheme: dark;
 }
 
-html[data-theme="dark"] {
-  color-scheme: dark;
+html[data-theme="light"] {
+  color-scheme: light;
 }
 
 body {

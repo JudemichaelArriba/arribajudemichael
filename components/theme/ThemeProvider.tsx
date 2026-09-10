@@ -47,6 +47,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const transitionRef = useRef<ThemeTransitionHandle>(null);
 
     const setTheme = useCallback((next: Theme, origin?: { x: number; y: number }) => {
+        // Picking the theme that is already applied is a no-op — it should not
+        // replay the ink wipe.
+        if (getSnapshot() === next) return;
+
         const apply = () => {
             document.documentElement.setAttribute('data-theme', next);
             try {

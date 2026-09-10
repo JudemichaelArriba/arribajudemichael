@@ -4,18 +4,8 @@ import { useRef } from 'react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import ScrollHighlight from '@/components/ui/ScrollHighlight/ScrollHighlight';
-import { useTheme } from '@/components/theme/ThemeProvider';
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
-
-// GSAP interpolates `color` numerically and cannot read `var(...)`, so the
-// scrub needs literals. Both `from` values stay legible against their own
-// ground — the sweep is a refinement, not what makes the statement readable.
-const HIGHLIGHT_COLORS = {
-    light: { from: '#9b9b98', to: '#141414' },
-    dark: { from: '#9a9a9a', to: '#ffffff' },
-} as const;
 
 interface WhatIDoProps {
     sentence?: string;
@@ -51,8 +41,6 @@ export default function WhatIDo({ sentence = DEFAULT_SENTENCE }: WhatIDoProps) {
     const sectionRef = useRef<HTMLElement>(null);
     const headerRef = useRef<HTMLDivElement>(null);
     const capabilityListRef = useRef<HTMLUListElement>(null);
-    const { theme } = useTheme();
-    const highlight = HIGHLIGHT_COLORS[theme];
 
     useGSAP(
         () => {
@@ -64,7 +52,7 @@ export default function WhatIDo({ sentence = DEFAULT_SENTENCE }: WhatIDoProps) {
             if (!section || !header || !statement || prefersReducedMotion) return;
 
             const headerLines = gsap.utils.toArray<HTMLElement>('[data-what-line]', header);
-            const statementWords = gsap.utils.toArray<HTMLElement>('.scroll-highlight-word', statement);
+            const statementWords = gsap.utils.toArray<HTMLElement>('.statement-word', statement);
             const capabilityItems = gsap.utils.toArray<HTMLElement>(
                 '[data-what-capability]',
                 capabilityListRef.current ?? undefined
@@ -211,20 +199,20 @@ export default function WhatIDo({ sentence = DEFAULT_SENTENCE }: WhatIDoProps) {
                     </span>
                 </div>
 
-                <ScrollHighlight
-                    as="h2"
-                    containerClassName="statement mt-12 w-full max-w-6xl text-left font-display text-[2.15rem] font-bold tracking-[-0.02em] text-[var(--text)] [text-wrap:pretty] sm:mt-16 sm:text-5xl lg:text-[3.6rem]"
-                    textClassName="statementText text-left leading-[1.1]"
-                    scrollStart="top 105%"
-                    scrollEnd="bottom 70%"
-                    scrub={0.1}
-                    duration={0.18}
-                    charStagger={0.025}
-                    fromColor={highlight.from}
-                    toColor={highlight.to}
-                >
-                    {sentence}
-                </ScrollHighlight>
+                {/* Plain words in the flow, revealed with a stagger. The previous
+                    per-character colour scrub kept breaking across theme switches
+                    and left the sentence half-lit, so nothing here animates colour. */}
+                <h2 className="statement mt-12 w-full max-w-6xl text-left font-display text-[2.15rem] font-bold leading-[1.1] tracking-[-0.02em] text-[var(--text)] [text-wrap:pretty] sm:mt-16 sm:text-5xl lg:text-[3.6rem]">
+                    {sentence.split(' ').map((word, index) => (
+                        <span
+                            key={`${word}-${index}`}
+                            className="statement-word inline-block whitespace-pre"
+                        >
+                            {word}
+                            {index < sentence.split(' ').length - 1 ? ' ' : ''}
+                        </span>
+                    ))}
+                </h2>
 
                 <ul
                     ref={capabilityListRef}

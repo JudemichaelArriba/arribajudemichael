@@ -1,21 +1,29 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import gsap from 'gsap';
 
-const INTERACTIVE_SELECTOR = 'a, button, input, textarea, select, summary, [role="button"]';
+interface StrokePoint {
+    x: number;
+    y: number;
+    t: number;
+    /** Width factor from pointer speed — fast strokes taper, slow ones pool. */
+    weight: number;
+}
+
+const TRAIL_LIFETIME = 620;
+const MAX_POINTS = 90;
+const MAX_WIDTH = 26;
+const MIN_WIDTH = 2;
 
 /**
- * Ink-dot cursor: a solid dot that tracks the pointer exactly and a ring that
- * trails behind it. Both are painted in `--text`, so the cursor is black on the
- * light theme and white on the dark one without any JS reading the theme.
+ * Ink-brush cursor: the pointer drags a tapered stroke that thins as you move
+ * faster and dries out behind you. Painted in the resolved `--text` colour, so
+ * it is black on the light theme and white on the dark one.
  *
- * Pointer devices only — hidden entirely for touch, coarse pointers and anyone
- * asking for reduced motion.
+ * Pointer devices only — skipped for touch, coarse pointers and reduced motion.
  */
 export default function Cursor() {
-    const dotRef = useRef<HTMLDivElement>(null);
-    const ringRef = useRef<HTMLDivElement>(null);
+    const canvasRef = useRef<HTMLCanvasElement>(null);
     const [enabled, setEnabled] = useState(false);
 
     useEffect(() => {
@@ -30,74 +38,132 @@ export default function Cursor() {
     }, []);
 
     useEffect(() => {
-        const dot = dotRef.current;
-        const ring = ringRef.current;
-        if (!enabled || !dot || !ring) return;
+        const canvas = canvasRef.current;
+        if (!enabled || !canvas) return;
 
-        const dotX = gsap.quickTo(dot, 'x', { duration: 0.08, ease: 'power3.out' });
-        const dotY = gsap.quickTo(dot, 'y', { duration: 0.08, ease: 'power3.out' });
-        const ringX = gsap.quickTo(ring, 'x', { duration: 0.42, ease: 'power3.out' });
-        const ringY = gsap.quickTo(ring, 'y', { duration: 0.42, ease: 'power3.out' });
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
 
-        let visible = false;
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const points: StrokePoint[] = [];
+        let width = 0;
+        let height = 0;
+        let raf = 0;
+        let lastX = 0;
+        let lastY = 0;
+        let hasLast = false;
+
+        // Read the live token so the stroke follows the theme without prop drilling.
+        let ink = '20, 20, 20';
+        const readInk = () => {
+            const value = getComputedStyle(document.documentElement)
+                .getPropertyValue('--text')
+                .trim();
+            const hex = value.replace('#', '');
+            if (hex.length !== 6) return;
+            const num = Number.parseInt(hex, 16);
+            if (Number.isNaN(num)) return;
+            ink = `${(num >> 16) & 255}, ${(num >> 8) & 255}, ${num & 255}`;
+        };
+
+        const resize = () => {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = Math.round(width * dpr);
+            canvas.height = Math.round(height * dpr);
+            canvas.style.width = `${width}px`;
+            canvas.style.height = `${height}px`;
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        };
 
         const handleMove = (event: PointerEvent) => {
-            if (!visible) {
-                visible = true;
-                gsap.to([dot, ring], { autoAlpha: 1, duration: 0.25, overwrite: 'auto' });
+            const now = performance.now();
+            const speed = hasLast
+                ? Math.hypot(event.clientX - lastX, event.clientY - lastY)
+                : 0;
+            lastX = event.clientX;
+            lastY = event.clientY;
+            hasLast = true;
+
+            // Faster movement → thinner stroke, the way a real brush behaves.
+            const weight = Math.max(0.18, 1 - Math.min(speed / 42, 0.86));
+            points.push({ x: event.clientX, y: event.clientY, t: now, weight });
+            if (points.length > MAX_POINTS) points.shift();
+        };
+
+        const draw = () => {
+            const now = performance.now();
+            ctx.clearRect(0, 0, width, height);
+
+            while (points.length > 0 && now - points[0].t > TRAIL_LIFETIME) {
+                points.shift();
             }
 
-            dotX(event.clientX);
-            dotY(event.clientY);
-            ringX(event.clientX);
-            ringY(event.clientY);
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
 
-            const overInteractive = Boolean(
-                (event.target as Element | null)?.closest?.(INTERACTIVE_SELECTOR)
-            );
-            gsap.to(ring, {
-                scale: overInteractive ? 1.9 : 1,
-                opacity: overInteractive ? 0.45 : 1,
-                duration: 0.32,
-                ease: 'power3.out',
-                overwrite: 'auto',
-            });
+            for (let i = 1; i < points.length; i++) {
+                const previous = points[i - 1];
+                const point = points[i];
+                const age = (now - point.t) / TRAIL_LIFETIME;
+                const life = Math.max(0, 1 - age);
+                if (life <= 0) continue;
+
+                // Taper toward the tail as well as with age.
+                const along = i / points.length;
+                const thickness = Math.max(
+                    MIN_WIDTH,
+                    MAX_WIDTH * point.weight * life * (0.35 + along * 0.65)
+                );
+
+                ctx.strokeStyle = `rgba(${ink}, ${(life * life * 0.9).toFixed(3)})`;
+                ctx.lineWidth = thickness;
+                ctx.beginPath();
+                ctx.moveTo(previous.x, previous.y);
+                ctx.lineTo(point.x, point.y);
+                ctx.stroke();
+            }
+
+            // The wet tip at the pointer itself.
+            const tip = points[points.length - 1];
+            if (tip) {
+                ctx.fillStyle = `rgba(${ink}, 0.95)`;
+                ctx.beginPath();
+                ctx.arc(tip.x, tip.y, Math.max(MIN_WIDTH, 5 * tip.weight + 2), 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            raf = requestAnimationFrame(draw);
         };
 
-        const handleLeave = () => {
-            visible = false;
-            gsap.to([dot, ring], { autoAlpha: 0, duration: 0.2, overwrite: 'auto' });
-        };
+        readInk();
+        resize();
+        raf = requestAnimationFrame(draw);
 
-        const handleDown = () => gsap.to(ring, { scale: 0.7, duration: 0.18, overwrite: 'auto' });
-        const handleUp = () => gsap.to(ring, { scale: 1, duration: 0.28, overwrite: 'auto' });
+        const themeObserver = new MutationObserver(readInk);
+        themeObserver.observe(document.documentElement, {
+            attributes: true,
+            attributeFilter: ['data-theme'],
+        });
 
         window.addEventListener('pointermove', handleMove, { passive: true });
-        window.addEventListener('pointerdown', handleDown);
-        window.addEventListener('pointerup', handleUp);
-        document.documentElement.addEventListener('pointerleave', handleLeave);
+        window.addEventListener('resize', resize);
 
         return () => {
+            cancelAnimationFrame(raf);
+            themeObserver.disconnect();
             window.removeEventListener('pointermove', handleMove);
-            window.removeEventListener('pointerdown', handleDown);
-            window.removeEventListener('pointerup', handleUp);
-            document.documentElement.removeEventListener('pointerleave', handleLeave);
-            gsap.killTweensOf([dot, ring]);
+            window.removeEventListener('resize', resize);
         };
     }, [enabled]);
 
     if (!enabled) return null;
 
     return (
-        <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-[120]">
-            <div
-                ref={ringRef}
-                className="invisible absolute -left-5 -top-5 size-10 rounded-full border border-[var(--text)] opacity-0 will-change-transform"
-            />
-            <div
-                ref={dotRef}
-                className="invisible absolute -left-[3px] -top-[3px] size-1.5 rounded-full bg-[var(--text)] opacity-0 will-change-transform"
-            />
-        </div>
+        <canvas
+            ref={canvasRef}
+            aria-hidden="true"
+            className="pointer-events-none fixed inset-0 z-[120]"
+        />
     );
 }

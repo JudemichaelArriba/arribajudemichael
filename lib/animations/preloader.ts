@@ -9,10 +9,18 @@ interface PreloaderRefs {
 }
 
 interface PreloaderCallbacks {
+    /**
+     * Fires as the overlay starts fading, not when it finishes — the page
+     * underneath animates in *with* the reveal rather than after a dead beat.
+     */
+    onReveal: () => void;
     onComplete: () => void;
 }
 
-export function buildPreloaderTimeline(refs: PreloaderRefs, { onComplete }: PreloaderCallbacks) {
+export function buildPreloaderTimeline(
+    refs: PreloaderRefs,
+    { onReveal, onComplete }: PreloaderCallbacks
+) {
     const tl = gsap.timeline({ onComplete });
 
     // Kept deliberately short — the hero entrance only starts once this clears,
@@ -38,6 +46,7 @@ export function buildPreloaderTimeline(refs: PreloaderRefs, { onComplete }: Prel
             { opacity: 0, duration: 0.4, ease: 'power2.inOut' },
             '<'
         )
+        .call(onReveal)
         .to(refs.overlay, { opacity: 0, duration: 0.4, ease: 'power2.out' }, '+=0.05');
 
     return tl;

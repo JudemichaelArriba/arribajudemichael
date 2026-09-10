@@ -40,7 +40,7 @@ export default function Experience({
         gsap.set([...headingTargets, ...rows], {
           autoAlpha: 1,
           y: 0,
-          clearProps: 'transform,opacity,visibility,willChange',
+          clearProps: 'transform,opacity,visibility,willChange,clipPath',
         });
         gsap.set(headingLines, { scaleX: 1, clearProps: 'transform' });
         return;
@@ -49,7 +49,11 @@ export default function Experience({
       const setInitialState = () => {
         gsap.set(headingTargets, { autoAlpha: 0, y: 14 });
         gsap.set(headingLines, { scaleX: 0, transformOrigin: 'left center' });
-        gsap.set(rows, { autoAlpha: 0, y: 24 });
+        gsap.set(rows, {
+          autoAlpha: 0,
+          y: 34,
+          clipPath: 'inset(0% 100% 0% 0%)',
+        });
       };
 
       setInitialState();
@@ -72,12 +76,16 @@ export default function Experience({
           duration: 0.75,
           ease: 'power3.out',
         }, 0.08)
+        // Each row wipes open left-to-right as it rises, so the list builds
+        // itself rather than just fading in.
         .to(rows, {
           autoAlpha: 1,
           y: 0,
-          duration: 0.62,
-          ease: 'power3.out',
-          stagger: 0.09,
+          clipPath: 'inset(0% 0% 0% 0%)',
+          duration: 0.95,
+          ease: 'expo.out',
+          stagger: 0.11,
+          clearProps: 'clipPath',
         }, 0.28);
 
       const resetReveal = () => {
