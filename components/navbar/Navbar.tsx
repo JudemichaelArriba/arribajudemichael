@@ -101,6 +101,11 @@ export default function Navbar() {
     }, [menuOpen]);
 
     const scrollTo = useCallback((id: string) => {
+        // The open-menu effect locks body scrolling, and its cleanup only runs
+        // after the commit. Scrolling while the lock is still on is a no-op on
+        // mobile browsers, so release it here first. The cleanup then writes
+        // back the same value, so nothing changes mid-scroll.
+        document.body.style.overflow = '';
         setMenuOpen(false);
         document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
     }, []);
@@ -219,9 +224,9 @@ export default function Navbar() {
                     id="mobile-nav-panel"
                     inert={!menuOpen ? true : undefined}
                     aria-hidden={!menuOpen}
-                    className={`pointer-events-none absolute inset-x-0 top-full z-10 origin-top overflow-hidden border-b bg-[var(--site-bg)] transition-[opacity,transform,border-color] duration-[360ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none md:hidden ${menuOpen
+                    className={`absolute inset-x-0 top-full z-10 origin-top overflow-hidden border-b bg-[var(--site-bg)] transition-[opacity,transform,border-color] duration-[360ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none md:hidden ${menuOpen
                         ? 'pointer-events-auto translate-y-0 border-[var(--hairline-soft)] opacity-100'
-                        : '-translate-y-2 border-transparent opacity-0'
+                        : 'pointer-events-none -translate-y-2 border-transparent opacity-0'
                         }`}
                 >
                     <ul className="flex flex-col px-5 pb-5 pt-1">
