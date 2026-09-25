@@ -112,11 +112,34 @@ const MESSAGE_ITEM: DirectNavigationItem = {
     href: '/dashboard/messages',
 };
 
-const INTERACTIVE_ITEM_CLASS =
-    'group relative flex min-h-11 w-full items-center gap-3 rounded-md px-3 text-sm font-semibold tracking-normal transition-[color,background-color,transform] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--signal)]/65 active:scale-[0.985] motion-reduce:transition-none motion-reduce:active:scale-100';
+const ITEM_BASE_CLASS =
+    'group relative flex min-h-11 w-full items-center gap-3 px-3 text-sm font-semibold tracking-normal transition-[color,background-color,transform] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--text)]/50 active:scale-[0.985] motion-reduce:transition-none motion-reduce:active:scale-100';
+
+/** The current page is a solid ink tab — the same invert the public site uses
+ *  on hover rows — so "where am I" reads at a glance, collapsed or not. */
+const ITEM_ACTIVE_CLASS = 'bg-[var(--inverse-bg)] text-[var(--inverse-text)]';
+const ITEM_IDLE_CLASS =
+    'text-[var(--muted)] hover:bg-[var(--hairline-soft)] hover:text-[var(--text)]';
+
+const ICON_CLASS =
+    'shrink-0 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0';
+
+const UNREAD_BADGE_CLASS =
+    'items-center justify-center font-mono font-bold tabular-nums';
 
 function formatUnreadMessageCount(count: number): string {
     return count > 99 ? '99+' : String(count);
+}
+
+function GroupLabel({ children }: { children: ReactNode }) {
+    return (
+        <div className="flex items-center gap-3 px-3 pb-2 pt-1">
+            <span className="shrink-0 font-mono text-[9px] font-bold uppercase tracking-[0.16em] text-[var(--faint)]">
+                {children}
+            </span>
+            <span aria-hidden="true" className="h-px flex-1 bg-[var(--hairline-soft)]" />
+        </div>
+    );
 }
 
 function NavigationContent({
@@ -148,17 +171,19 @@ function NavigationContent({
     const collapsedMessageLabel = unreadMessageCount > 0
         ? `${MESSAGE_ITEM.label}, ${unreadMessageLabel}`
         : MESSAGE_ITEM.label;
+    const alignment = showLabels ? 'justify-start' : 'justify-center px-0';
+    // On the active (inverted) row the badge flips too, so it never vanishes.
+    const badgeColors = isMessageActive
+        ? 'bg-[var(--inverse-text)] text-[var(--inverse-bg)]'
+        : 'bg-[var(--inverse-bg)] text-[var(--inverse-text)]';
 
     return (
         <nav
             aria-label={isMobile ? 'Admin mobile navigation' : 'Admin navigation'}
             className="space-y-1"
         >
-            {showLabels ? (
-                <p className="px-3 pb-2 font-mono text-[8px] font-bold uppercase tracking-[0.12em] text-[var(--muted)]/30">
-                    Workspace
-                </p>
-            ) : null}
+            {showLabels ? <GroupLabel>Workspace</GroupLabel> : null}
+
             <Link
                 href="/dashboard"
                 onClick={onDashboardNavigate}
@@ -166,17 +191,9 @@ function NavigationContent({
                 aria-label={!showLabels ? 'Dashboard' : undefined}
                 title={!showLabels ? 'Dashboard' : undefined}
                 data-mobile-first={isMobile ? 'true' : undefined}
-                className={`group relative flex min-h-11 w-full items-center gap-3 overflow-hidden rounded-md px-3 text-sm font-semibold tracking-normal transition-[color,background-color,transform] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--signal)]/65 active:scale-[0.985] motion-reduce:transition-none motion-reduce:active:scale-100 ${showLabels ? 'justify-start' : 'justify-center px-0'} ${
-                    isDashboardActive
-                        ? 'bg-white/[0.055] text-[var(--text)]'
-                        : 'text-[var(--muted)]/65 hover:bg-white/[0.035] hover:text-[var(--text)]'
-                }`}
+                className={`${ITEM_BASE_CLASS} ${alignment} ${isDashboardActive ? ITEM_ACTIVE_CLASS : ITEM_IDLE_CLASS}`}
             >
-                <span
-                    aria-hidden="true"
-                    className={`absolute bottom-2 left-0 top-2 w-0.5 bg-[var(--signal)] transition-opacity duration-200 motion-reduce:transition-none ${isDashboardActive ? 'opacity-100' : 'opacity-0'}`}
-                />
-                <LayoutDashboard aria-hidden="true" size={18} strokeWidth={1.8} />
+                <LayoutDashboard aria-hidden="true" size={18} strokeWidth={1.8} className={ICON_CLASS} />
                 {showLabels ? <span>Dashboard</span> : null}
             </Link>
 
@@ -187,9 +204,9 @@ function NavigationContent({
                 aria-controls={sectionsId}
                 aria-label={!showLabels ? 'Open Sections' : undefined}
                 title={!showLabels ? 'Sections' : undefined}
-                className={`${INTERACTIVE_ITEM_CLASS} ${showLabels ? 'justify-start' : 'justify-center px-0'} ${isSectionRouteActive ? 'bg-white/[0.045] text-[var(--signal)]' : 'text-[var(--muted)]/65 hover:bg-white/[0.035] hover:text-[var(--text)]'}`}
+                className={`${ITEM_BASE_CLASS} ${alignment} ${isSectionRouteActive ? 'text-[var(--text)] hover:bg-[var(--hairline-soft)]' : ITEM_IDLE_CLASS}`}
             >
-                <Layers3 aria-hidden="true" size={18} strokeWidth={1.8} />
+                <Layers3 aria-hidden="true" size={18} strokeWidth={1.8} className={ICON_CLASS} />
                 {showLabels ? (
                     <>
                         <span className="min-w-0 flex-1 text-left">Sections</span>
@@ -197,9 +214,14 @@ function NavigationContent({
                             aria-hidden="true"
                             size={16}
                             strokeWidth={1.8}
-                            className={`shrink-0 transition-transform duration-200 motion-reduce:transition-none ${isSectionsVisible ? 'rotate-180' : 'rotate-0'}`}
+                            className={`shrink-0 text-[var(--faint)] transition-transform duration-300 ease-out motion-reduce:transition-none ${isSectionsVisible ? 'rotate-180' : 'rotate-0'}`}
                         />
                     </>
+                ) : isSectionRouteActive ? (
+                    <span
+                        aria-hidden="true"
+                        className="absolute bottom-1.5 left-1/2 size-1 -translate-x-1/2 bg-[var(--text)]"
+                    />
                 ) : null}
             </button>
 
@@ -210,7 +232,7 @@ function NavigationContent({
                 className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out motion-reduce:transition-none ${isSectionsVisible ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}
             >
                 <div className="overflow-hidden">
-                    <div className="ml-4 space-y-1 border-l border-white/[0.06] pb-1 pl-2 pt-1">
+                    <div className="ml-[1.45rem] space-y-1 border-l border-[var(--hairline-soft)] py-1 pl-2">
                         {SECTION_ITEMS.map((item) => {
                             const Icon = item.icon;
                             const isActive = pathname === item.href;
@@ -221,13 +243,9 @@ function NavigationContent({
                                     href={item.href}
                                     onClick={onSectionNavigate}
                                     aria-current={isActive ? 'page' : undefined}
-                                    className={`group relative flex min-h-11 w-full items-center gap-3 rounded-md px-3 text-sm font-semibold tracking-normal transition-[color,background-color,transform] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--signal)]/65 active:scale-[0.985] motion-reduce:transition-none motion-reduce:active:scale-100 ${isActive ? 'bg-[var(--signal)]/[0.075] text-[var(--signal)]' : 'text-[var(--muted)]/58 hover:bg-white/[0.035] hover:text-[var(--text)]'}`}
+                                    className={`${ITEM_BASE_CLASS} min-h-10 text-[13px] ${isActive ? ITEM_ACTIVE_CLASS : ITEM_IDLE_CLASS}`}
                                 >
-                                    <span
-                                        aria-hidden="true"
-                                        className={`absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-full bg-[var(--signal)] transition-opacity duration-200 motion-reduce:transition-none ${isActive ? 'opacity-100' : 'opacity-0'}`}
-                                    />
-                                    <Icon aria-hidden="true" size={17} strokeWidth={1.8} />
+                                    <Icon aria-hidden="true" size={16} strokeWidth={1.8} className={ICON_CLASS} />
                                     <span className="min-w-0 truncate">{item.label}</span>
                                 </Link>
                             );
@@ -237,11 +255,11 @@ function NavigationContent({
             </div>
 
             {showLabels ? (
-                <p className="px-3 pb-2 pt-4 font-mono text-[8px] font-bold uppercase tracking-[0.12em] text-[var(--muted)]/30">
-                    Operations
-                </p>
+                <div className="pt-4">
+                    <GroupLabel>Operations</GroupLabel>
+                </div>
             ) : (
-                <div aria-hidden="true" className="mx-3 my-3 h-px bg-white/[0.055]" />
+                <div aria-hidden="true" className="mx-3 my-3 h-px bg-[var(--hairline-soft)]" />
             )}
 
             <Link
@@ -250,17 +268,9 @@ function NavigationContent({
                 aria-current={isAnalyticsActive ? 'page' : undefined}
                 aria-label={!showLabels ? ANALYTICS_ITEM.label : undefined}
                 title={!showLabels ? ANALYTICS_ITEM.label : undefined}
-                className={`${INTERACTIVE_ITEM_CLASS} overflow-hidden ${showLabels ? 'justify-start' : 'justify-center px-0'} ${
-                    isAnalyticsActive
-                        ? 'bg-white/[0.055] text-[var(--text)]'
-                        : 'text-[var(--muted)]/65 hover:bg-white/[0.035] hover:text-[var(--text)]'
-                }`}
+                className={`${ITEM_BASE_CLASS} ${alignment} ${isAnalyticsActive ? ITEM_ACTIVE_CLASS : ITEM_IDLE_CLASS}`}
             >
-                <span
-                    aria-hidden="true"
-                    className={`absolute bottom-2 left-0 top-2 w-0.5 bg-[var(--signal)] transition-opacity duration-200 motion-reduce:transition-none ${isAnalyticsActive ? 'opacity-100' : 'opacity-0'}`}
-                />
-                <AnalyticsIcon aria-hidden="true" size={18} strokeWidth={1.8} />
+                <AnalyticsIcon aria-hidden="true" size={18} strokeWidth={1.8} className={ICON_CLASS} />
                 {showLabels ? (
                     <span className="min-w-0 truncate">{ANALYTICS_ITEM.label}</span>
                 ) : null}
@@ -272,24 +282,16 @@ function NavigationContent({
                 aria-current={isMessageActive ? 'page' : undefined}
                 aria-label={!showLabels ? collapsedMessageLabel : undefined}
                 title={!showLabels ? collapsedMessageLabel : undefined}
-                className={`${INTERACTIVE_ITEM_CLASS} overflow-hidden ${showLabels ? 'justify-start' : 'justify-center px-0'} ${
-                    isMessageActive
-                        ? 'bg-white/[0.055] text-[var(--text)]'
-                        : 'text-[var(--muted)]/65 hover:bg-white/[0.035] hover:text-[var(--text)]'
-                }`}
+                className={`${ITEM_BASE_CLASS} ${alignment} ${isMessageActive ? ITEM_ACTIVE_CLASS : ITEM_IDLE_CLASS}`}
             >
-                <span
-                    aria-hidden="true"
-                    className={`absolute bottom-2 left-0 top-2 w-0.5 bg-[var(--signal)] transition-opacity duration-200 motion-reduce:transition-none ${isMessageActive ? 'opacity-100' : 'opacity-0'}`}
-                />
-                <MessageIcon aria-hidden="true" size={18} strokeWidth={1.8} />
+                <MessageIcon aria-hidden="true" size={18} strokeWidth={1.8} className={ICON_CLASS} />
                 {showLabels ? (
                     <>
                         <span className="min-w-0 flex-1 truncate">{MESSAGE_ITEM.label}</span>
                         {unreadMessageCount > 0 ? (
                             <span
                                 aria-label={unreadMessageLabel}
-                                className="inline-flex min-h-5 min-w-5 shrink-0 items-center justify-center rounded-full border border-[var(--signal)]/25 bg-[var(--signal)]/[0.1] px-1.5 font-mono text-[9px] font-bold tabular-nums text-[var(--signal)]"
+                                className={`inline-flex min-h-5 min-w-5 shrink-0 px-1.5 text-[9px] ${UNREAD_BADGE_CLASS} ${badgeColors}`}
                             >
                                 {formatUnreadMessageCount(unreadMessageCount)}
                             </span>
@@ -298,7 +300,7 @@ function NavigationContent({
                 ) : unreadMessageCount > 0 ? (
                     <span
                         aria-hidden="true"
-                        className="absolute right-1 top-1 inline-flex min-h-4 min-w-4 items-center justify-center rounded-full border border-[var(--signal)]/25 bg-[var(--signal)]/[0.12] px-1 font-mono text-[8px] font-bold tabular-nums text-[var(--signal)]"
+                        className={`absolute right-1 top-1 inline-flex min-h-4 min-w-4 px-1 text-[8px] ${UNREAD_BADGE_CLASS} ${badgeColors}`}
                     >
                         {formatUnreadMessageCount(unreadMessageCount)}
                     </span>
@@ -315,14 +317,9 @@ function LogoutButton({ showLabel, onClick }: LogoutButtonProps) {
             onClick={onClick}
             aria-label="Sign out"
             title={!showLabel ? 'Sign out' : undefined}
-            className={`group flex min-h-11 w-full items-center gap-3 rounded-md px-3 text-sm font-semibold tracking-normal text-[var(--muted)]/55 transition-[color,background-color] duration-200 hover:bg-red-400/[0.055] hover:text-red-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300/55 motion-reduce:transition-none ${showLabel ? 'justify-start' : 'justify-center px-0'}`}
+            className={`group flex min-h-11 w-full items-center gap-3 px-3 text-sm font-semibold tracking-normal text-[var(--faint)] transition-[color,background-color] duration-200 hover:bg-[var(--danger)]/10 hover:text-[var(--danger)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--danger)]/55 motion-reduce:transition-none ${showLabel ? 'justify-start' : 'justify-center px-0'}`}
         >
-            <LogOut
-                aria-hidden="true"
-                size={18}
-                strokeWidth={1.8}
-                className="transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none"
-            />
+            <LogOut aria-hidden="true" size={18} strokeWidth={1.8} className={ICON_CLASS} />
             {showLabel ? <span>Logout</span> : null}
         </button>
     );
@@ -460,7 +457,7 @@ function AdminShellContent({
     return (
         <div className="relative min-h-svh overflow-x-clip bg-[#020203] text-[var(--text)]">
             <aside
-                className={`fixed bottom-4 left-4 top-4 z-40 hidden flex-col overflow-visible rounded-lg border border-white/[0.075] bg-[#050607]/96 shadow-[0_18px_52px_rgba(0,0,0,0.38),inset_0_1px_0_rgba(255,255,255,0.02)] backdrop-blur-md transition-[width] duration-300 ease-out motion-reduce:transition-none md:flex ${isDesktopExpanded ? 'w-64' : 'w-[4.5rem]'}`}
+                className={`fixed bottom-4 left-4 top-4 z-40 hidden flex-col overflow-visible border border-[var(--hairline-soft)] bg-[#050607] shadow-[0_24px_60px_rgba(0,0,0,0.45)] transition-[width] duration-300 ease-out motion-reduce:transition-none md:flex ${isDesktopExpanded ? 'w-64' : 'w-[4.5rem]'}`}
             >
                 <button
                     type="button"
@@ -471,33 +468,34 @@ function AdminShellContent({
                             : 'Expand admin navigation'
                     }
                     title={isDesktopExpanded ? 'Collapse sidebar' : 'Expand sidebar'}
-                    className="absolute -right-4 top-12 z-10 flex size-8 items-center justify-center rounded-md border border-white/[0.1] bg-[#07080a] text-[var(--muted)]/60 shadow-[0_8px_22px_rgba(0,0,0,0.38)] transition-[color,border-color,background-color] duration-200 hover:border-[var(--signal)]/30 hover:bg-[#0b0a0d] hover:text-[var(--signal)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--signal)]/65 motion-reduce:transition-none"
+                    className="absolute -right-3.5 top-[3.25rem] z-10 flex size-7 items-center justify-center border border-[var(--hairline)] bg-[#050607] text-[var(--faint)] transition-[color,border-color] duration-200 hover:border-[var(--text)] hover:text-[var(--text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--text)]/50 motion-reduce:transition-none"
                 >
                     {isDesktopExpanded ? (
-                        <PanelLeftClose aria-hidden="true" size={15} strokeWidth={1.8} />
+                        <PanelLeftClose aria-hidden="true" size={14} strokeWidth={1.8} />
                     ) : (
-                        <PanelLeftOpen aria-hidden="true" size={15} strokeWidth={1.8} />
+                        <PanelLeftOpen aria-hidden="true" size={14} strokeWidth={1.8} />
                     )}
                 </button>
 
                 <div
-                    className={`flex h-20 shrink-0 items-center border-b border-white/[0.055] ${isDesktopExpanded ? 'px-4' : 'justify-center px-2'}`}
+                    className={`flex h-20 shrink-0 items-center border-b border-[var(--hairline-soft)] ${isDesktopExpanded ? 'px-4' : 'justify-center px-2'}`}
                 >
                     <Link
                         href="/dashboard"
                         aria-label="Admin dashboard"
-                        className="group flex min-w-0 items-center gap-3 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--signal)]/65 focus-visible:ring-offset-4 focus-visible:ring-offset-[#050607]"
+                        className="group flex min-w-0 items-center gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--text)]/50 focus-visible:ring-offset-4 focus-visible:ring-offset-[#050607]"
                     >
-                        <span className="flex h-10 w-10 shrink-0 items-center justify-center font-name text-xl font-extrabold tracking-normal text-white">
-                            J<span className="text-[var(--signal)]">M</span>
+                        <span className="flex size-10 shrink-0 items-center justify-center border border-[var(--hairline)] font-name text-lg font-extrabold tracking-tight text-[var(--text)] transition-colors duration-300 group-hover:border-[var(--text)] motion-reduce:transition-none">
+                            J<span className="text-[var(--faint)] transition-colors duration-300 group-hover:text-[var(--text)] motion-reduce:transition-none">M</span>
                         </span>
                         {isDesktopExpanded ? (
                             <span className="min-w-0">
-                                <span className="block truncate text-sm font-bold tracking-normal text-[var(--text)]">
-                                    Admin Panel
+                                <span className="block truncate font-display text-[15px] font-bold tracking-[-0.01em] text-[var(--text)]">
+                                    Admin panel
                                 </span>
-                                <span className="mt-1 block font-mono text-[9px] font-bold uppercase tracking-normal text-[var(--signal)]/75">
-                                    Portfolio Console
+                                <span className="mt-1 flex items-center gap-1.5 font-mono text-[9px] font-bold uppercase tracking-[0.14em] text-[var(--faint)]">
+                                    <span aria-hidden="true" className="size-1.5 bg-[var(--text)]" />
+                                    Portfolio console
                                 </span>
                             </span>
                         ) : null}
@@ -516,7 +514,7 @@ function AdminShellContent({
                     />
                 </div>
 
-                <div className="shrink-0 border-t border-white/[0.055] p-2.5">
+                <div className="shrink-0 border-t border-[var(--hairline-soft)] p-2.5">
                     <LogoutControl showLabel={isDesktopExpanded} />
                 </div>
             </aside>
@@ -529,23 +527,24 @@ function AdminShellContent({
 
             <header className="fixed inset-x-3 top-[calc(env(safe-area-inset-top)+0.75rem)] z-[60] md:hidden">
                 <div
-                    className={`flex h-14 items-center justify-between rounded-lg border px-2.5 backdrop-blur-xl transition-[border-color,background-color,box-shadow] duration-300 motion-reduce:transition-none ${isMobileMenuOpen ? 'border-[var(--signal)]/22 bg-[#050607]/95 shadow-[0_18px_48px_rgba(0,0,0,0.5)]' : 'border-white/[0.09] bg-[#050607]/88 shadow-[0_12px_36px_rgba(0,0,0,0.38)]'}`}
+                    className={`flex h-14 items-center justify-between border bg-[#050607] px-2.5 transition-[border-color,box-shadow] duration-300 motion-reduce:transition-none ${isMobileMenuOpen ? 'border-[var(--hairline)] shadow-[0_18px_48px_rgba(0,0,0,0.5)]' : 'border-[var(--hairline-soft)] shadow-[0_12px_36px_rgba(0,0,0,0.38)]'}`}
                 >
                     <Link
                         href="/dashboard"
                         onClick={() => closeMobileMenu()}
                         aria-label="Admin dashboard"
-                        className="flex min-w-0 items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--signal)]/65"
+                        className="flex min-w-0 items-center gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--text)]/50"
                     >
-                        <span className="flex h-10 w-10 shrink-0 items-center justify-center font-name text-xl font-extrabold tracking-normal text-white">
-                            J<span className="text-[var(--signal)]">M</span>
+                        <span className="flex size-10 shrink-0 items-center justify-center border border-[var(--hairline)] font-name text-lg font-extrabold tracking-tight text-[var(--text)]">
+                            J<span className="text-[var(--faint)]">M</span>
                         </span>
                         <span className="min-w-0">
-                            <span className="block truncate text-xs font-bold tracking-normal text-[var(--text)]">
-                                Admin Panel
+                            <span className="block truncate font-display text-sm font-bold tracking-[-0.01em] text-[var(--text)]">
+                                Admin panel
                             </span>
-                            <span className="mt-0.5 block font-mono text-[8px] font-bold uppercase tracking-normal text-[var(--signal)]/75">
-                                Portfolio Console
+                            <span className="mt-0.5 flex items-center gap-1.5 font-mono text-[8px] font-bold uppercase tracking-[0.14em] text-[var(--faint)]">
+                                <span aria-hidden="true" className="size-1 bg-[var(--text)]" />
+                                Portfolio console
                             </span>
                         </span>
                     </Link>
@@ -557,7 +556,7 @@ function AdminShellContent({
                         aria-expanded={isMobileMenuOpen}
                         aria-controls={mobileMenuId}
                         aria-label={isMobileMenuOpen ? 'Close admin menu' : 'Open admin menu'}
-                        className={`relative flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border transition-[border-color,background-color,color,transform] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--signal)]/65 active:scale-95 motion-reduce:transition-none motion-reduce:active:scale-100 ${isMobileMenuOpen ? 'border-[var(--signal)]/30 bg-[var(--signal)]/[0.09] text-[var(--signal)]' : 'border-white/[0.09] bg-white/[0.025] text-[var(--muted)]/70 hover:border-white/[0.18] hover:text-[var(--text)]'}`}
+                        className={`relative flex size-10 shrink-0 items-center justify-center border transition-[border-color,background-color,color,transform] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--text)]/50 active:scale-95 motion-reduce:transition-none motion-reduce:active:scale-100 ${isMobileMenuOpen ? 'border-[var(--inverse-bg)] bg-[var(--inverse-bg)] text-[var(--inverse-text)]' : 'border-[var(--hairline)] text-[var(--muted)] hover:border-[var(--text)] hover:text-[var(--text)]'}`}
                     >
                         <Menu
                             aria-hidden="true"
@@ -583,7 +582,7 @@ function AdminShellContent({
                 aria-label="Admin navigation"
                 aria-hidden={!isMobileMenuOpen}
                 inert={!isMobileMenuOpen ? true : undefined}
-                className={`fixed inset-x-3 top-[calc(env(safe-area-inset-top)+5rem)] z-50 max-h-[calc(100dvh-env(safe-area-inset-top)-6rem)] overflow-y-auto rounded-lg border bg-[#050607]/96 shadow-[0_24px_64px_rgba(0,0,0,0.58)] backdrop-blur-xl transition-[opacity,transform,border-color] duration-300 ease-out motion-reduce:transition-none md:hidden ${isMobileMenuOpen ? 'pointer-events-auto translate-y-0 border-white/[0.1] opacity-100' : 'pointer-events-none -translate-y-2 border-white/[0.05] opacity-0'}`}
+                className={`fixed inset-x-3 top-[calc(env(safe-area-inset-top)+5rem)] z-50 max-h-[calc(100dvh-env(safe-area-inset-top)-6rem)] overflow-y-auto border bg-[#050607] shadow-[0_24px_64px_rgba(0,0,0,0.58)] transition-[opacity,transform,border-color] duration-300 ease-out motion-reduce:transition-none md:hidden ${isMobileMenuOpen ? 'pointer-events-auto translate-y-0 border-[var(--hairline)] opacity-100' : 'pointer-events-none -translate-y-2 border-[var(--hairline-soft)] opacity-0'}`}
             >
                 <div className="p-2.5">
                     <NavigationContent
@@ -603,7 +602,7 @@ function AdminShellContent({
                         unreadMessageCount={unreadMessageCount}
                     />
                 </div>
-                <div className="border-t border-white/[0.055] p-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))]">
+                <div className="border-t border-[var(--hairline-soft)] p-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))]">
                     <LogoutControl showLabel />
                 </div>
             </div>

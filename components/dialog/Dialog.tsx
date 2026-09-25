@@ -344,16 +344,16 @@ export function DialogProvider({ children }: DialogProviderProps) {
                         handleCancel();
                     }}
                     onKeyDown={handleKeyDown}
-                    className="fixed inset-0 m-0 h-dvh w-screen max-w-none overflow-hidden border-0 bg-transparent p-0 text-[var(--text)] backdrop:bg-transparent"
+                    className={`fixed inset-0 m-0 h-dvh w-screen max-w-none overflow-hidden border-0 bg-transparent p-0 text-[var(--text)] backdrop:bg-[rgba(0,0,0,0.72)] backdrop:[-webkit-backdrop-filter:blur(10px)] backdrop:[backdrop-filter:blur(10px)] backdrop:[transition:opacity_280ms_ease] motion-reduce:backdrop:[transition:none] ${isAnimating ? 'backdrop:opacity-100' : 'backdrop:opacity-0'}`}
                 >
                     <div
-                        className={`flex h-full w-full items-center justify-center bg-black/76 p-4 backdrop-blur-sm transition-opacity duration-[280ms] motion-reduce:transition-none ${isAnimating ? 'opacity-100' : 'opacity-0'}`}
+                        className={`flex h-full w-full items-center justify-center p-4 transition-opacity duration-[280ms] motion-reduce:transition-none ${isAnimating ? 'opacity-100' : 'opacity-0'}`}
                         onMouseDown={(event) => {
                             if (event.target === event.currentTarget) handleCancel();
                         }}
                     >
                         <section
-                            className={`relative w-full max-w-sm overflow-hidden rounded-lg border border-white/[0.1] bg-[#0a090c]/95 shadow-[0_28px_90px_rgba(0,0,0,0.68),inset_0_1px_0_rgba(255,255,255,0.035)] backdrop-blur-xl transition-[opacity,transform] duration-[280ms] [transition-timing-function:cubic-bezier(0.34,1.35,0.64,1)] motion-reduce:transition-none ${isAnimating ? 'translate-y-0 scale-100 opacity-100' : 'translate-y-5 scale-[0.96] opacity-0'}`}
+                            className={`relative w-full max-w-sm overflow-hidden rounded-lg border border-white/[0.1] bg-[#0a090c]/95 shadow-[0_28px_90px_rgba(0,0,0,0.68),inset_0_1px_0_rgba(255,255,255,0.035)] transition-[opacity,transform] duration-[280ms] [transition-timing-function:cubic-bezier(0.34,1.35,0.64,1)] motion-reduce:transition-none ${isAnimating ? 'translate-y-0 scale-100 opacity-100' : 'translate-y-5 scale-[0.96] opacity-0'}`}
                             role="document"
                             onMouseDown={(event) => event.stopPropagation()}
                         >

@@ -55,6 +55,24 @@ html[data-theme="light"] {
   color-scheme: light;
 }
 
+/* Admin and login pin their own dark subtree, but the page canvas behind it
+   (overscroll, anything past the shell's height) still follows the public
+   theme toggle — which showed as a lighter band under the dashboard. Pin the
+   canvas to the same ground as the pinned subtree. */
+html:has([data-theme-pin]) {
+  color-scheme: dark;
+}
+
+html:has([data-theme-pin="admin"]),
+html:has([data-theme-pin="admin"]) body {
+  background: #020203;
+}
+
+html:has([data-theme-pin="auth"]),
+html:has([data-theme-pin="auth"]) body {
+  background: #0b0b0b;
+}
+
 body {
   background: var(--site-bg);
   color: var(--text);
