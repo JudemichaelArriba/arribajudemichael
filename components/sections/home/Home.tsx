@@ -164,7 +164,7 @@ export default function Home() {
                 />
             </div>
 
-            <div className="pointer-events-none absolute inset-x-0 top-[42%] z-[1] flex -translate-y-1/2 justify-center px-4">
+            <div className="pointer-events-none absolute inset-x-0 bottom-[calc(3.5rem+min(72.8vw,(100svh-8rem)*0.593))] z-[1] flex translate-y-1/2 justify-center px-4 md:bottom-auto md:top-[42%] md:-translate-y-1/2">
                 <h1
                     ref={headingRef}
                     className="m-0 whitespace-nowrap text-center font-[family-name:var(--font-hero)] text-[clamp(2rem,8.6vw,9.5rem)] font-normal uppercase leading-[0.86] tracking-[-0.015em] text-[var(--text)]"
@@ -197,7 +197,7 @@ export default function Home() {
                             height={1195}
                             priority
                             sizes="(max-width: 767px) 92vw, 55vh"
-                            className="block h-[calc(100svh-8rem)] w-auto max-w-[92vw] select-none object-contain"
+                            className="block h-auto max-h-[calc(100svh-8rem)] w-[92vw] select-none object-contain object-bottom md:h-[calc(100svh-8rem)] md:max-h-none md:w-auto md:max-w-[92vw]"
                         />
                     </div>
                 </div>

@@ -286,20 +286,20 @@ function createEmailContent(
 
     const html = `<!doctype html>
 <html lang="en">
-  <body style="margin:0;background:#08080b;color:#e7e9ec;font-family:Arial,sans-serif;">
+  <body style="margin:0;background:#0b0b0b;color:#ededed;font-family:Arial,Helvetica,sans-serif;">
     <div style="max-width:620px;margin:0 auto;padding:32px 20px;">
-      <div style="border:1px solid rgba(195,109,252,0.24);border-radius:8px;background:#101014;padding:28px;">
-        <p style="margin:0 0 8px;color:#c36dfc;font-size:12px;font-weight:700;text-transform:uppercase;">Portfolio inbox</p>
-        <h1 style="margin:0 0 24px;font-size:24px;line-height:1.25;">New portfolio message</h1>
-        <p style="margin:0 0 8px;color:#9ca0a8;font-size:13px;">From</p>
+      <div style="border:1px solid #2a2a2a;background:#141414;padding:28px;">
+        <p style="margin:0 0 8px;color:#a2a2a2;font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;">Portfolio inbox</p>
+        <h1 style="margin:0 0 24px;color:#ededed;font-size:24px;line-height:1.25;">New portfolio message</h1>
+        <p style="margin:0 0 8px;color:#8a8a8a;font-size:13px;">From</p>
         <p style="margin:0 0 20px;font-size:16px;font-weight:700;">${safeSenderName}</p>
-        <p style="margin:0 0 8px;color:#9ca0a8;font-size:13px;">Email</p>
+        <p style="margin:0 0 8px;color:#8a8a8a;font-size:13px;">Email</p>
         <p style="margin:0 0 20px;font-size:15px;">${safeSenderEmail}</p>
-        <p style="margin:0 0 8px;color:#9ca0a8;font-size:13px;">Received</p>
+        <p style="margin:0 0 8px;color:#8a8a8a;font-size:13px;">Received</p>
         <p style="margin:0 0 20px;font-size:15px;">${safeReceivedAt}</p>
-        <p style="margin:0 0 8px;color:#9ca0a8;font-size:13px;">Message preview</p>
+        <p style="margin:0 0 8px;color:#8a8a8a;font-size:13px;">Message preview</p>
         <p style="margin:0 0 28px;white-space:pre-wrap;font-size:15px;line-height:1.65;">${safePreview}</p>
-        <a href="${safeAdminInboxUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-block;border-radius:6px;background:#c36dfc;color:#09090c;padding:12px 18px;font-size:14px;font-weight:700;text-decoration:none;">Open Admin Inbox</a>
+        <a href="${safeAdminInboxUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-block;background:#ededed;color:#0b0b0b;padding:12px 20px;font-size:14px;font-weight:700;text-decoration:none;">Open Admin Inbox</a>
       </div>
     </div>
   </body>
