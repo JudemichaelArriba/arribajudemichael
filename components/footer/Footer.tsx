@@ -188,6 +188,10 @@ export default function Footer() {
                         Full-Stack Software Engineer
                     </p>
                 </div>
+
+                <p className="mt-4 text-xs leading-relaxed text-[var(--faint)]">
+                    This site keeps anonymous visit statistics. No ads, no tracking across sites.
+                </p>
             </div>
         </footer>
     );

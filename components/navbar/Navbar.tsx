@@ -184,11 +184,11 @@ export default function Navbar() {
 
                             <a
                                 href="/cv.pdf"
-                                aria-label="Download resume"
+                                aria-label="Download CV"
                                 className="group inline-flex h-10 shrink-0 items-center justify-center gap-2 bg-[var(--inverse-bg)] px-4 font-mono text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--inverse-text)] transition-[opacity,transform] duration-300 ease-out hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--text)]/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--site-bg)] active:scale-[0.98] motion-reduce:transition-none motion-reduce:active:scale-100"
                             >
                                 <Download aria-hidden="true" size={13} strokeWidth={2} className="transition-transform duration-300 group-hover:translate-y-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-y-0" />
-                                <span>Resume</span>
+                                <span>CV</span>
                             </a>
                         </div>
 
@@ -264,7 +264,7 @@ export default function Navbar() {
                                 onClick={() => setMenuOpen(false)}
                                 className="flex min-h-14 w-full items-center justify-between gap-3 bg-[var(--inverse-bg)] px-4 font-mono text-xs font-bold uppercase tracking-[0.12em] text-[var(--inverse-text)] transition-opacity duration-300 ease-out hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--text)]/45 motion-reduce:transition-none"
                             >
-                                <span>Download resume</span>
+                                <span>Download CV</span>
                                 <Download aria-hidden="true" size={16} strokeWidth={2} />
                             </a>
                         </li>

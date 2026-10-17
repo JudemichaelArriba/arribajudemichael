@@ -1,6 +1,4 @@
-import {
-    insertContactMessage,
-} from '@/features/contact/messages';
+import { sendContactEmail } from '@/features/contact/email';
 import {
     validateContactFields,
     type ContactFieldErrors,
@@ -176,12 +174,10 @@ export async function POST(request: Request): Promise<Response> {
         return validationErrorResponse(validation.fieldErrors);
     }
 
-    const insertResult = await insertContactMessage(
-        validation.data,
-        source.identifier,
-    );
+    // Delivered straight to the owner's inbox; the message is never stored.
+    const delivery = await sendContactEmail(validation.data);
 
-    if (!insertResult.inserted) {
+    if (!delivery.sent) {
         return jsonResponse(MESSAGE_SERVICE_MESSAGE, 500);
     }
 

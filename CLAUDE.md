@@ -81,7 +81,7 @@ public/
 - **PDF-only credentials** - The authenticated browser uploads directly to `certificate-files/certificates/<uuid>/certificate.pdf`; Server Actions derive and verify that path, and public cards lazily render page 1 through `CertificatePdfPreview`.
 - **Local PDF.js runtime** - `pdfjs-dist` worker and WASM assets are synchronized into ignored `public/vendor/pdfjs/` before `dev` and `build`. Never add CDN workers or duplicate preview images.
 - **Shared site configuration** - `lib/site.ts` owns navigation and contact destinations used by Navbar, Contact, and Footer.
-- **Static contact boundary** - The current form validates locally and reports that no message was sent; replace only its submission boundary when Supabase is introduced.
+- **Contact messages are never stored** - `/api/contact` validates, rate-limits, checks bans and Turnstile, then `features/contact/email.ts` emails the message straight to the owner via Resend (`RESEND_API_KEY`, `NOTIFICATION_EMAIL`, `NOTIFICATION_FROM_EMAIL`, server-only). The site tells visitors their message "isn't stored on this site" — do not reintroduce a messages table or persist submissions without changing that notice.
 
 ### Analytics Safety Boundary
 - `app/(public)/layout.tsx` mounts three client entry points: `AnalyticsSessionBootstrap` detects throttled interaction and requests or refreshes anonymous cookies, `AnalyticsEngagementTracker` observes only marked sections, and `AnalyticsEngagementBatcher` snapshots and sends deltas approximately every 30 seconds.
@@ -322,7 +322,7 @@ npm run dev         # Test in development
 The Jest + React Testing Library suite is deliberately risk-based rather than count-driven. Tests are co-located with the code they protect in `__tests__/` directories and prioritize:
 - Authentication and protected-route authorization
 - Contact validation, source identification, rate limiting, bans, Turnstile, and API orchestration
-- Projects, Certificates, Experiences, and Messages mutation safety
+- Projects, Certificates, and Experiences mutation safety
 - Analytics session expiry, payload validation, batching, retries, idempotency, and Admin/Home exclusion
 - Important user-facing navigation and submit behavior
 

@@ -580,6 +580,9 @@ export default function Contact() {
                             </div>
                             </fieldset>
                         </form>
+                        <p className="mt-5 border-t border-[var(--hairline)] pt-4 text-center text-xs leading-relaxed text-[var(--muted)]">
+                            Your message goes straight to my email and isn&apos;t stored on this site.
+                        </p>
                     </div>
                 </div>
             </div>

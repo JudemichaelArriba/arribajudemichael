@@ -11,7 +11,6 @@ import {
     Layers3,
     LayoutDashboard,
     LogOut,
-    Mail,
     Menu,
     PanelLeftClose,
     PanelLeftOpen,
@@ -28,13 +27,11 @@ import {
 } from 'react';
 
 import { DialogProvider, useDialog } from '@/components/dialog/Dialog';
-import { useMessageRealtime } from '@/components/admin/messages/useMessageRealtime';
 import { SnackbarProvider } from '@/components/snackbar/Snackbar';
 import { logout } from '@/lib/auth/logoutActions';
 
 interface AdminShellProps {
     children: ReactNode;
-    initialUnreadMessageCount?: number | null;
 }
 
 interface AdminNavigationItem {
@@ -56,13 +53,11 @@ interface NavigationContentProps {
     isMobile?: boolean;
     onAnalyticsNavigate?: () => void;
     onDashboardNavigate?: () => void;
-    onMessageNavigate?: () => void;
     onSectionNavigate?: () => void;
     onToggleSections: () => void;
     pathname: string;
     sectionsId: string;
     sectionsOpen: boolean;
-    unreadMessageCount: number;
 }
 
 interface LogoutControlProps {
@@ -105,13 +100,6 @@ const ANALYTICS_ITEM: DirectNavigationItem = {
     href: '/dashboard/analytics',
 };
 
-const MESSAGE_ITEM: DirectNavigationItem = {
-    id: 'messages',
-    label: 'Emails / Messages',
-    icon: Mail,
-    href: '/dashboard/messages',
-};
-
 const ITEM_BASE_CLASS =
     'group relative flex min-h-11 w-full items-center gap-3 px-3 text-sm font-semibold tracking-normal transition-[color,background-color,transform] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--text)]/50 active:scale-[0.985] motion-reduce:transition-none motion-reduce:active:scale-100';
 
@@ -123,13 +111,6 @@ const ITEM_IDLE_CLASS =
 
 const ICON_CLASS =
     'shrink-0 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0';
-
-const UNREAD_BADGE_CLASS =
-    'items-center justify-center font-mono font-bold tabular-nums';
-
-function formatUnreadMessageCount(count: number): string {
-    return count > 99 ? '99+' : String(count);
-}
 
 function GroupLabel({ children }: { children: ReactNode }) {
     return (
@@ -147,13 +128,11 @@ function NavigationContent({
     isMobile = false,
     onAnalyticsNavigate,
     onDashboardNavigate,
-    onMessageNavigate,
     onSectionNavigate,
     onToggleSections,
     pathname,
     sectionsId,
     sectionsOpen,
-    unreadMessageCount,
 }: NavigationContentProps) {
     const showLabels = isMobile || isExpanded;
     const isSectionsVisible = showLabels && sectionsOpen;
@@ -162,20 +141,8 @@ function NavigationContent({
         (item) => pathname === item.href,
     );
     const isAnalyticsActive = pathname === ANALYTICS_ITEM.href;
-    const isMessageActive = pathname === MESSAGE_ITEM.href;
     const AnalyticsIcon = ANALYTICS_ITEM.icon;
-    const MessageIcon = MESSAGE_ITEM.icon;
-    const unreadMessageLabel = unreadMessageCount === 1
-        ? '1 unread message'
-        : `${unreadMessageCount} unread messages`;
-    const collapsedMessageLabel = unreadMessageCount > 0
-        ? `${MESSAGE_ITEM.label}, ${unreadMessageLabel}`
-        : MESSAGE_ITEM.label;
     const alignment = showLabels ? 'justify-start' : 'justify-center px-0';
-    // On the active (inverted) row the badge flips too, so it never vanishes.
-    const badgeColors = isMessageActive
-        ? 'bg-[var(--inverse-text)] text-[var(--inverse-bg)]'
-        : 'bg-[var(--inverse-bg)] text-[var(--inverse-text)]';
 
     return (
         <nav
@@ -275,37 +242,6 @@ function NavigationContent({
                     <span className="min-w-0 truncate">{ANALYTICS_ITEM.label}</span>
                 ) : null}
             </Link>
-
-            <Link
-                href={MESSAGE_ITEM.href}
-                onClick={onMessageNavigate}
-                aria-current={isMessageActive ? 'page' : undefined}
-                aria-label={!showLabels ? collapsedMessageLabel : undefined}
-                title={!showLabels ? collapsedMessageLabel : undefined}
-                className={`${ITEM_BASE_CLASS} ${alignment} ${isMessageActive ? ITEM_ACTIVE_CLASS : ITEM_IDLE_CLASS}`}
-            >
-                <MessageIcon aria-hidden="true" size={18} strokeWidth={1.8} className={ICON_CLASS} />
-                {showLabels ? (
-                    <>
-                        <span className="min-w-0 flex-1 truncate">{MESSAGE_ITEM.label}</span>
-                        {unreadMessageCount > 0 ? (
-                            <span
-                                aria-label={unreadMessageLabel}
-                                className={`inline-flex min-h-5 min-w-5 shrink-0 px-1.5 text-[9px] ${UNREAD_BADGE_CLASS} ${badgeColors}`}
-                            >
-                                {formatUnreadMessageCount(unreadMessageCount)}
-                            </span>
-                        ) : null}
-                    </>
-                ) : unreadMessageCount > 0 ? (
-                    <span
-                        aria-hidden="true"
-                        className={`absolute right-1 top-1 inline-flex min-h-4 min-w-4 px-1 text-[8px] ${UNREAD_BADGE_CLASS} ${badgeColors}`}
-                    >
-                        {formatUnreadMessageCount(unreadMessageCount)}
-                    </span>
-                ) : null}
-            </Link>
         </nav>
     );
 }
@@ -352,10 +288,8 @@ function LogoutControl({ showLabel }: LogoutControlProps) {
 
 function AdminShellContent({
     children,
-    initialUnreadMessageCount = null,
 }: AdminShellProps) {
     const pathname = usePathname();
-    const unreadMessageCount = useMessageRealtime(initialUnreadMessageCount);
     const [isDesktopExpanded, setIsDesktopExpanded] = useState(true);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [sectionsOpen, setSectionsOpen] = useState(() =>
@@ -510,7 +444,6 @@ function AdminShellContent({
                         pathname={pathname}
                         sectionsId={desktopSectionsId}
                         sectionsOpen={sectionsOpen}
-                        unreadMessageCount={unreadMessageCount}
                     />
                 </div>
 
@@ -590,7 +523,6 @@ function AdminShellContent({
                         isMobile
                         onAnalyticsNavigate={() => closeMobileMenu()}
                         onDashboardNavigate={() => closeMobileMenu()}
-                        onMessageNavigate={() => closeMobileMenu()}
                         onSectionNavigate={() => {
                             setSectionsOpen(true);
                             closeMobileMenu();
@@ -599,7 +531,6 @@ function AdminShellContent({
                         pathname={pathname}
                         sectionsId={mobileSectionsId}
                         sectionsOpen={sectionsOpen}
-                        unreadMessageCount={unreadMessageCount}
                     />
                 </div>
                 <div className="border-t border-[var(--hairline-soft)] p-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))]">

@@ -7,10 +7,6 @@ import {
 } from '@/features/admin/certificates/validation';
 import { validateExperienceFormData } from '@/features/admin/experiences/validation';
 import {
-  parseAdminMessageQuery,
-  validateBanSourceInput,
-} from '@/features/admin/messages/validation';
-import {
   MAX_PROJECT_IMAGE_BYTES,
   slugifyProjectTitle,
   validateProjectFormData,
@@ -197,41 +193,5 @@ describe('experience validation', () => {
     formData.set(field, value);
 
     expect(validateExperienceFormData(formData).success).toBe(false);
-  });
-});
-
-describe('message validation', () => {
-  it('sanitizes search input and safely defaults untrusted query controls', () => {
-    expect(parseAdminMessageQuery({
-      filter: 'deleted',
-      page: '-5',
-      q: `  hello\u0000   world ${'x'.repeat(120)}`,
-    })).toEqual({
-      filter: 'inbox',
-      page: 1,
-      search: expect.not.stringContaining('\u0000'),
-    });
-    expect(parseAdminMessageQuery({ q: 'x'.repeat(150) }).search).toHaveLength(100);
-  });
-
-  it('normalizes valid ban data and rejects unsafe values', () => {
-    expect(validateBanSourceInput({
-      duration: '7d',
-      messageId: VALID_ID,
-      reason: '  Repeated abuse\r\nfrom this source. ',
-    })).toEqual({
-      data: {
-        duration: '7d',
-        messageId: VALID_ID,
-        reason: 'Repeated abuse\nfrom this source.',
-      },
-      success: true,
-    });
-
-    expect(validateBanSourceInput({
-      duration: 'forever',
-      messageId: VALID_ID,
-      reason: 'x\u0000y',
-    })).toMatchObject({ success: false });
   });
 });

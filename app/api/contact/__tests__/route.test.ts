@@ -1,6 +1,6 @@
 /** @jest-environment node */
 
-import { insertContactMessage } from '@/features/contact/messages';
+import { sendContactEmail } from '@/features/contact/email';
 import { validateContactFields } from '@/features/contact/validation';
 import { checkContactSourceBan } from '@/lib/security/contactBan';
 import { checkContactRateLimit } from '@/lib/security/contactRateLimit';
@@ -8,7 +8,7 @@ import { getContactSourceIdentifier } from '@/lib/security/contactSource';
 import { verifyTurnstileToken } from '@/lib/security/turnstile';
 import { POST } from '../route';
 
-jest.mock('@/features/contact/messages', () => ({ insertContactMessage: jest.fn() }));
+jest.mock('@/features/contact/email', () => ({ sendContactEmail: jest.fn() }));
 jest.mock('@/features/contact/validation', () => ({ validateContactFields: jest.fn() }));
 jest.mock('@/lib/security/contactBan', () => ({ checkContactSourceBan: jest.fn() }));
 jest.mock('@/lib/security/contactRateLimit', () => ({ checkContactRateLimit: jest.fn() }));
@@ -20,7 +20,7 @@ const rateLimitMock = jest.mocked(checkContactRateLimit);
 const banMock = jest.mocked(checkContactSourceBan);
 const turnstileMock = jest.mocked(verifyTurnstileToken);
 const validationMock = jest.mocked(validateContactFields);
-const insertMock = jest.mocked(insertContactMessage);
+const sendMock = jest.mocked(sendContactEmail);
 
 function validForm(): FormData {
   const formData = new FormData();
@@ -55,7 +55,7 @@ describe('POST /api/contact', () => {
       data: { message: 'Hello', senderEmail: 'jude@example.com', senderName: 'Jude' },
       success: true,
     });
-    insertMock.mockResolvedValue({ inserted: true });
+    sendMock.mockResolvedValue({ sent: true });
     jest.spyOn(console, 'error').mockImplementation(() => undefined);
   });
 
@@ -118,19 +118,19 @@ describe('POST /api/contact', () => {
 
     expect(response.status).toBe(403);
     expect(turnstileMock).not.toHaveBeenCalled();
-    expect(insertMock).not.toHaveBeenCalled();
+    expect(sendMock).not.toHaveBeenCalled();
   });
 
   it.each([
     [{ reason: 'invalid', verified: false } as const, 403],
     [{ reason: 'service', verified: false } as const, 500],
-  ])('maps Turnstile failures without inserting a message', async (verification, status) => {
+  ])('maps Turnstile failures without sending a message', async (verification, status) => {
     turnstileMock.mockResolvedValue(verification);
 
     const response = await POST(requestWith(validForm()));
 
     expect(response.status).toBe(status);
-    expect(insertMock).not.toHaveBeenCalled();
+    expect(sendMock).not.toHaveBeenCalled();
   });
 
   it('returns field errors from normalized contact validation', async () => {
@@ -146,10 +146,10 @@ describe('POST /api/contact', () => {
       fieldErrors: { email: 'Enter a valid email address.' },
       ok: false,
     });
-    expect(insertMock).not.toHaveBeenCalled();
+    expect(sendMock).not.toHaveBeenCalled();
   });
 
-  it('stores only validated fields with the server-derived source identifier', async () => {
+  it('emails only the validated fields and stores nothing', async () => {
     const response = await POST(requestWith(validForm()));
 
     expect(response.status).toBe(200);
@@ -158,14 +158,14 @@ describe('POST /api/contact', () => {
       expectedAction: 'contact',
       token: 'turnstile-token',
     });
-    expect(insertMock).toHaveBeenCalledWith(
+    expect(sendMock).toHaveBeenCalledTimes(1);
+    expect(sendMock).toHaveBeenCalledWith(
       { message: 'Hello', senderEmail: 'jude@example.com', senderName: 'Jude' },
-      'a'.repeat(64),
     );
   });
 
-  it('returns a safe service error when message persistence fails', async () => {
-    insertMock.mockResolvedValue({ inserted: false });
+  it('returns a safe service error when email delivery fails', async () => {
+    sendMock.mockResolvedValue({ sent: false });
 
     const response = await POST(requestWith(validForm()));
 
