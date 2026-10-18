@@ -33,7 +33,7 @@ components/
   sections/              -> Page sections and page-level section scenes
     home/                -> Home.tsx (stacked hero: name -> role loop -> bottom-anchored Profile 2)
     WhatIDo/             -> WhatIDo.tsx (Tailwind CSS only)
-    AboutMe/             -> AboutMe.tsx (no portrait; hover-invert detail rows)
+    AboutMe/             -> AboutSection.tsx (server) -> AboutMe.tsx (statement + tags) + GitHubActivity.tsx (contribution calendar)
     Experience/          -> Experience.tsx (minimal stacked list + replayable GSAP)
     TechStack/           -> TechStack.tsx (unframed icon/name lists + reversible scrubbed GSAP)
     Projects/            -> Projects.tsx (dynamic Supabase projects/certificates showcase)
@@ -82,6 +82,7 @@ public/
 - **Local PDF.js runtime** - `pdfjs-dist` worker and WASM assets are synchronized into ignored `public/vendor/pdfjs/` before `dev` and `build`. Never add CDN workers or duplicate preview images.
 - **Shared site configuration** - `lib/site.ts` owns navigation and contact destinations used by Navbar, Contact, and Footer.
 - **Contact messages are never stored** - `/api/contact` validates, rate-limits, checks bans and Turnstile, then `features/contact/email.ts` emails the message straight to the owner via Resend (`RESEND_API_KEY`, `NOTIFICATION_EMAIL`, `NOTIFICATION_FROM_EMAIL`, server-only). The site tells visitors their message "isn't stored on this site" — do not reintroduce a messages table or persist submissions without changing that notice.
+- **GitHub contributions are server-only** - `features/github/contributions.ts` queries GitHub's GraphQL API for `GITHUB_USERNAME` (`lib/site.ts`) with the server-only `GITHUB_CONTRIBUTIONS_TOKEN` (fine-grained, public read-only, no permissions), strictly validates the calendar, and caches it for a day with `unstable_cache` (failures throw so they are never cached). It never throws to callers: a missing token or GitHub failure returns `null` and the About calendar is simply hidden. Only the serialized DTO reaches `GitHubActivity`; never pass the token or call GitHub from client code.
 
 ### Analytics Safety Boundary
 - `app/(public)/layout.tsx` mounts three client entry points: `AnalyticsSessionBootstrap` detects throttled interaction and requests or refreshes anonymous cookies, `AnalyticsEngagementTracker` observes only marked sections, and `AnalyticsEngagementBatcher` snapshots and sends deltas approximately every 30 seconds.

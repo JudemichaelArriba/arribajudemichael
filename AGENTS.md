@@ -34,8 +34,10 @@ arribajudemichael/
 │   │   │   └── Home.tsx          # Uses Tailwind CSS (no CSS module)
 │   │   ├── WhatIDo/              # What I Do section
 │   │   │   └── WhatIDo.tsx       # Tailwind CSS only
-│   │   ├── AboutMe/              # About section with compact bento/profile layout
+│   │   ├── AboutMe/              # About statement + GitHub contribution calendar
+│   │   │   ├── AboutSection.tsx  # Server wrapper: loads cached GitHub contributions
 │   │   │   ├── AboutMe.tsx       # Tailwind CSS only
+│   │   │   ├── GitHubActivity.tsx # Monochrome contribution calendar (DTO only)
 │   │   │   └── AboutBento.tsx    # Thin wrapper around shared Bento UI
 │   │   ├── Experience/           # Replayable timeline section
 │   │   │   └── Experience.tsx

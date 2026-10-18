@@ -4,37 +4,29 @@ import { useRef } from 'react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { ArrowUpRight } from 'lucide-react';
+import type { GitHubContributionsDto } from '@/features/github/types';
 import { rearmOnExitBelow } from '@/lib/animations/rearmOnExitBelow';
+import GitHubActivity from './GitHubActivity';
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
-interface AboutDetail {
-    code: string;
-    label: string;
-    value: string;
+interface AboutMeProps {
+    /** `null` hides the calendar (token missing or GitHub unavailable). */
+    contributions: GitHubContributionsDto | null;
 }
 
-const ABOUT_DETAILS: AboutDetail[] = [
-    { code: 'A.01', label: 'Location', value: 'Tagum City, Philippines' },
-    { code: 'A.02', label: 'Status', value: 'Open to opportunities' },
-    { code: 'A.03', label: 'Focus', value: 'Secure RESTful APIs paired with refined, responsive client experiences.' },
-    { code: 'A.04', label: 'Quality', value: 'Clean architecture, measured performance, and long-term maintainability.' },
-];
-
 const PROOF_POINTS = [
-    { code: '01', label: 'Full-stack systems' },
-    { code: '02', label: 'Backend + IoT' },
-    { code: '03', label: 'Maintainable code' },
+    { code: '01', label: 'Full-stack' },
+    { code: '02', label: 'Backend APIs' },
+    { code: '03', label: 'Clean code' },
 ] as const;
 
-export default function AboutMe() {
+export default function AboutMe({ contributions }: AboutMeProps) {
     const sectionRef = useRef<HTMLElement>(null);
     const sectionHeaderRef = useRef<HTMLDivElement>(null);
     const headingRef = useRef<HTMLHeadingElement>(null);
     const introRef = useRef<HTMLParagraphElement>(null);
     const proofListRef = useRef<HTMLUListElement>(null);
-    const detailListRef = useRef<HTMLDListElement>(null);
 
     useGSAP(
         () => {
@@ -52,10 +44,10 @@ export default function AboutMe() {
             );
             const headerLines = gsap.utils.toArray<HTMLElement>('[data-about-line]', sectionHeaderRef.current ?? undefined);
             const proofTargets = gsap.utils.toArray<HTMLElement>('[data-about-proof]', proofListRef.current ?? undefined);
-            const rowTargets = gsap.utils.toArray<HTMLElement>('[data-about-row]', detailListRef.current ?? undefined);
+            const activityTargets = gsap.utils.toArray<HTMLElement>('[data-about-activity]', section);
 
             if (prefersReducedMotion) {
-                gsap.set([...copyTargets, ...proofTargets, ...rowTargets], {
+                gsap.set([...copyTargets, ...proofTargets, ...activityTargets], {
                     autoAlpha: 1,
                     y: 0,
                     clearProps: 'transform,opacity,visibility,willChange',
@@ -68,7 +60,7 @@ export default function AboutMe() {
                 gsap.set(copyTargets, { autoAlpha: 0, y: 14 });
                 gsap.set(headerLines, { scaleX: 0, transformOrigin: 'left center' });
                 gsap.set(proofTargets, { autoAlpha: 0, y: 12 });
-                gsap.set(rowTargets, { autoAlpha: 0, y: 18 });
+                gsap.set(activityTargets, { autoAlpha: 0, y: 18 });
             };
 
             setInitialState();
@@ -98,13 +90,13 @@ export default function AboutMe() {
                     ease: 'power3.out',
                     stagger: 0.07,
                 }, 0.3)
-                .to(rowTargets, {
+                .to(activityTargets, {
                     autoAlpha: 1,
                     y: 0,
                     duration: 0.58,
                     ease: 'power3.out',
                     stagger: 0.08,
-                }, 0.24);
+                }, 0.36);
 
             const resetReveal = () => {
                 timeline.pause(0, true);
@@ -131,7 +123,7 @@ export default function AboutMe() {
                 timeline.kill();
             };
         },
-        { scope: sectionRef }
+        { scope: sectionRef, dependencies: [contributions] }
     );
 
     return (
@@ -157,23 +149,26 @@ export default function AboutMe() {
                     </span>
                 </div>
 
-                <div className="mt-12 grid grid-cols-1 gap-12 lg:mt-16 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:items-start lg:gap-20">
+                <div className="mt-12 grid grid-cols-1 gap-8 lg:mt-16 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:items-start lg:gap-20">
+                    <h2
+                        id="about-heading"
+                        ref={headingRef}
+                        className="min-w-0 font-display text-4xl font-bold leading-[1.02] tracking-[-0.03em] text-[var(--text)] sm:text-5xl lg:text-[4.25rem]"
+                    >
+                        Steady work,
+                        <br />
+                        shipped in the open.
+                    </h2>
+
                     <div className="min-w-0">
-                        <h2
-                            id="about-heading"
-                            ref={headingRef}
-                            className="font-display text-4xl font-bold leading-[1.04] tracking-[-0.025em] text-[var(--text)] sm:text-5xl lg:text-[3.65rem]"
-                        >
-                            I build reliable systems with a clean product feel.
-                        </h2>
                         <p
                             ref={introRef}
-                            className="mt-7 max-w-[46ch] text-base leading-[1.75] text-[var(--muted)] sm:text-lg"
+                            className="max-w-[48ch] text-base leading-[1.75] text-[var(--muted)] sm:text-lg"
                         >
-                            Full-stack engineer focused on backend APIs, IoT workflows, and responsive interfaces that remain fast, clear, and maintainable.
+                            I care about the parts nobody sees: the migration that runs cleanly, the error message that explains itself, the code the next person can read without asking me. I work in small, steady steps, ask questions early, and leave every project easier to change than I found it.
                         </p>
 
-                        <ul ref={proofListRef} className="mt-10 flex flex-wrap gap-2.5">
+                        <ul ref={proofListRef} className="mt-7 flex flex-wrap gap-2.5">
                             {PROOF_POINTS.map((point) => (
                                 <li
                                     key={point.code}
@@ -185,30 +180,9 @@ export default function AboutMe() {
                             ))}
                         </ul>
                     </div>
-
-                    <dl ref={detailListRef} className="min-w-0 border-b border-[var(--hairline)]">
-                        {ABOUT_DETAILS.map((detail) => (
-                            <div
-                                key={detail.code}
-                                data-about-row
-                                className="group grid grid-cols-[minmax(0,1fr)_1.25rem] items-start gap-4 border-t border-[var(--hairline)] px-4 py-7 transition-colors duration-300 ease-out hover:bg-[var(--inverse-bg)] motion-reduce:transition-none sm:grid-cols-[11rem_minmax(0,1fr)_1.25rem] sm:gap-8"
-                            >
-                                <dt className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--faint)] transition-colors duration-300 ease-out group-hover:text-[var(--inverse-text)]/60 motion-reduce:transition-none sm:order-none">
-                                    {detail.code} &mdash; {detail.label}
-                                </dt>
-                                <dd className="col-span-2 m-0 font-display text-lg font-semibold leading-[1.35] text-[var(--text)] transition-colors duration-300 ease-out group-hover:text-[var(--inverse-text)] motion-reduce:transition-none sm:col-span-1 sm:text-xl">
-                                    {detail.value}
-                                </dd>
-                                <ArrowUpRight
-                                    aria-hidden="true"
-                                    size={18}
-                                    strokeWidth={2.2}
-                                    className="col-start-2 row-start-1 self-center justify-self-end text-[var(--inverse-text)] opacity-0 transition-opacity duration-300 ease-out group-hover:opacity-100 motion-reduce:transition-none sm:col-start-3"
-                                />
-                            </div>
-                        ))}
-                    </dl>
                 </div>
+
+                {contributions ? <GitHubActivity contributions={contributions} /> : null}
             </div>
         </section>
     );

@@ -19,6 +19,8 @@ export interface ContactChannel {
     href: string;
 }
 
+export const GITHUB_USERNAME = 'JudemichaelArriba';
+
 export const SITE_NAVIGATION: readonly SiteNavigationItem[] = [
     { id: 'home', label: 'Home' },
     { id: 'about', label: 'About' },
@@ -30,7 +32,7 @@ export const SITE_NAVIGATION: readonly SiteNavigationItem[] = [
 
 
 export const CONTACT_CHANNELS: readonly ContactChannel[] = [
-    { id: 'github', label: 'GitHub', href: 'https://github.com/JudemichaelArriba' },
+    { id: 'github', label: 'GitHub', href: `https://github.com/${GITHUB_USERNAME}` },
     { id: 'linkedin', label: 'LinkedIn', href: 'https://www.linkedin.com/in/jude-michael-t-arriba-a70b103b9' },
     { id: 'email', label: 'Email', href: 'mailto:arribajudemichael@gmail.com' },
 ];
