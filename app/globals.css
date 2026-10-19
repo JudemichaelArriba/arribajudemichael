@@ -135,6 +135,9 @@ body {
 html {
   scrollbar-color: var(--hairline-strong) transparent;
   scrollbar-width: thin;
+  /* Keep the scrollbar's space reserved while scrolling is locked (Ask overlay, mobile menu,
+     preloader), so the page never widens and shifts sideways when the scrollbar disappears. */
+  scrollbar-gutter: stable;
 }
 
 ::-webkit-scrollbar {

@@ -56,7 +56,8 @@ export async function streamChatAnswer(
                 messages: messages.map(({ role, content }) => ({ role, content })),
                 tools: chatTools,
                 stopWhen: isStepCount(4),
-                temperature: 0.2,
+                // 0: stay as close to the portfolio data as possible; wording varies little.
+                temperature: 0,
                 maxOutputTokens: 600,
                 maxRetries: 0,
                 abortSignal: signal,
