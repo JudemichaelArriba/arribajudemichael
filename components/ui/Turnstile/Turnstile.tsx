@@ -6,7 +6,7 @@ import {
     useEffect,
     useRef,
     useState,
-    useSyncExternalStore,
+    type CSSProperties,
 } from 'react';
 
 export type TurnstileAction = 'login' | 'contact';
@@ -23,7 +23,7 @@ interface TurnstileRenderOptions {
     sitekey: string;
     action: TurnstileAction;
     theme: 'dark';
-    size: 'compact' | 'flexible';
+    size: 'flexible';
     appearance: 'always';
     execution: 'render';
     retry: 'auto';
@@ -55,21 +55,12 @@ declare global {
 
 const TURNSTILE_SCRIPT_URL =
     'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
-const COMPACT_QUERY = '(max-width: 399px)';
-
-function subscribeToCompactMode(onStoreChange: () => void): () => void {
-    const mediaQuery = window.matchMedia(COMPACT_QUERY);
-    mediaQuery.addEventListener('change', onStoreChange);
-    return () => mediaQuery.removeEventListener('change', onStoreChange);
-}
-
-function getCompactModeSnapshot(): boolean {
-    return window.matchMedia(COMPACT_QUERY).matches;
-}
-
-function getServerCompactModeSnapshot(): boolean {
-    return false;
-}
+// Cloudflare's flexible widget refuses to shrink below 300px wide. Narrower containers (a 360px
+// phone leaves ~278px inside the contact card) scale the bar down to fit instead of falling back
+// to the 150x140 compact square. Its rendered height (72px today, nominally 65px) is measured,
+// not assumed, so the scaled frame never clips the border.
+const WIDGET_MIN_WIDTH = 300;
+const WIDGET_NOMINAL_HEIGHT = 65;
 
 export default function Turnstile({
     action,
@@ -78,16 +69,36 @@ export default function Turnstile({
     className = '',
 }: TurnstileProps) {
     const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+    const frameRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const widgetIdRef = useRef<string | null>(null);
     const previousResetKeyRef = useRef(resetKey);
     const statusCallbackRef = useRef(onStatusChange);
     const [isScriptReady, setIsScriptReady] = useState(false);
-    const isCompact = useSyncExternalStore(
-        subscribeToCompactMode,
-        getCompactModeSnapshot,
-        getServerCompactModeSnapshot,
-    );
+    const [scale, setScale] = useState(1);
+    const [widgetHeight, setWidgetHeight] = useState(WIDGET_NOMINAL_HEIGHT);
+
+    useEffect(() => {
+        const frame = frameRef.current;
+        const container = containerRef.current;
+        if (!frame || !container) return;
+
+        const observer = new ResizeObserver((entries) => {
+            for (const entry of entries) {
+                if (entry.target === frame) {
+                    const width = entry.contentRect.width;
+                    if (width > 0) setScale(Math.min(1, width / WIDGET_MIN_WIDTH));
+                } else {
+                    // offsetHeight ignores the scale transform: this is the widget's real height.
+                    const height = container.offsetHeight;
+                    if (height > 0) setWidgetHeight(height);
+                }
+            }
+        });
+        observer.observe(frame);
+        observer.observe(container);
+        return () => observer.disconnect();
+    }, []);
 
     useEffect(() => {
         statusCallbackRef.current = onStatusChange;
@@ -132,7 +143,7 @@ export default function Turnstile({
                 sitekey: siteKey,
                 action,
                 theme: 'dark',
-                size: isCompact ? 'compact' : 'flexible',
+                size: 'flexible',
                 appearance: 'always',
                 execution: 'render',
                 retry: 'auto',
@@ -154,7 +165,7 @@ export default function Turnstile({
         }
 
         return removeWidget;
-    }, [action, isCompact, isScriptReady, removeWidget, siteKey]);
+    }, [action, isScriptReady, removeWidget, siteKey]);
 
     useEffect(() => {
         if (Object.is(previousResetKeyRef.current, resetKey)) {
@@ -193,11 +204,26 @@ export default function Turnstile({
                 onError={() => statusCallbackRef.current?.('error')}
             />
             <div
-                ref={containerRef}
-                role="group"
-                aria-label="Security verification"
-                className="flex min-h-[65px] w-full min-w-0 items-center justify-center max-[399px]:min-h-[140px] [&>div]:!w-full [&_iframe]:!w-full"
-            />
+                ref={frameRef}
+                // The scaled widget still takes its full layout height; size the frame to what is
+                // actually visible so no gap is left below it.
+                style={{
+                    '--turnstile-scale': scale,
+                    height: scale < 1 ? `${widgetHeight * scale}px` : undefined,
+                } as CSSProperties}
+                className={`w-full min-w-0 ${scale < 1 ? 'overflow-hidden' : ''}`}
+            >
+                <div
+                    ref={containerRef}
+                    role="group"
+                    aria-label="Security verification"
+                    className={`flex min-h-[65px] items-center justify-center [&>div]:!w-full [&_iframe]:!w-full ${
+                        scale < 1
+                            ? 'w-[300px] origin-top-left scale-[var(--turnstile-scale)]'
+                            : 'w-full'
+                    }`}
+                />
+            </div>
         </div>
     );
 }
