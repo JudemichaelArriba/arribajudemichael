@@ -12,7 +12,7 @@ const BIO = [
     'Focus: backend APIs, web and mobile clients, and system architecture.',
     'What he builds: scalable APIs, resilient backend infrastructure, and fluid digital experiences that bridge technical excellence with intuitive design.',
     'Core capabilities: system architecture (scalable APIs and dependable data flows); backend engineering (resilient services and practical integrations); product delivery (responsive web and mobile experiences).',
-    'How he works: cares about the parts nobody sees — migrations that run cleanly, error messages that explain themselves, code the next person can read. Works in small, steady steps, asks questions early, and leaves projects easier to change than he found them.',
+    'About: a current IT (BSIT) student at ACES Tagum College in Tagum, Davao del Norte, Philippines. Teaching himself to code since 2023. Has shipped a capstone project to production and won Innovathon 2026. Always looking for the next real problem to build for.',
     'Values: clean code, performance, maintainability, long-term reliability.',
 ];
 

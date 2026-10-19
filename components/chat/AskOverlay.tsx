@@ -62,6 +62,11 @@ function toErrorKind(error: Error): ErrorKind {
     return 'error';
 }
 
+/** Phones and tablets: the primary pointer is a finger, so focusing a field opens a keyboard. */
+function prefersTouchInput(): boolean {
+    return window.matchMedia('(pointer: coarse)').matches;
+}
+
 function pad(index: number): string {
     return String(index + 1).padStart(2, '0');
 }
@@ -199,6 +204,7 @@ export default function AskOverlay({ isOpen, onClose, onClosed }: AskOverlayProp
     const timelineRef = useRef<gsap.core.Timeline | null>(null);
     const onClosedRef = useRef(onClosed);
     const followStreamRef = useRef(true);
+    const wasTypingRef = useRef(false);
     const [draft, setDraft] = useState('');
 
     useEffect(() => {
@@ -218,6 +224,7 @@ export default function AskOverlay({ isOpen, onClose, onClosed }: AskOverlayProp
 
     const turns = useMemo(() => toTurns(messages), [messages]);
     const hasConversation = turns.length > 0;
+    const hadConversationRef = useRef(hasConversation);
     const isWaiting = status === 'submitted';
     const isStreaming = status === 'streaming';
     const isBusy = isWaiting || isStreaming;
@@ -262,8 +269,12 @@ export default function AskOverlay({ isOpen, onClose, onClosed }: AskOverlayProp
             const timeline = gsap.timeline();
 
             const focusInput = () => {
-                if (rootRef.current?.inert) return;
-                inputRef.current?.focus({ preventScroll: true });
+                const dialog = rootRef.current;
+                if (!dialog || dialog.inert) return;
+                // On touch screens, focusing the input would throw the keyboard over the overlay
+                // before the visitor has chosen to type; move focus into the dialog instead.
+                if (prefersTouchInput()) dialog.focus({ preventScroll: true });
+                else inputRef.current?.focus({ preventScroll: true });
             };
 
             if (reduceMotion) {
@@ -333,6 +344,33 @@ export default function AskOverlay({ isOpen, onClose, onClosed }: AskOverlayProp
         };
     }, [isOpen]);
 
+    // A phone keyboard shrinks only the *visual* viewport; the layout viewport a fixed element is
+    // sized against stays full height, so the docked input would sit underneath the keyboard.
+    // Pin the overlay to the visible area instead, and keep the newest message in view as it
+    // shrinks. On desktop the visual viewport matches the window, so nothing changes.
+    useEffect(() => {
+        const root = rootRef.current;
+        const viewport = window.visualViewport;
+        if (!isOpen || !root || !viewport) return;
+
+        const fitToVisibleArea = () => {
+            root.style.top = `${viewport.offsetTop}px`;
+            root.style.height = `${viewport.height}px`;
+            const scroller = scrollRef.current;
+            if (scroller && followStreamRef.current) scroller.scrollTop = scroller.scrollHeight;
+        };
+
+        fitToVisibleArea();
+        viewport.addEventListener('resize', fitToVisibleArea);
+        viewport.addEventListener('scroll', fitToVisibleArea);
+        return () => {
+            viewport.removeEventListener('resize', fitToVisibleArea);
+            viewport.removeEventListener('scroll', fitToVisibleArea);
+            root.style.top = '';
+            root.style.height = '';
+        };
+    }, [isOpen]);
+
     // Keep the newest exchange in view as the answer grows (it grows on the reveal clock, not on
     // network events, so watch the content's size). Scrolling up to read detaches; scrolling back
     // to the bottom or sending a question re-attaches.
@@ -375,6 +413,7 @@ export default function AskOverlay({ isOpen, onClose, onClosed }: AskOverlayProp
         clearError();
         setDraft('');
         followStreamRef.current = true;
+        wasTypingRef.current = document.activeElement === inputRef.current;
         void sendMessage({ text: question });
     };
 
@@ -447,9 +486,15 @@ export default function AskOverlay({ isOpen, onClose, onClosed }: AskOverlayProp
         return () => document.removeEventListener('keydown', handleKeyDown);
     }, [isOpen, onClose]);
 
-    // The first question swaps the large input for the docked one; keep the caret in it.
+    // The first question swaps the large input for the docked one; keep the caret in it. On touch
+    // screens only when the visitor was typing — tapping a starter should not pop the keyboard.
+    // (Opening an existing conversation is handled by the open timeline.)
     useEffect(() => {
-        if (!isOpen || !hasConversation) return;
+        const startedConversation = hasConversation && !hadConversationRef.current;
+        hadConversationRef.current = hasConversation;
+        if (!isOpen || !startedConversation) return;
+        if (prefersTouchInput() && !wasTypingRef.current) return;
+
         const frame = window.requestAnimationFrame(() => inputRef.current?.focus({ preventScroll: true }));
         return () => window.cancelAnimationFrame(frame);
     }, [hasConversation, isOpen]);
@@ -476,7 +521,8 @@ export default function AskOverlay({ isOpen, onClose, onClosed }: AskOverlayProp
             aria-modal="true"
             aria-labelledby="ask-dialog-title"
             inert={!isOpen ? true : undefined}
-            className={`fixed inset-0 z-[90] flex flex-col text-[var(--text)] ${isOpen ? '' : 'pointer-events-none'}`}
+            tabIndex={-1}
+            className={`fixed inset-x-0 top-0 z-[90] flex h-dvh flex-col text-[var(--text)] outline-none ${isOpen ? '' : 'pointer-events-none'}`}
         >
             <div
                 data-ask-backdrop

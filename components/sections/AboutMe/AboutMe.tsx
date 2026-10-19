@@ -17,9 +17,9 @@ interface AboutMeProps {
 
 // The Ask assistant restates this section's copy in features/chat/profile.ts; keep the two in sync.
 const PROOF_POINTS = [
-    { code: '01', label: 'Full-stack' },
-    { code: '02', label: 'Backend APIs' },
-    { code: '03', label: 'Clean code' },
+    { code: '01', label: 'BSIT' },
+    { code: '02', label: 'Coding since 2023' },
+    { code: '03', label: 'Innovathon winner' },
 ] as const;
 
 export default function AboutMe({ contributions }: AboutMeProps) {
@@ -156,9 +156,9 @@ export default function AboutMe({ contributions }: AboutMeProps) {
                         ref={headingRef}
                         className="min-w-0 font-display text-4xl font-bold leading-[1.02] tracking-[-0.03em] text-[var(--text)] sm:text-5xl lg:text-[4.25rem]"
                     >
-                        Steady work,
+                        Student by day,
                         <br />
-                        shipped in the open.
+                        builder by habit.
                     </h2>
 
                     <div className="min-w-0">
@@ -166,7 +166,7 @@ export default function AboutMe({ contributions }: AboutMeProps) {
                             ref={introRef}
                             className="max-w-[48ch] text-base leading-[1.75] text-[var(--muted)] sm:text-lg"
                         >
-                            I care about the parts nobody sees: the migration that runs cleanly, the error message that explains itself, the code the next person can read without asking me. I work in small, steady steps, ask questions early, and leave every project easier to change than I found it.
+                            I&apos;m <strong className="font-semibold text-[var(--text)]">Jude Michael T. Arriba</strong>, an IT student at ACES Tagum College in Tagum, Davao del Norte, Philippines. I&apos;ve been teaching myself to code since 2023, shipped a capstone to production, won Innovathon 2026, and I&apos;m always looking for the next real problem to build for.
                         </p>
 
                         <ul ref={proofListRef} className="mt-7 flex flex-wrap gap-2.5">
