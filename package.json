@@ -2,6 +2,9 @@
   "name": "arribajudemichael",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "pdfjs:sync": "node scripts/sync-pdfjs-assets.mjs",
     "postinstall": "npm run pdfjs:sync",
@@ -16,11 +19,15 @@
     "test:coverage": "jest --coverage"
   },
   "dependencies": {
+    "@ai-sdk/groq": "^4.0.63",
+    "@ai-sdk/openai-compatible": "^3.0.71",
+    "@ai-sdk/react": "^4.0.147",
     "@gsap/react": "^2.1.2",
     "@supabase/ssr": "^0.12.4",
     "@supabase/supabase-js": "^2.112.2",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.38.2",
+    "ai": "^7.0.143",
     "gsap": "^3.15.0",
     "lucide-react": "^1.27.0",
     "motion": "^12.43.0",
@@ -30,7 +37,8 @@
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "recharts": "^3.10.1",
-    "three": "^0.185.1"
+    "three": "^0.185.1",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

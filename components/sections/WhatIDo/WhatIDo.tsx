@@ -17,7 +17,8 @@ interface Capability {
     detail: string;
 }
 
-const DEFAULT_SENTENCE = 'I build scalable APIs, resilient backend infrastructure, and fluid digital experiences that bridge technical excellence with intuitive design.';
+// The Ask assistant restates this copy in features/chat/profile.ts; keep the two in sync.
+const DEFAULT_SENTENCE ='I build scalable APIs, resilient backend infrastructure, and fluid digital experiences that bridge technical excellence with intuitive design.';
 
 const CAPABILITIES: Capability[] = [
     {

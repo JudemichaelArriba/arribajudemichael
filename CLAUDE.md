@@ -28,6 +28,7 @@ app/
 
 components/
   analytics/             -> Client session activity, section observer, and delta batcher
+  chat/                  -> "Ask" AI overlay: ChatProvider (shortcuts, lazy mount), AskOverlay (useChat + GSAP), helpers
   admin/analytics/       -> Admin report UI, formatting, and Recharts visualizations
   theme/                 -> ThemeProvider.tsx (data-theme store) + ThemeToggle.tsx
   sections/              -> Page sections and page-level section scenes
@@ -56,6 +57,7 @@ lib/
 
 features/
   analytics/             -> Shared limits/activity, client delta state, server session logic
+  chat/                  -> AI chat: env, schema, models + fallback, tools, prompt/profile, moderation
   admin/analytics/       -> Authenticated reporting DTOs and server RPC queries
 
 public/
@@ -83,6 +85,15 @@ public/
 - **Shared site configuration** - `lib/site.ts` owns navigation and contact destinations used by Navbar, Contact, and Footer.
 - **Contact messages are never stored** - `/api/contact` validates, rate-limits, checks bans and Turnstile, then `features/contact/email.ts` emails the message straight to the owner via Resend (`RESEND_API_KEY`, `NOTIFICATION_EMAIL`, `NOTIFICATION_FROM_EMAIL`, server-only). The site tells visitors their message "isn't stored on this site" — do not reintroduce a messages table or persist submissions without changing that notice.
 - **GitHub contributions are server-only** - `features/github/contributions.ts` queries GitHub's GraphQL API for `GITHUB_USERNAME` (`lib/site.ts`) with the server-only `GITHUB_CONTRIBUTIONS_TOKEN` (fine-grained, public read-only, no permissions), strictly validates the calendar, and caches it for a day with `unstable_cache` (failures throw so they are never cached). It never throws to callers: a missing token or GitHub failure returns `null` and the About calendar is simply hidden. Only the serialized DTO reaches `GitHubActivity`; never pass the token or call GitHub from client code.
+
+### Chat Safety Boundary
+- `/api/chat` is the only way the "Ask" assistant reaches a model. It checks, in order: the `CHAT_ENABLED` kill switch and Zod env validation, same-origin, a 24 KB body cap, hashed-IP Upstash limits, a strict Zod body (≤10 text messages, user ≤1,000 chars), then moderation. Errors are generic `{ code, message }` with no provider, model or stack details.
+- `features/chat/respond.ts` is the only AI SDK importer. The fallback chain (Groq gpt-oss-120b → Groq llama-3.3-70b → Cloudflare llama-3.3-70b) moves on only for 429/5xx/timeout before any output.
+- Tools are argument-free reads over the existing cached public queries, which use the publishable key, RLS and published rows only. Never give the chat `lib/supabase/system.ts`, `SUPABASE_SECRET_KEY`, writes, RPCs or free-form queries.
+- Moderation is an EN/TL/CEB blocklist, then crisis phrases, then a gpt-oss-20b classifier. If the classifier fails, only short, clean messages pass. Crisis replies are supportive and name no hotlines.
+- Model output is redacted by `lib/security/chatOutputFilter.ts` and rendered as plain text with allow-listed links only.
+- Chats are never stored, and the overlay says so.
+- The system prompt (`features/chat/prompt.ts`) and profile (`features/chat/profile.ts`) stay server-only. Keep `profile.ts` in sync with the About/What I Do copy.
 
 ### Analytics Safety Boundary
 - `app/(public)/layout.tsx` mounts three client entry points: `AnalyticsSessionBootstrap` detects throttled interaction and requests or refreshes anonymous cookies, `AnalyticsEngagementTracker` observes only marked sections, and `AnalyticsEngagementBatcher` snapshots and sends deltas approximately every 30 seconds.

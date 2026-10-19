@@ -15,6 +15,7 @@ interface AboutMeProps {
     contributions: GitHubContributionsDto | null;
 }
 
+// The Ask assistant restates this section's copy in features/chat/profile.ts; keep the two in sync.
 const PROOF_POINTS = [
     { code: '01', label: 'Full-stack' },
     { code: '02', label: 'Backend APIs' },

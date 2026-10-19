@@ -24,6 +24,7 @@ const config: Config = {
     'app/api/**/*.{ts,tsx}',
     'app/(auth)/login/LoginActions.ts',
     'components/analytics/AnalyticsEngagementBatcher.tsx',
+    'components/chat/chatMessages.ts',
     'components/navbar/Navbar.tsx',
     'components/ui/Button.tsx',
     'features/**/*.{ts,tsx}',

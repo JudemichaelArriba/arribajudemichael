@@ -69,6 +69,10 @@ arribajudemichael/
 │   │   └── PreloaderLogo.tsx
 │   ├── footer/                   # Semantic public-site footer
 │   │   └── Footer.tsx            # Server-rendered navigation + contact placeholders
+│   ├── chat/                     # "Ask" AI assistant UI
+│   │   ├── ChatProvider.tsx      # Open state, Ctrl/⌘+K and "/" shortcuts, lazy overlay mount
+│   │   ├── AskOverlay.tsx        # Full-screen overlay (useChat + GSAP open/close timeline)
+│   │   └── chatMessages.ts       # Pure helpers: wire format, turns, safe link segments
 │   └── effects/                  # Visual effects
 │       ├── Magnet/               # Magnetic hover effect
 │       │   └── Magnet.tsx
@@ -81,6 +85,8 @@ arribajudemichael/
 ├── lib/
 │   ├── fonts.ts                  # Font configurations (Bricolage Grotesque)
 │   ├── site.ts                   # Shared typed navigation and contact configuration
+│   ├── techStack.ts              # Tech Stack data shared by the section and the chat profile
+│   ├── security/                 # Server-only rate limits, source hashing, origin check, chat output filter
 │   ├── useActiveSection.ts       # Hook for active section detection
 │   └── animations/
 │       ├── useRoleCycle.ts       # Text role cycling animation
@@ -136,6 +142,14 @@ arribajudemichael/
 - Traffic RPCs currently attribute visitors and sessions by `analytics_sessions.started_at`. Changing cross-midnight or cross-period attribution requires an owner-managed RPC/schema decision, not a client-side workaround.
 - Analytics is non-critical: public failures stay silent, ingestion fails closed without blocking the portfolio, and Admin query failures render explicit unavailable states distinct from valid zero-data states.
 - **Database ownership:** the repository owner manually manages Supabase schema, migrations, RPCs, RLS, and indexes. Agents must report database mismatches and must not create, edit, or push analytics database changes unless explicitly directed by the owner.
+
+### 3b. AI Chat ("Ask") Architecture
+- `POST /api/chat` (`app/api/chat/route.ts`, Node runtime) is the only entry point. Order: `CHAT_ENABLED` kill switch and Zod env check (`features/chat/env.ts`) → same-origin check (`lib/security/requestOrigin.ts`) → JSON content type and 24 KB byte-capped body → hashed-IP rate limits (`lib/security/chatRateLimit.ts`: 8/min and 40/day per visitor, 1,500/day global) → strict Zod body (`features/chat/schema.ts`: ≤10 `user`/`assistant` text messages, user ≤1,000 chars, last message from the user) → moderation → model.
+- `features/chat/respond.ts` is the only module that imports the AI SDK (`ai` v7, ESM-only), so the route and pure modules stay testable in Jest. Models (`features/chat/models.ts`): Groq `openai/gpt-oss-120b` → Groq `llama-3.3-70b-versatile` → Cloudflare Workers AI `@cf/meta/llama-3.3-70b-instruct-fp8-fast` (OpenAI-compatible). `features/chat/modelStream.ts` falls back only on 429/5xx/timeout/network errors before the first output (15 s first-part timeout, `maxRetries: 0`); once output starts, failures end the answer with a generic error.
+- Tools (`features/chat/tools.ts`) are three argument-free reads — `getProjects`, `getExperience`, `getCertificates` — over the existing cached public queries via `features/chat/portfolioData.ts`, which strips ids, storage URLs and timestamps and caps rows. Never give the chat the system client or `SUPABASE_SECRET_KEY`, and never add write, RPC or free-form query tools. Profile and skills are static context (`features/chat/profile.ts`, `lib/techStack.ts`); keep `profile.ts` in sync with the About/What I Do copy.
+- Moderation (`features/chat/moderation/`): normalized EN/TL/CEB blocklist over every user turn → crisis phrases → a `openai/gpt-oss-20b` structured classifier on the newest message. If the classifier fails, only short, clean messages pass; everything else fails closed. Replies are calm canned text in the visitor's language; crisis replies are supportive and never name hotlines.
+- Output passes through `lib/security/chatOutputFilter.ts`, a streaming redactor for keys, tokens, env var names and internal hosts. The UI (`components/chat/`) renders plain text only, links just GitHub/LinkedIn/the public email, and talks only to `/api/chat`.
+- Chats are never stored. Do not add persistence without changing the in-chat notice. `supabase/audit/chat_read_access.sql` is a read-only check of the RLS the chat relies on.
 
 ### 4. Styling Approach
 - **Tailwind CSS 4 is mandatory for standard styling** - Use utility classes for layout, spacing, sizing, typography, colors, borders, shadows, responsive states, and simple hover/focus states.
@@ -302,6 +316,7 @@ export default function Component({ title, onAction }: ComponentProps) {
 - **Never commit `.env` or expose secrets in code**
 - Analytics requires server-only `ANALYTICS_ENABLED`, `SUPABASE_SECRET_KEY`, `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`, and `CONTACT_IP_HASH_SECRET`; only the existing Supabase URL/publishable key are public.
 - `ANALYTICS_ENABLED=true` enables public collection. Missing privileged/rate-limit configuration must fail closed and must not fall back to anonymous table writes.
+- The AI chat requires server-only `CHAT_ENABLED=true`, `GROQ_API_KEY`, `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN`, the Upstash pair and `CONTACT_IP_HASH_SECRET`. It never uses `SUPABASE_SECRET_KEY`. The home page is statically rendered, so changing `CHAT_ENABLED` needs a redeploy for the navbar trigger to appear or disappear.
 
 ## Dependencies Reference
 
@@ -317,6 +332,12 @@ export default function Component({ title, onAction }: ComponentProps) {
 - `three@0.185.1` - 3D/WebGL library
 - `ogl@1.0.11` - Lightweight WebGL library
 - `pdfjs-dist@6` - Client-side first-page certificate PDF rendering
+
+### AI Chat
+- `ai@7` - AI SDK core (server streaming and `DefaultChatTransport`); ESM-only, requires Node ≥ 22
+- `@ai-sdk/react@4` - `useChat` for the Ask overlay
+- `@ai-sdk/groq@4`, `@ai-sdk/openai-compatible@3` - Groq and Cloudflare Workers AI providers
+- `zod@4` - Chat request, env and tool schemas
 
 ### UI & Icons
 - `lucide-react@1.27.0` - Icon library

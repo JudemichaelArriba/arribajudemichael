@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Download, Menu, X } from 'lucide-react';
+import { useAskChat } from '@/components/chat/ChatProvider';
 import { useActiveSection } from '@/lib/useActiveSection';
 import { SITE_NAVIGATION } from '@/lib/site';
 import { NAV_LINK_UNDERLINE_CLASS } from '@/components/ui/navigationStyles';
@@ -21,6 +22,7 @@ export default function Navbar() {
     const lastScrollYRef = useRef(0);
     const tickingRef = useRef(false);
     const active = useActiveSection(TRACKED_SECTION_IDS);
+    const askChat = useAskChat();
 
     useEffect(() => {
         const el = navRef.current;
@@ -110,6 +112,12 @@ export default function Navbar() {
         document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
     }, []);
 
+    const openAsk = useCallback(() => {
+        document.body.style.overflow = '';
+        setMenuOpen(false);
+        askChat.open();
+    }, [askChat]);
+
     const isNavVisible = mode !== 'hidden';
     const isScrolled = mode !== 'top';
 
@@ -179,6 +187,21 @@ export default function Navbar() {
                                     );
                                 })}
                             </ul>
+
+                            {askChat.enabled ? (
+                                <button
+                                    type="button"
+                                    onClick={openAsk}
+                                    aria-haspopup="dialog"
+                                    aria-keyshortcuts="Control+K Meta+K"
+                                    className="group inline-flex h-10 shrink-0 items-center gap-2.5 border border-[var(--hairline-strong)] pl-3.5 pr-2.5 text-[var(--text)] transition-colors duration-300 ease-out hover:border-[var(--inverse-bg)] hover:bg-[var(--inverse-bg)] hover:text-[var(--inverse-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--text)]/45 motion-reduce:transition-none"
+                                >
+                                    <span className="font-mono text-[10px] font-bold uppercase tracking-[0.12em]">Ask</span>
+                                    <kbd className="border border-[var(--hairline-strong)] px-1.5 py-px font-mono text-[10px] opacity-80 transition-colors duration-300 group-hover:border-[var(--inverse-text)]/50 motion-reduce:transition-none">
+                                        Ctrl + K
+                                    </kbd>
+                                </button>
+                            ) : null}
 
                             <ThemeToggle />
 
@@ -255,9 +278,25 @@ export default function Navbar() {
                                 </li>
                             );
                         })}
+                        {askChat.enabled ? (
+                            <li
+                                style={{ transitionDelay: menuOpen ? `${45 + SITE_NAVIGATION.length * 35}ms` : '0ms' }}
+                                className={`mt-5 transition-[opacity,transform] duration-300 ease-out motion-reduce:translate-y-0 motion-reduce:opacity-100 motion-reduce:transition-none ${menuOpen ? 'translate-y-0 opacity-100' : '-translate-y-1.5 opacity-0'}`}
+                            >
+                                <button
+                                    type="button"
+                                    onClick={openAsk}
+                                    aria-haspopup="dialog"
+                                    className="flex min-h-14 w-full items-center justify-between gap-3 border border-[var(--hairline-strong)] px-4 font-mono text-xs font-bold uppercase tracking-[0.12em] text-[var(--text)] transition-colors duration-300 ease-out hover:border-[var(--inverse-bg)] hover:bg-[var(--inverse-bg)] hover:text-[var(--inverse-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--text)]/45 motion-reduce:transition-none"
+                                >
+                                    <span>Ask about Jude</span>
+                                    <span aria-hidden="true" className="text-[var(--faint)]">AI</span>
+                                </button>
+                            </li>
+                        ) : null}
                         <li
-                            style={{ transitionDelay: menuOpen ? `${45 + SITE_NAVIGATION.length * 35}ms` : '0ms' }}
-                            className={`mt-5 transition-[opacity,transform] duration-300 ease-out motion-reduce:translate-y-0 motion-reduce:opacity-100 motion-reduce:transition-none ${menuOpen ? 'translate-y-0 opacity-100' : '-translate-y-1.5 opacity-0'}`}
+                            style={{ transitionDelay: menuOpen ? `${45 + (SITE_NAVIGATION.length + 1) * 35}ms` : '0ms' }}
+                            className={`${askChat.enabled ? 'mt-2.5' : 'mt-5'} transition-[opacity,transform] duration-300 ease-out motion-reduce:translate-y-0 motion-reduce:opacity-100 motion-reduce:transition-none ${menuOpen ? 'translate-y-0 opacity-100' : '-translate-y-1.5 opacity-0'}`}
                         >
                             <a
                                 href="/cv.pdf"
