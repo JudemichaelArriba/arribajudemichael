@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Download, Menu, X } from 'lucide-react';
+import AskNavButton from '@/components/chat/AskNavButton';
 import { useAskChat } from '@/components/chat/ChatProvider';
 import { useActiveSection } from '@/lib/useActiveSection';
 import { SITE_NAVIGATION } from '@/lib/site';
@@ -188,20 +189,7 @@ export default function Navbar() {
                                 })}
                             </ul>
 
-                            {askChat.enabled ? (
-                                <button
-                                    type="button"
-                                    onClick={openAsk}
-                                    aria-haspopup="dialog"
-                                    aria-keyshortcuts="Control+K Meta+K"
-                                    className="group inline-flex h-10 shrink-0 items-center gap-2.5 border border-[var(--hairline-strong)] pl-3.5 pr-2.5 text-[var(--text)] transition-colors duration-300 ease-out hover:border-[var(--inverse-bg)] hover:bg-[var(--inverse-bg)] hover:text-[var(--inverse-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--text)]/45 motion-reduce:transition-none"
-                                >
-                                    <span className="font-mono text-[10px] font-bold uppercase tracking-[0.12em]">Ask</span>
-                                    <kbd className="border border-[var(--hairline-strong)] px-1.5 py-px font-mono text-[10px] opacity-80 transition-colors duration-300 group-hover:border-[var(--inverse-text)]/50 motion-reduce:transition-none">
-                                        Ctrl + K
-                                    </kbd>
-                                </button>
-                            ) : null}
+                            {askChat.enabled ? <AskNavButton onOpen={openAsk} /> : null}
 
                             <ThemeToggle />
 
@@ -286,11 +274,14 @@ export default function Navbar() {
                                 <button
                                     type="button"
                                     onClick={openAsk}
+                                    aria-label="Ask Nero, AI assistant"
                                     aria-haspopup="dialog"
-                                    className="flex min-h-14 w-full items-center justify-between gap-3 border border-[var(--hairline-strong)] px-4 font-mono text-xs font-bold uppercase tracking-[0.12em] text-[var(--text)] transition-colors duration-300 ease-out hover:border-[var(--inverse-bg)] hover:bg-[var(--inverse-bg)] hover:text-[var(--inverse-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--text)]/45 motion-reduce:transition-none"
+                                    className="group flex min-h-14 w-full items-center justify-between gap-3 border border-[var(--hairline-strong)] px-4 font-mono text-xs font-bold uppercase tracking-[0.12em] text-[var(--text)] transition-colors duration-300 ease-out hover:border-[var(--inverse-bg)] hover:bg-[var(--inverse-bg)] hover:text-[var(--inverse-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--text)]/45 motion-reduce:transition-none"
                                 >
-                                    <span>Ask about Jude</span>
-                                    <span aria-hidden="true" className="text-[var(--faint)]">AI</span>
+                                    <span aria-hidden="true">Ask Nero</span>
+                                    <span aria-hidden="true" className="border border-[var(--hairline-strong)] px-1.5 py-0.5 text-[10px] transition-colors duration-300 group-hover:border-[var(--inverse-text)]/50 motion-reduce:transition-none">
+                                        AI
+                                    </span>
                                 </button>
                             </li>
                         ) : null}

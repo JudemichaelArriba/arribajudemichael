@@ -324,6 +324,7 @@ export default function AskOverlay({ isOpen, onClose, onClosed }: AskOverlayProp
             if (rule.length) {
                 timeline.fromTo(rule, { scaleX: 0 }, { scaleX: 1, transformOrigin: 'left center', duration: 0.7, ease: 'expo.out' }, 0.95);
             }
+            rise(select('[data-ask-subline]'), 0.6, { duration: 0.6 });
             rise(select('[data-ask-chip]'), 1.1, { y: 0, duration: 0.5, ease: 'power3.out', stagger: 0.07 });
 
             // Conversation view: only the last few turns are near the viewport, so only they move.
@@ -537,8 +538,8 @@ export default function AskOverlay({ isOpen, onClose, onClosed }: AskOverlayProp
                             J<span className="text-[var(--faint)]">M</span>
                         </span>
                         <span aria-hidden="true" className="h-px w-6 shrink-0 bg-[var(--hairline-strong)]" />
-                        <span id="ask-dialog-title" className="truncate font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--faint)] sm:text-[11px]">
-                            Ask &mdash; AI assistant
+                        <span id="ask-dialog-title" className="truncate font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text)] sm:text-[11px]">
+                            Nero &mdash; AI assistant
                         </span>
                     </div>
 
@@ -665,6 +666,9 @@ export default function AskOverlay({ isOpen, onClose, onClosed }: AskOverlayProp
                         <h2 className="shrink-0 overflow-hidden pb-[0.1em] font-display text-[clamp(2.5rem,7vw,4.75rem)] font-bold lowercase leading-[1.02] tracking-[-0.035em] text-[var(--text)]">
                             <span data-ask-headline className="inline-block">what do you want to ask?</span>
                         </h2>
+                        <p data-ask-subline className="mt-3 max-w-[52ch] text-[15px] leading-relaxed text-[var(--muted)] md:mt-4 md:text-base">
+                            Nero is an AI chatbot that answers questions about Jude&apos;s work.
+                        </p>
 
                         <form onSubmit={handleSubmit} className="mt-6 max-w-[47.5rem] [@media(min-height:720px)]:mt-10">
                             <label htmlFor="ask-input" className="sr-only">Your question about Jude</label>

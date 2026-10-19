@@ -14,17 +14,14 @@ export interface ModelStreamAttempt {
     start: (signal: AbortSignal) => ReadableStream<ModelStreamPart>;
 }
 
-export const FIRST_PART_TIMEOUT_MS = 15_000;
+// Time allowed until the first answer text, which comes after reasoning and any tool step.
+export const FIRST_PART_TIMEOUT_MS = 20_000;
 
-// Once any of these arrives the provider is answering, so the attempt is committed: from then on
-// a failure ends the answer instead of silently restarting it on another model.
-const COMMITTING_PART_TYPES = new Set<ModelStreamPart['type']>([
-    'text-delta',
-    'reasoning-delta',
-    'tool-input-start',
-    'tool-call',
-    'tool-result',
-]);
+// The attempt is committed once visible answer text starts: from then on a failure ends the
+// answer instead of silently restarting it on another model. Everything before that (reasoning,
+// tool calls and their results) is buffered, so a provider failure on a later step (for example
+// the call that follows a tool lookup) still falls back to the next model.
+const COMMITTING_PART_TYPES = new Set<ModelStreamPart['type']>(['text-delta']);
 
 type PeekOutcome =
     | { kind: 'commit' }

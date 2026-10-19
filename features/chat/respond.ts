@@ -9,6 +9,7 @@ import {
 } from 'ai';
 
 import type { ChatEnv } from './env';
+import { describeModelError } from './fallback';
 import { getChatModelChain, getModerationModel } from './models';
 import { classifyMessage } from './moderation/classify';
 import type { ModerationClassifier } from './moderation';
@@ -47,26 +48,31 @@ export async function streamChatAnswer(
     messages: readonly ChatMessage[],
     requestSignal: AbortSignal,
 ): Promise<Response | null> {
-    const attempts: ModelStreamAttempt[] = getChatModelChain(env).map(({ label, model }) => ({
-        label,
-        start: (signal) =>
-            streamText({
-                model,
-                instructions: getChatInstructions(),
-                messages: messages.map(({ role, content }) => ({ role, content })),
-                tools: chatTools,
-                stopWhen: isStepCount(4),
-                // 0: stay as close to the portfolio data as possible; wording varies little.
-                temperature: 0,
-                maxOutputTokens: 600,
-                maxRetries: 0,
-                abortSignal: signal,
-                timeout: { totalMs: 50_000, chunkMs: 15_000 },
-                // Errors are handled (and logged without details) by the fallback runner and the
-                // UI stream below; the SDK default would print the raw provider error.
-                onError: () => undefined,
-            }).stream,
-    }));
+    const attempts: ModelStreamAttempt[] = getChatModelChain(env).map(
+        ({ label, model, maxOutputTokens, providerOptions }) => ({
+            label,
+            start: (signal) =>
+                streamText({
+                    model,
+                    instructions: getChatInstructions(),
+                    messages: messages.map(({ role, content }) => ({ role, content })),
+                    tools: chatTools,
+                    stopWhen: isStepCount(4),
+                    // 0: stay as close to the portfolio data as possible; wording varies little.
+                    temperature: 0,
+                    // Per model (features/chat/models.ts): reasoning models count hidden reasoning
+                    // against this budget, and reasoning options are only sent to models that take them.
+                    maxOutputTokens,
+                    ...(providerOptions ? { providerOptions } : {}),
+                    maxRetries: 0,
+                    abortSignal: signal,
+                    timeout: { totalMs: 50_000, chunkMs: 15_000 },
+                    // Errors are handled (and logged without details) by the fallback runner and the
+                    // UI stream below; the SDK default would print the raw provider error.
+                    onError: () => undefined,
+                }).stream,
+        }),
+    );
 
     const modelStream = await openFirstHealthyStream(attempts, requestSignal);
     if (!modelStream) return null;
@@ -79,9 +85,7 @@ export async function streamChatAnswer(
         sendReasoning: false,
         sendSources: false,
         onError: (error) => {
-            console.error('[api/chat] Answer stream failed.', {
-                name: error instanceof Error ? error.name : 'UnknownError',
-            });
+            console.error('[api/chat] Answer stream failed.', describeModelError(error));
             return GENERIC_STREAM_ERROR;
         },
     });

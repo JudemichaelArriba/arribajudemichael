@@ -124,6 +124,24 @@ describe('openFirstHealthyStream', () => {
     expect(await collect(stream)).toEqual(answer);
   });
 
+  it('falls back when a later step fails after a tool lookup but before any answer text', async () => {
+    const primary = attempt('primary', () =>
+      partsStream([
+        { type: 'start-step' } as ModelStreamPart,
+        { type: 'reasoning-delta', id: 'r', text: 'thinking' } as ModelStreamPart,
+        { type: 'tool-call', toolCallId: 'c1', toolName: 'getExperience', input: {} } as ModelStreamPart,
+        { type: 'tool-result', toolCallId: 'c1', toolName: 'getExperience', input: {}, output: { items: [] } } as ModelStreamPart,
+        { type: 'error', error: apiError(429) } as ModelStreamPart,
+      ]),
+    );
+    const secondary = attempt('secondary', () => partsStream(answer));
+
+    const parts = await collect(await openFirstHealthyStream([primary, secondary], new AbortController().signal));
+
+    expect(parts).toEqual(answer);
+    expect(secondary.start).toHaveBeenCalledTimes(1);
+  });
+
   it('does not fall back on a non-retryable error', async () => {
     const primary = attempt('primary', () => partsStream([{ type: 'error', error: apiError(401) } as ModelStreamPart]));
     const secondary = attempt('secondary', () => partsStream(answer));

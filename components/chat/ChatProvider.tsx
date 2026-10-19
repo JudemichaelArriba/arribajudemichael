@@ -2,6 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { markChatUsed } from './askHint';
 
 interface AskChatContextValue {
     enabled: boolean;
@@ -34,6 +35,7 @@ export default function ChatProvider({ enabled, children }: ChatProviderProps) {
 
     const open = useCallback(() => {
         if (!enabled) return;
+        markChatUsed();
         returnFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
         setHasOpened(true);
         setIsOpen(true);
