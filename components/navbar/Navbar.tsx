@@ -204,6 +204,21 @@ export default function Navbar() {
                         </div>
 
                         <div className="flex items-center gap-2 md:hidden">
+                            {askChat.enabled ? (
+                                // Phones have no hover tooltip, so the "AI" tag discloses it here.
+                                <button
+                                    type="button"
+                                    onClick={openAsk}
+                                    aria-label="Ask Nero, AI assistant"
+                                    aria-haspopup="dialog"
+                                    className="inline-flex h-11 shrink-0 items-center gap-2 border border-[var(--hairline-strong)] px-3 text-[var(--text)] transition-[border-color,background-color,color] duration-300 ease-out hover:border-[var(--inverse-bg)] hover:bg-[var(--inverse-bg)] hover:text-[var(--inverse-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--text)]/45 active:scale-95 motion-reduce:transition-none"
+                                >
+                                    <span aria-hidden="true" className="font-mono text-[10px] font-bold uppercase tracking-[0.12em]">Ask</span>
+                                    <span aria-hidden="true" className="border border-current/40 px-1 py-px font-mono text-[9px] font-bold tracking-[0.1em]">
+                                        AI
+                                    </span>
+                                </button>
+                            ) : null}
                             <ThemeToggle />
                             <button
                                 ref={menuButtonRef}
@@ -266,28 +281,9 @@ export default function Navbar() {
                                 </li>
                             );
                         })}
-                        {askChat.enabled ? (
-                            <li
-                                style={{ transitionDelay: menuOpen ? `${45 + SITE_NAVIGATION.length * 35}ms` : '0ms' }}
-                                className={`mt-5 transition-[opacity,transform] duration-300 ease-out motion-reduce:translate-y-0 motion-reduce:opacity-100 motion-reduce:transition-none ${menuOpen ? 'translate-y-0 opacity-100' : '-translate-y-1.5 opacity-0'}`}
-                            >
-                                <button
-                                    type="button"
-                                    onClick={openAsk}
-                                    aria-label="Ask Nero, AI assistant"
-                                    aria-haspopup="dialog"
-                                    className="group flex min-h-14 w-full items-center justify-between gap-3 border border-[var(--hairline-strong)] px-4 font-mono text-xs font-bold uppercase tracking-[0.12em] text-[var(--text)] transition-colors duration-300 ease-out hover:border-[var(--inverse-bg)] hover:bg-[var(--inverse-bg)] hover:text-[var(--inverse-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--text)]/45 motion-reduce:transition-none"
-                                >
-                                    <span aria-hidden="true">Ask Nero</span>
-                                    <span aria-hidden="true" className="border border-[var(--hairline-strong)] px-1.5 py-0.5 text-[10px] transition-colors duration-300 group-hover:border-[var(--inverse-text)]/50 motion-reduce:transition-none">
-                                        AI
-                                    </span>
-                                </button>
-                            </li>
-                        ) : null}
                         <li
-                            style={{ transitionDelay: menuOpen ? `${45 + (SITE_NAVIGATION.length + 1) * 35}ms` : '0ms' }}
-                            className={`${askChat.enabled ? 'mt-2.5' : 'mt-5'} transition-[opacity,transform] duration-300 ease-out motion-reduce:translate-y-0 motion-reduce:opacity-100 motion-reduce:transition-none ${menuOpen ? 'translate-y-0 opacity-100' : '-translate-y-1.5 opacity-0'}`}
+                            style={{ transitionDelay: menuOpen ? `${45 + SITE_NAVIGATION.length * 35}ms` : '0ms' }}
+                            className={`mt-5 transition-[opacity,transform] duration-300 ease-out motion-reduce:translate-y-0 motion-reduce:opacity-100 motion-reduce:transition-none ${menuOpen ? 'translate-y-0 opacity-100' : '-translate-y-1.5 opacity-0'}`}
                         >
                             <a
                                 href="/cv.pdf"
