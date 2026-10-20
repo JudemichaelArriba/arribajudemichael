@@ -3,6 +3,8 @@
 import { REDACTION } from '@/lib/security/chatOutputFilter';
 import { describeModelError, isRetryableModelError } from '../fallback';
 import {
+  CUT_SHORT_NOTE,
+  createAnswerTracker,
   createRedactionTransform,
   openFirstHealthyStream,
   type ModelStreamAttempt,
@@ -49,11 +51,11 @@ async function collect(stream: ReadableStream<ModelStreamPart> | null): Promise<
 }
 
 describe('isRetryableModelError', () => {
-  it.each([429, 500, 502, 503, 504])('retries HTTP %i', (status) => {
+  it.each([429, 500, 502, 503, 504, 403, 404])('moves on after HTTP %i', (status) => {
     expect(isRetryableModelError(apiError(status))).toBe(true);
   });
 
-  it.each([400, 401, 403, 404, 422])('does not retry HTTP %i', (status) => {
+  it.each([400, 401, 422])('does not retry HTTP %i', (status) => {
     expect(isRetryableModelError(apiError(status))).toBe(false);
   });
 
@@ -181,6 +183,29 @@ describe('openFirstHealthyStream', () => {
 
     await expect(openFirstHealthyStream([primary], controller.signal)).resolves.toBeNull();
     expect(primary.start).not.toHaveBeenCalled();
+  });
+});
+
+describe('createAnswerTracker', () => {
+  const finish = (finishReason: string) => ({ type: 'finish', finishReason } as ModelStreamPart);
+
+  it('records the answer text for section matching', async () => {
+    const tracker = createAnswerTracker();
+    await collect(partsStream([...answer, finish('stop')]).pipeThrough(tracker.transform));
+
+    expect(tracker.text()).toBe('Hello');
+  });
+
+  it('ends a length-limited answer with a clear note instead of a dangling sentence', async () => {
+    const tracker = createAnswerTracker();
+    const parts = await collect(partsStream([...answer, finish('length')]).pipeThrough(tracker.transform));
+    const text = parts
+      .filter((part): part is Extract<ModelStreamPart, { type: 'text-delta' }> => part.type === 'text-delta')
+      .map((part) => part.text)
+      .join('');
+
+    expect(text).toBe(`Hello${CUT_SHORT_NOTE}`);
+    expect(parts.at(-1)).toMatchObject({ type: 'finish' });
   });
 });
 

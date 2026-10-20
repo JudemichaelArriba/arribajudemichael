@@ -133,6 +133,40 @@ export async function openFirstHealthyStream(
     return null;
 }
 
+export const CUT_SHORT_NOTE = '\n\n(That answer was cut short. Ask me to continue, or ask about one item.)';
+
+export interface AnswerTracker {
+    transform: TransformStream<ModelStreamPart, ModelStreamPart>;
+    /** The visible answer text so far (after redaction). */
+    text: () => string;
+}
+
+/**
+ * Records the answer text as it passes (for the "Jump to" sections) and, if the model stopped
+ * because it hit its output limit, ends the answer with a clear note instead of a dangling
+ * half-sentence.
+ */
+export function createAnswerTracker(): AnswerTracker {
+    let text = '';
+
+    const transform = new TransformStream<ModelStreamPart, ModelStreamPart>({
+        transform(part, controller) {
+            if (part.type === 'text-delta') text += part.text;
+
+            if (part.type === 'finish' && part.finishReason === 'length') {
+                text += CUT_SHORT_NOTE;
+                controller.enqueue({ type: 'text-start', id: 'cut-short' } as ModelStreamPart);
+                controller.enqueue({ type: 'text-delta', id: 'cut-short', text: CUT_SHORT_NOTE } as ModelStreamPart);
+                controller.enqueue({ type: 'text-end', id: 'cut-short' } as ModelStreamPart);
+            }
+
+            controller.enqueue(part);
+        },
+    });
+
+    return { transform, text: () => text };
+}
+
 /** Redacts text deltas per text block, holding a short tail until the block ends. */
 export function createRedactionTransform(): TransformStream<ModelStreamPart, ModelStreamPart> {
     const redactors = new Map<string, StreamingRedactor>();

@@ -15,7 +15,7 @@ describe('toWireMessages', () => {
   it('sends text only — tool parts never travel back to the server', () => {
     const wire = toWireMessages([
       message('1', 'user', 'Projects?'),
-      message('2', 'assistant', 'Here they are.', [{ type: 'tool-getProjects' }]),
+      message('2', 'assistant', 'Here they are.', [{ type: 'data-sections', data: ['projects'] }]),
       message('3', 'user', 'Thanks'),
     ]);
 
@@ -40,10 +40,10 @@ describe('toWireMessages', () => {
 });
 
 describe('toTurns', () => {
-  it('pairs questions with answers and maps tools to sections', () => {
+  it('pairs questions with answers and reads the sections the server matched, ignoring unknown ids', () => {
     const turns = toTurns([
       message('1', 'user', 'Where did he work?'),
-      message('2', 'assistant', 'At ...', [{ type: 'tool-getExperience' }, { type: 'tool-getCertificates' }]),
+      message('2', 'assistant', 'At ...', [{ type: 'data-sections', data: ['experience', 'projects', 'javascript:alert(1)', 42] }]),
       message('3', 'user', 'And projects?'),
     ]);
 

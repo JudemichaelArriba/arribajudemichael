@@ -3,9 +3,9 @@ import 'server-only';
 import {
     createUIMessageStream,
     createUIMessageStreamResponse,
-    isStepCount,
     streamText,
     toUIMessageStream,
+    type UIMessageChunk,
 } from 'ai';
 
 import type { ChatEnv } from './env';
@@ -13,10 +13,15 @@ import { describeModelError } from './fallback';
 import { getChatModelChain, getModerationModel } from './models';
 import { classifyMessage } from './moderation/classify';
 import type { ModerationClassifier } from './moderation';
-import { createRedactionTransform, openFirstHealthyStream, type ModelStreamAttempt } from './modelStream';
+import {
+    createAnswerTracker,
+    createRedactionTransform,
+    openFirstHealthyStream,
+    type ModelStreamAttempt,
+} from './modelStream';
 import { getChatInstructions } from './prompt';
+import { detectAnswerSections, formatPortfolioRecords, loadPortfolioRecords } from './records';
 import type { ChatMessage } from './schema';
-import { chatTools } from './tools';
 
 // The only module that talks to the AI SDK. The route stays SDK-free and testable.
 
@@ -48,16 +53,19 @@ export async function streamChatAnswer(
     messages: readonly ChatMessage[],
     requestSignal: AbortSignal,
 ): Promise<Response | null> {
+    // Every model gets the complete published records up front: nothing to look up, so even a
+    // fallback model can only answer from real data, in a single model call.
+    const records = await loadPortfolioRecords();
+    const instructions = getChatInstructions(formatPortfolioRecords(records));
+
     const attempts: ModelStreamAttempt[] = getChatModelChain(env).map(
         ({ label, model, maxOutputTokens, providerOptions }) => ({
             label,
             start: (signal) =>
                 streamText({
                     model,
-                    instructions: getChatInstructions(),
+                    instructions,
                     messages: messages.map(({ role, content }) => ({ role, content })),
-                    tools: chatTools,
-                    stopWhen: isStepCount(4),
                     // 0: stay as close to the portfolio data as possible; wording varies little.
                     temperature: 0,
                     // Per model (features/chat/models.ts): reasoning models count hidden reasoning
@@ -77,11 +85,12 @@ export async function streamChatAnswer(
     const modelStream = await openFirstHealthyStream(attempts, requestSignal);
     if (!modelStream) return null;
 
+    const answer = createAnswerTracker();
+
     // Visual pacing happens in the browser (components/chat/useRevealedText.ts), so text is sent
     // as soon as the redactor releases it.
-    const stream = toUIMessageStream({
-        stream: modelStream.pipeThrough(createRedactionTransform()),
-        tools: chatTools,
+    const uiStream = toUIMessageStream({
+        stream: modelStream.pipeThrough(createRedactionTransform()).pipeThrough(answer.transform),
         sendReasoning: false,
         sendSources: false,
         onError: (error) => {
@@ -89,6 +98,20 @@ export async function streamChatAnswer(
             return GENERIC_STREAM_ERROR;
         },
     });
+
+    // Just before the answer finishes, tell the client which site sections it actually mentioned
+    // (matched against the real record titles) for the "Jump to" buttons.
+    const stream = uiStream.pipeThrough(
+        new TransformStream<UIMessageChunk, UIMessageChunk>({
+            transform(chunk, controller) {
+                if (chunk.type === 'finish') {
+                    const sections = detectAnswerSections(answer.text(), records);
+                    if (sections.length > 0) controller.enqueue({ type: 'data-sections', data: sections });
+                }
+                controller.enqueue(chunk);
+            },
+        }),
+    );
 
     return createUIMessageStreamResponse({ stream, headers: RESPONSE_HEADERS });
 }

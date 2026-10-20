@@ -5,6 +5,7 @@ import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import type { LanguageModel } from 'ai';
 
 import type { ChatEnv } from './env';
+import { createWorkersAiFetch } from './workersAiFetch';
 
 type GroqReasoningOptions = {
     groq: {
@@ -29,8 +30,11 @@ const SECONDARY_MODEL_ID = 'qwen/qwen3.8-27b';
 const FALLBACK_MODEL_ID = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
 const MODERATION_MODEL_ID = 'openai/gpt-oss-20b';
 
-const REASONING_OUTPUT_TOKENS = 4_000;
-const PLAIN_OUTPUT_TOKENS = 600;
+// Answers are kept under ~150 words (~250 tokens) by the prompt. Reasoning models also spend
+// hidden tokens from this budget, so they get more room; plain models get a comfortable margin.
+// Qwen must stay below this Groq project's 1,000 output-tokens-per-minute limit.
+const REASONING_OUTPUT_TOKENS = 3_000;
+const PLAIN_OUTPUT_TOKENS = 900;
 
 let cachedChain: readonly ChatModelAttempt[] | null = null;
 let cachedModerationModel: LanguageModel | null = null;
@@ -48,22 +52,23 @@ export function getChatModelChain(env: ChatEnv): readonly ChatModelAttempt[] {
         name: 'workers-ai',
         baseURL: `https://api.cloudflare.com/client/v4/accounts/${env.cloudflareAccountId}/ai/v1`,
         apiKey: env.cloudflareApiToken,
+        fetch: createWorkersAiFetch(),
     });
 
     cachedChain = [
         {
             label: 'primary',
             model: groq(PRIMARY_MODEL_ID),
-            // gpt-oss follows the grounding rules more reliably with more reasoning.
+            // Medium reasoning: the records are already in front of it, and "high" could use up
+            // most of the budget before the answer was finished.
             maxOutputTokens: REASONING_OUTPUT_TOKENS,
-            providerOptions: { groq: { reasoningEffort: 'high' } },
+            providerOptions: { groq: { reasoningEffort: 'medium' } },
         },
         {
             label: 'secondary',
             model: groq(SECONDARY_MODEL_ID),
-            // This project allows only 1,000 output tokens per minute on Qwen, and Groq rejects a
-            // request whose max_tokens alone exceeds that. Instruct mode ("none") skips hidden
-            // reasoning so a normal answer fits; "hidden" keeps any thinking out of the text.
+            // Instruct mode ("none") skips hidden reasoning so the whole budget goes to the answer;
+            // "hidden" keeps any thinking out of the text.
             maxOutputTokens: PLAIN_OUTPUT_TOKENS,
             providerOptions: { groq: { reasoningEffort: 'none', reasoningFormat: 'hidden' } },
         },

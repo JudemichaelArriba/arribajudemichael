@@ -10,6 +10,7 @@ const MAX_ANSWER_LENGTH = 4_000;
 export interface ChatPartLike {
     type: string;
     text?: string;
+    data?: unknown;
 }
 
 export interface ChatMessageLike {
@@ -67,17 +68,25 @@ export function toWireMessages(messages: readonly ChatMessageLike[]): WireMessag
     return recent;
 }
 
-const TOOL_SECTIONS: Readonly<Record<string, SiteSectionId>> = {
-    'tool-getProjects': 'projects',
-    'tool-getCertificates': 'projects',
-    'tool-getExperience': 'experience',
-};
+const SECTION_IDS = new Set<string>(SITE_NAVIGATION.map((item) => item.id));
+
+function isSectionId(value: unknown): value is SiteSectionId {
+    return typeof value === 'string' && SECTION_IDS.has(value);
+}
+
+/** Sections the server matched in the answer (a `data-sections` part); unknown values are ignored. */
+function getAnswerSections(message: ChatMessageLike): SiteSectionId[] {
+    const sections = message.parts.flatMap((part) =>
+        part.type === 'data-sections' && Array.isArray(part.data) ? part.data.filter(isSectionId) : [],
+    );
+    return [...new Set(sections)];
+}
 
 export function getSectionLabel(id: SiteSectionId): string {
     return SITE_NAVIGATION.find((item) => item.id === id)?.label ?? id;
 }
 
-/** Pairs each question with the answer that followed it, plus the sections its tools drew on. */
+/** Pairs each question with the answer that followed it, plus the sections that answer covered. */
 export function toTurns(messages: readonly ChatMessageLike[]): ChatTurn[] {
     const turns: ChatTurn[] = [];
 
@@ -92,11 +101,7 @@ export function toTurns(messages: readonly ChatMessageLike[]): ChatTurn[] {
 
         turn.answer = stripMarkdownEmphasis(getMessageText(message));
         turn.hasAnswer = turn.answer.length > 0;
-        turn.sections = [
-            ...new Set(
-                message.parts.flatMap((part) => (part.type in TOOL_SECTIONS ? [TOOL_SECTIONS[part.type]] : [])),
-            ),
-        ];
+        turn.sections = getAnswerSections(message);
     }
 
     return turns;

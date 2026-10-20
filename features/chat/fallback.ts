@@ -1,6 +1,11 @@
 // Pure: decides whether a failed model attempt may move on to the next model in the chain.
-// Only transient provider trouble qualifies. Bad requests, auth problems and missing models are
-// configuration bugs that another provider would not fix, so they surface as a generic error.
+// Transient trouble (429, 5xx, timeouts, network) and a model that is unavailable to this account
+// (403 blocked, 404 missing or retired) move on: another model can still answer. Malformed
+// requests (400/422) and invalid credentials (401) are bugs no other model would fix, so they
+// surface as a generic error.
+
+// Model-specific availability problems: the next model in the chain is a different model.
+const MODEL_UNAVAILABLE_STATUS = new Set([403, 404]);
 
 const RETRYABLE_ERROR_NAMES = new Set(['TimeoutError', 'AbortError']);
 const NETWORK_ERROR_CODES = new Set([
@@ -28,7 +33,11 @@ export function isRetryableModelError(error: unknown, depth = 0): boolean {
 
     const statusCode = readStatusCode(error);
     if (statusCode !== null) {
-        return statusCode === 429 || (statusCode >= 500 && statusCode <= 599);
+        return (
+            statusCode === 429 ||
+            MODEL_UNAVAILABLE_STATUS.has(statusCode) ||
+            (statusCode >= 500 && statusCode <= 599)
+        );
     }
 
     const name = (error as { name?: unknown }).name;

@@ -57,7 +57,7 @@ lib/
 
 features/
   analytics/             -> Shared limits/activity, client delta state, server session logic
-  chat/                  -> AI chat: env, schema, models + fallback, tools, prompt/profile, moderation
+  chat/                  -> AI chat: env, schema, models + fallback, records, prompt/profile, moderation
   admin/analytics/       -> Authenticated reporting DTOs and server RPC queries
 
 public/
@@ -88,8 +88,8 @@ public/
 
 ### Chat Safety Boundary
 - `/api/chat` is the only way the "Ask" assistant reaches a model. It checks, in order: the `CHAT_ENABLED` kill switch and Zod env validation, same-origin, a 24 KB body cap, hashed-IP Upstash limits, a strict Zod body (≤10 text messages, user ≤1,000 chars), then moderation. Errors are generic `{ code, message }` with no provider, model or stack details.
-- `features/chat/respond.ts` is the only AI SDK importer. The fallback chain (Groq gpt-oss-120b → Groq qwen3.8-27b → Cloudflare llama-3.3-70b) moves on only for 429/5xx/timeout before any answer text. Per-model token budgets and reasoning options live in `features/chat/models.ts`; reasoning tokens count against `maxOutputTokens`, and the Groq project caps Qwen at 1,000 output tokens per minute.
-- Tools are argument-free reads over the existing cached public queries, which use the publishable key, RLS and published rows only. Never give the chat `lib/supabase/system.ts`, `SUPABASE_SECRET_KEY`, writes, RPCs or free-form queries.
+- `features/chat/respond.ts` is the only AI SDK importer. The fallback chain (Groq gpt-oss-120b → Groq qwen3.8-27b → Cloudflare llama-3.3-70b) moves on only for 429, 403/404 (model not enabled), 5xx or timeout before any answer text. Per-model token budgets and reasoning options live in `features/chat/models.ts`; reasoning tokens count against `maxOutputTokens`, and the Groq project caps Qwen at 1,000 output tokens per minute. A length-stopped answer ends with a "cut short" note.
+- No tools: `features/chat/records.ts` injects the complete published projects, experience and certificates into every request (existing cached public queries: publishable key, RLS, published rows only), so backup models cannot skip a lookup and invent records. "Jump to" sections are matched server-side against real record titles and sent as a `data-sections` part. Never give the chat `lib/supabase/system.ts`, `SUPABASE_SECRET_KEY`, writes, RPCs or free-form queries.
 - Moderation is an EN/TL/CEB blocklist, then crisis phrases, then a gpt-oss-20b classifier. If the classifier fails, only short, clean messages pass. Crisis replies are supportive and name no hotlines.
 - Model output is redacted by `lib/security/chatOutputFilter.ts` and rendered as plain text with allow-listed links only.
 - Chats are never stored, and the overlay says so.
