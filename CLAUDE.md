@@ -94,7 +94,7 @@ public/
 - Model output is redacted by `lib/security/chatOutputFilter.ts` and rendered as plain text with allow-listed links only.
 - Chats are never stored, and the overlay says so.
 - The assistant is named **Nero** and is always labelled as an AI: overlay label "Nero — AI assistant", subline "Nero is an AI chatbot…", a square "Ask · AI" button in the mobile navbar bar (not in the dropdown), button name "Ask Nero, AI assistant". The prompt forbids claiming to be Jude or a human. The navbar keeps "Ask"; its hover tooltip (`components/chat/AskNavButton.tsx`, rules in `askHint.ts`) shows immediately on hover or keyboard focus, then rests for 20 minutes and comes back until the visitor has opened the chat once; never on touch. Only a timestamp and a "used" flag are kept in `localStorage`, all access guarded.
-- The system prompt (`features/chat/prompt.ts`) and profile (`features/chat/profile.ts`) stay server-only. Keep `profile.ts` in sync with the About/What I Do copy.
+- The system prompt (`features/chat/prompt.ts`) and profile (`features/chat/profile.ts`) stay server-only. Keep `profile.ts` in sync with the About/What I Do copy; its `PERSONAL` facts (hobbies, base) are chat-only details Jude supplied, and the age is computed per request from `BIRTH_DATE` in Asia/Manila time. Only the age reaches the model, never the birth date.
 
 ### Analytics Safety Boundary
 - `app/(public)/layout.tsx` mounts three client entry points: `AnalyticsSessionBootstrap` detects throttled interaction and requests or refreshes anonymous cookies, `AnalyticsEngagementTracker` observes only marked sections, and `AnalyticsEngagementBatcher` snapshots and sends deltas approximately every 30 seconds.

@@ -66,6 +66,24 @@ describe('detectAnswerSections', () => {
     expect(detectAnswerSections('He works with React, Laravel and PostgreSQL.', records)).toEqual(['techstack']);
   });
 
+  it('adds Contact when the answer gives his contact details or points to the Contact section', () => {
+    expect(
+      detectAnswerSections(
+        'GitHub: https://github.com/JudemichaelArriba\nEmail: arribajudemichael@gmail.com\nOr use the Contact form on this site.',
+        records,
+      ),
+    ).toEqual(['contact']);
+    expect(detectAnswerSections("That isn't listed; you can ask him through the Contact section.", records)).toEqual([
+      'contact',
+    ]);
+  });
+
+  it('does not add Contact for a project repository link', () => {
+    expect(
+      detectAnswerSections('He built the Admission System: https://github.com/JudemichaelArriba/admission-web', records),
+    ).toEqual(['projects']);
+  });
+
   it('ignores invented records', () => {
     expect(detectAnswerSections('He built Kasalo and a Rust portfolio.', records)).toEqual([]);
   });

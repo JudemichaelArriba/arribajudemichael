@@ -325,11 +325,16 @@ export default function AskOverlay({ isOpen, onClose, onClosed }: AskOverlayProp
                 timeline.fromTo(rule, { scaleX: 0 }, { scaleX: 1, transformOrigin: 'left center', duration: 0.7, ease: 'expo.out' }, 0.95);
             }
             rise(select('[data-ask-subline]'), 0.6, { duration: 0.6 });
+            // The privacy note follows the rule; in the conversation view it rides with the dock.
+            rise(select('[data-ask-note]').filter((note) => !note.closest('[data-ask-dock]')), 1.0, { duration: 0.6 });
+            rise(select('[data-ask-starters-label]'), 1.05, { duration: 0.5 });
             rise(select('[data-ask-chip]'), 1.1, { y: 0, duration: 0.5, ease: 'power3.out', stagger: 0.07 });
 
             // Conversation view: only the last few turns are near the viewport, so only they move.
             rise(select('[data-ask-turn]').slice(-3), 0.3, { stagger: 0.08 });
             rise(select('[data-ask-dock]'), 0.45);
+
+            rise(select('[data-ask-footer]'), headline.length ? 1.25 : 0.55, { duration: 0.6 });
 
             timelineRef.current = timeline;
         },
@@ -502,7 +507,7 @@ export default function AskOverlay({ isOpen, onClose, onClosed }: AskOverlayProp
 
     // Sits right under whichever input is showing: the privacy notice, plus a counter near the limit.
     const inputNote = (
-        <div className="mt-2.5 flex items-start justify-between gap-4 font-mono text-[9px] uppercase tracking-[0.12em] text-[var(--faint)] md:text-[10px]">
+        <div data-ask-note className="mt-2.5 flex items-start justify-between gap-4 font-mono text-[9px] uppercase tracking-[0.12em] text-[var(--faint)] md:text-[10px]">
             <span>Don&apos;t share sensitive personal information &middot; Chats aren&apos;t stored</span>
             {draft.length >= COUNTER_THRESHOLD ? (
                 <span className="shrink-0 tabular-nums">
@@ -687,7 +692,7 @@ export default function AskOverlay({ isOpen, onClose, onClosed }: AskOverlayProp
                         </form>
 
                         <div className="mt-7 [@media(min-height:720px)]:mt-12">
-                            <p className="mb-4 font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--faint)]">Or start with</p>
+                            <p data-ask-starters-label className="mb-4 font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--faint)]">Or start with</p>
                             <ul className="flex max-w-[56rem] flex-col gap-2 sm:flex-row sm:flex-wrap sm:gap-2.5">
                                 {STARTERS.map((starter, index) => (
                                     <li key={starter} data-ask-chip>
@@ -714,7 +719,7 @@ export default function AskOverlay({ isOpen, onClose, onClosed }: AskOverlayProp
                     </div>
                 )}
 
-                <div className="mx-auto w-full max-w-[82rem] px-5 pb-4 md:px-8 md:pb-6 lg:px-[6.5rem]">
+                <div data-ask-footer className="mx-auto w-full max-w-[82rem] px-5 pb-4 md:px-8 md:pb-6 lg:px-[6.5rem]">
                     <div className="mt-4 flex items-center justify-center gap-6 border-t border-[var(--hairline)] pt-3.5 font-mono text-[9px] uppercase tracking-[0.12em] text-[var(--faint)] md:mt-5 md:justify-between md:pt-4 md:text-[10px]">
                         <span className="hidden shrink-0 items-center gap-5 whitespace-nowrap md:flex">
                             <span><kbd className="mr-1.5 border border-[var(--hairline-strong)] px-1.5 py-0.5 font-mono text-[var(--text)]">↵</kbd>Send</span>

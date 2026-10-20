@@ -1,6 +1,6 @@
 import 'server-only';
 
-import type { SiteSectionId } from '@/lib/site';
+import { CONTACT_CHANNELS, type SiteSectionId } from '@/lib/site';
 import { TECH_CATEGORIES } from '@/lib/techStack';
 import {
     listCertificatesForChat,
@@ -86,6 +86,16 @@ function mentions(text: string, phrase: string): boolean {
 const TECH_NAMES = TECH_CATEGORIES.flatMap((category) => category.technologies.map((tech) => tech.name));
 const TECH_MENTIONS_FOR_SECTION = 3;
 
+// Ways an answer sends a visitor to Jude: his email or LinkedIn, or the Contact section/form.
+// GitHub does not count on its own, since project answers link to repositories there.
+const CONTACT_MENTIONS = [
+    ...CONTACT_CHANNELS.filter((channel) => channel.id !== 'github').map((channel) =>
+        channel.href.replace(/^mailto:/, ''),
+    ),
+    'Contact section',
+    'Contact form',
+];
+
 /**
  * Which site sections an answer actually talks about, for the "Jump to" buttons. Deterministic:
  * a section counts only when the answer names one of its real records (or several technologies).
@@ -105,6 +115,9 @@ export function detectAnswerSections(answer: string, records: PortfolioRecords):
         items(records.certificates).some((certificate) => mentions(answer, certificate.title))
     ) {
         sections.add('projects');
+    }
+    if (CONTACT_MENTIONS.some((phrase) => mentions(answer, phrase))) {
+        sections.add('contact');
     }
 
     return [...sections];
