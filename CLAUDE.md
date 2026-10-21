@@ -36,8 +36,8 @@ components/
     WhatIDo/             -> WhatIDo.tsx (Tailwind CSS only)
     AboutMe/             -> AboutSection.tsx (server) -> AboutMe.tsx (statement + tags) + GitHubActivity.tsx (contribution calendar)
     Experience/          -> Experience.tsx (minimal stacked list + replayable GSAP)
-    TechStack/           -> TechStack.tsx (unframed icon/name lists + reversible scrubbed GSAP)
-    Projects/            -> Projects.tsx (dynamic Supabase projects/certificates showcase)
+    TechStack/           -> TechStack.tsx + keyboard/ (R3F 3D keyboard: layout/palette/build/controller/KeyboardCanvas)
+    Projects/            -> Projects.tsx (Direction B spreads; Projects/Certificates tabs; desktop pinned stack)
     Contact/             -> Contact.tsx (static form + replayable GSAP reveal)
   ui/                    -> Reusable UI (Button, RollingText, ScrollFloat, Bento, PDF preview, navigation styles)
     CertificatePdfPreview/ -> Lazy PDF.js first-page canvas renderer
@@ -84,6 +84,11 @@ public/
 - **Local PDF.js runtime** - `pdfjs-dist` worker and WASM assets are synchronized into ignored `public/vendor/pdfjs/` before `dev` and `build`. Never add CDN workers or duplicate preview images.
 - **Shared site configuration** - `lib/site.ts` owns navigation and contact destinations used by Navbar, Contact, and Footer.
 - **Contact messages are never stored** - `/api/contact` validates, rate-limits, checks bans and Turnstile, then `features/contact/email.ts` emails the message straight to the owner via Resend (`RESEND_API_KEY`, `NOTIFICATION_EMAIL`, `NOTIFICATION_FROM_EMAIL`, server-only). The site tells visitors their message "isn't stored on this site" — do not reintroduce a messages table or persist submissions without changing that notice.
+- **3D keyboard (Tech Stack)** - `@react-three/fiber` renders the board on demand (`frameloop="demand"`), lazy-loaded (`next/dynamic`, ssr:false) only after the preloader, near the viewport, on idle. All three.js mutation lives in `keyboard/controller.ts` (React only wires it). Theme switches recolour in place (`setTheme`), never rebuild. Shadows redraw only when the board moves. Dark page → white board, light page → black board. Physical keys are mirrored only while the section is visible and never inside fields/dialogs (`shouldMirrorKey`); nothing typed is stored or sent, and keys are never `preventDefault`ed.
+- **No-WebGL safety** - `KeyboardCanvas` checks WebGL once and wraps the R3F `Canvas` in an error boundary; without WebGL the board is dropped (`onUnavailable`) and the tool chips update the readout directly. A renderer failure must never take the page down.
+- **Showcase frames** - every Projects/Certificates spread uses one `FRAME_RATIO` (16:9) with the visual fitted inside (`object-contain`, PDF `paper={false}`), so boxes match across tabs and loading never shifts layout. A tab switch re-measures only Projects and the triggers after it, never a full `ScrollTrigger.refresh()`. PDF previews paint one at a time in idle moments.
+- **Phone reveals** - where content stacks (phones/tablets), scrubbed reveals trigger on each element itself (frame, copy, panel, field), never on a section top, so they play while on screen.
+- **Scroll animations** - each section uses `gsap.matchMedia` + scrubbed ScrollTrigger timelines. When passing a conditions object, include an always-true key (`any: 'all'`), otherwise the callback never runs when no condition matches. Streamed sections (Experience, Projects) call `ScrollTrigger.sort()` before `refresh()`. Never put a form behind a scrubbed reveal (Contact's form reveals once). Don't add per-cell/per-item tweens for large lists; drive them with one CSS variable (About calendar `--reveal`).
 - **GitHub contributions are server-only** - `features/github/contributions.ts` queries GitHub's GraphQL API for `GITHUB_USERNAME` (`lib/site.ts`) with the server-only `GITHUB_CONTRIBUTIONS_TOKEN` (fine-grained, public read-only, no permissions), strictly validates the calendar, and caches it for a day with `unstable_cache` (failures throw so they are never cached). It never throws to callers: a missing token or GitHub failure returns `null` and the About calendar is simply hidden. Only the serialized DTO reaches `GitHubActivity`; never pass the token or call GitHub from client code.
 
 ### Chat Safety Boundary

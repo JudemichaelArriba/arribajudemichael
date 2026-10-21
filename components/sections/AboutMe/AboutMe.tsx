@@ -5,7 +5,6 @@ import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import type { GitHubContributionsDto } from '@/features/github/types';
-import { rearmOnExitBelow } from '@/lib/animations/rearmOnExitBelow';
 import GitHubActivity from './GitHubActivity';
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
@@ -29,102 +28,79 @@ export default function AboutMe({ contributions }: AboutMeProps) {
     const introRef = useRef<HTMLParagraphElement>(null);
     const proofListRef = useRef<HTMLUListElement>(null);
 
+    // Scrubbed: the intro rises as the section enters, then a second pass fills the GitHub
+    // calendar column by column while its numbers count up.
     useGSAP(
         () => {
             const section = sectionRef.current;
-            if (!section) return;
+            const heading = headingRef.current;
+            if (!section || !heading) return;
 
-            const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-            const copyCandidates: Array<HTMLElement | null> = [
-                sectionHeaderRef.current,
-                headingRef.current,
-                introRef.current,
-            ];
-            const copyTargets = copyCandidates.filter(
-                (target): target is HTMLElement => target !== null
-            );
-            const headerLines = gsap.utils.toArray<HTMLElement>('[data-about-line]', sectionHeaderRef.current ?? undefined);
-            const proofTargets = gsap.utils.toArray<HTMLElement>('[data-about-proof]', proofListRef.current ?? undefined);
-            const activityTargets = gsap.utils.toArray<HTMLElement>('[data-about-activity]', section);
+            const mm = gsap.matchMedia();
+            mm.add('(prefers-reduced-motion: no-preference)', () => {
+                gsap.timeline({
+                    defaults: { ease: 'none' },
+                    scrollTrigger: { trigger: section, start: 'top 85%', end: 'top 20%', scrub: 0.6, invalidateOnRefresh: true },
+                })
+                    .fromTo(gsap.utils.toArray<HTMLElement>('[data-about-line]', sectionHeaderRef.current ?? undefined), { scaleX: 0 }, { scaleX: 1, transformOrigin: 'left center', duration: 0.3 }, 0)
+                    .fromTo(heading, { autoAlpha: 0, y: 48 }, { autoAlpha: 1, y: 0, ease: 'power3.out', duration: 0.5 }, 0.05)
+                    .fromTo(introRef.current, { autoAlpha: 0, y: 24 }, { autoAlpha: 1, y: 0, duration: 0.4 }, 0.25)
+                    .fromTo(gsap.utils.toArray<HTMLElement>('[data-about-proof]', proofListRef.current ?? undefined), { autoAlpha: 0, scale: 0.7 }, { autoAlpha: 1, scale: 1, ease: 'back.out(2)', duration: 0.3, stagger: 0.08 }, 0.5);
 
-            if (prefersReducedMotion) {
-                gsap.set([...copyTargets, ...proofTargets, ...activityTargets], {
-                    autoAlpha: 1,
-                    y: 0,
-                    clearProps: 'transform,opacity,visibility,willChange',
+                const blocks = gsap.utils.toArray<HTMLElement>('[data-about-activity]', section);
+                const activity = blocks[0]?.parentElement;
+                if (!activity) return;
+
+                // Finishes while the whole block is in view: as its bottom reaches the fold, or, when it
+                // is taller than the screen, once its top has risen near the top.
+                const calendar = gsap.timeline({
+                    defaults: { ease: 'none' },
+                    scrollTrigger: {
+                        trigger: activity,
+                        start: 'top 85%',
+                        end: () => (activity.offsetHeight <= window.innerHeight * 0.85 ? 'bottom 95%' : 'top 10%'),
+                        scrub: 0.6,
+                        invalidateOnRefresh: true,
+                    },
                 });
-                gsap.set(headerLines, { scaleX: 1, clearProps: 'transform' });
-                return;
-            }
+                calendar.fromTo(blocks[0], { autoAlpha: 0, y: 24 }, { autoAlpha: 1, y: 0, duration: 0.15 }, 0);
 
-            const setInitialState = () => {
-                gsap.set(copyTargets, { autoAlpha: 0, y: 14 });
-                gsap.set(headerLines, { scaleX: 0, transformOrigin: 'left center' });
-                gsap.set(proofTargets, { autoAlpha: 0, y: 12 });
-                gsap.set(activityTargets, { autoAlpha: 0, y: 18 });
-            };
+                // One CSS variable drives every cell (see GitHubActivity): cheap to scrub and to refresh.
+                const grid = activity.querySelector<HTMLElement>('[data-calendar-grid]');
+                if (grid) {
+                    const weeks = getComputedStyle(grid).gridTemplateColumns.split(' ').length || 53;
+                    const reveal = { value: 0 };
+                    calendar.fromTo(reveal, { value: 0 }, {
+                        value: weeks + 1,
+                        duration: 0.75,
+                        onUpdate: () => grid.style.setProperty('--reveal', reveal.value.toFixed(2)),
+                    }, 0.1);
+                }
 
-            setInitialState();
+                // Count-ups write only the number's own text node and always end on the real value.
+                gsap.utils.toArray<HTMLElement>('[data-count-to]', activity).forEach((el) => {
+                    const target = Number(el.dataset.countTo);
+                    const node = el.firstChild;
+                    if (!Number.isFinite(target) || !node) return;
+                    const final = node.nodeValue;
+                    const counter = { value: 0 };
+                    calendar.fromTo(counter, { value: 0 }, {
+                        value: 1,
+                        duration: 0.75,
+                        onUpdate: () => {
+                            node.nodeValue = counter.value >= 1 ? final : Math.round(target * counter.value).toLocaleString('en-US');
+                        },
+                    }, 0.1);
+                });
 
-            const timeline = gsap.timeline({
-                paused: true,
-                defaults: { overwrite: 'auto', force3D: true },
-            });
+                calendar.fromTo(blocks.slice(2), { autoAlpha: 0, y: 16 }, { autoAlpha: 1, y: 0, duration: 0.15, stagger: 0.05 }, 0.8);
+                // On breakpoint change / unmount, show the whole calendar again.
+                return () => grid?.style.removeProperty('--reveal');
+            }, section);
 
-            timeline
-                .to(copyTargets, {
-                    autoAlpha: 1,
-                    y: 0,
-                    duration: 0.6,
-                    ease: 'power3.out',
-                    stagger: 0.08,
-                }, 0)
-                .to(headerLines, {
-                    scaleX: 1,
-                    duration: 0.75,
-                    ease: 'power3.out',
-                }, 0.08)
-                .to(proofTargets, {
-                    autoAlpha: 1,
-                    y: 0,
-                    duration: 0.5,
-                    ease: 'power3.out',
-                    stagger: 0.07,
-                }, 0.3)
-                .to(activityTargets, {
-                    autoAlpha: 1,
-                    y: 0,
-                    duration: 0.58,
-                    ease: 'power3.out',
-                    stagger: 0.08,
-                }, 0.36);
-
-            const resetReveal = () => {
-                timeline.pause(0, true);
-                setInitialState();
-            };
-
-            const trigger = ScrollTrigger.create({
-                trigger: section,
-                start: 'top 86%',
-                end: 'bottom top',
-                invalidateOnRefresh: true,
-                onEnter: () => {
-                    setInitialState();
-                    timeline.restart(true);
-                },
-                onLeaveBack: resetReveal,
-            });
-
-            const disconnectRearm = rearmOnExitBelow(section, resetReveal);
-
-            return () => {
-                disconnectRearm();
-                trigger.kill(false);
-                timeline.kill();
-            };
+            return () => mm.revert();
         },
-        { scope: sectionRef, dependencies: [contributions] }
+        { scope: sectionRef }
     );
 
     return (

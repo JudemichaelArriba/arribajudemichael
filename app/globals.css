@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+/* Desktop-width screens that are short (laptops at 100% zoom, e.g. 1366×630, 1536×730):
+   pinned sections switch to a compact layout so they always fit one screen. */
+@custom-variant short (@media (min-width: 1024px) and (max-height: 820px));
+
 @theme {
   /* Ask assistant: each newly revealed word fades in instead of popping. Opacity only, so it
      stays on the compositor however many words are mid-fade. */

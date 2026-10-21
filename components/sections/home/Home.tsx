@@ -50,6 +50,8 @@ export default function Home() {
     const marqueeRef = useRef<HTMLDivElement>(null);
     const marqueeTrackRef = useRef<HTMLDivElement>(null);
     const marqueeTweenRef = useRef<gsap.core.Tween | null>(null);
+    const gridRef = useRef<HTMLDivElement>(null);
+    const portraitWrapRef = useRef<HTMLDivElement>(null);
     const isReady = usePreloaderReady();
     const { theme } = useTheme();
 
@@ -146,13 +148,47 @@ export default function Home() {
         { scope: sectionRef, dependencies: [isReady] }
     );
 
+    // Scroll exit (pinned, scrubbed). It moves the words in px and the portrait's outer wrapper,
+    // so it composes with the intro (yPercent / clip-path) instead of fighting it.
+    useGSAP(
+        () => {
+            const section = sectionRef.current;
+            const heading = headingRef.current;
+            const portrait = portraitWrapRef.current;
+            const grid = gridRef.current;
+            if (!section || !heading || !portrait || !grid) return;
+
+            const mm = gsap.matchMedia();
+            mm.add('(prefers-reduced-motion: no-preference)', () => {
+                const words = gsap.utils.toArray<HTMLElement>('[data-hero-word]', heading);
+                gsap.timeline({
+                    defaults: { ease: 'none' },
+                    scrollTrigger: {
+                        trigger: section,
+                        start: 'top top',
+                        end: () => `+=${Math.max(window.innerHeight * 0.8, 640)}`,
+                        pin: true,
+                        scrub: 0.6,
+                        invalidateOnRefresh: true,
+                    },
+                })
+                    .fromTo(words, { y: 0 }, { y: (_: number, word: HTMLElement) => word.offsetHeight * 1.15, ease: 'power2.in', duration: 0.45, stagger: 0.07 }, 0.1)
+                    .fromTo(portrait, { y: 0, scale: 1, autoAlpha: 1 }, { y: -40, scale: 0.92, autoAlpha: 0.15, transformOrigin: '50% 100%', duration: 0.8 }, 0.15)
+                    .fromTo(grid, { autoAlpha: 0.7 }, { autoAlpha: 0, duration: 0.5 }, 0)
+                    .to({}, { duration: 0.05 }, 0.95);
+            }, section);
+            return () => mm.revert();
+        },
+        { scope: sectionRef }
+    );
+
     return (
         <section
             id="home"
             ref={sectionRef}
             className="relative isolate min-h-svh w-full overflow-hidden"
         >
-            <div aria-hidden="true" className="absolute inset-0 z-0 opacity-70">
+            <div ref={gridRef} aria-hidden="true" className="absolute inset-0 z-0 opacity-70">
                 <CursorGrid
                     color={GRID_COLOR[theme]}
                     cellSize={64}
@@ -187,7 +223,7 @@ export default function Home() {
                 inherited through percentage parents, which was leaving the figure
                 short of its box; `max-w` shrinks it proportionally on narrow
                 screens so nothing is ever clipped. */}
-            <div className="pointer-events-none absolute inset-x-0 bottom-14 z-10 flex justify-center">
+            <div ref={portraitWrapRef} className="pointer-events-none absolute inset-x-0 bottom-14 z-10 flex justify-center">
                 <div ref={portraitMaskRef} className="overflow-hidden">
                     <div ref={portraitInnerRef}>
                         <Image

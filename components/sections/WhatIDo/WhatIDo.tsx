@@ -43,137 +43,42 @@ export default function WhatIDo({ sentence = DEFAULT_SENTENCE }: WhatIDoProps) {
     const headerRef = useRef<HTMLDivElement>(null);
     const capabilityListRef = useRef<HTMLUListElement>(null);
 
+    // Scrubbed with the scroll: the statement inks in word by word as it is read. Pinned on
+    // desktop, played in place on phones. Opacity (not colour) keeps the theme switch safe.
     useGSAP(
         () => {
             const section = sectionRef.current;
             const header = headerRef.current;
             const statement = section?.querySelector<HTMLElement>('.statement');
-            const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            if (!section || !header || !statement) return;
 
-            if (!section || !header || !statement || prefersReducedMotion) return;
+            const mm = gsap.matchMedia();
+            mm.add(
+                { desktop: '(min-width: 1024px) and (min-height: 560px)', motion: '(prefers-reduced-motion: no-preference)' },
+                (context) => {
+                    const { desktop, motion } = context.conditions as { desktop: boolean; motion: boolean };
+                    if (!motion) return;
 
-            const headerLines = gsap.utils.toArray<HTMLElement>('[data-what-line]', header);
-            const statementWords = gsap.utils.toArray<HTMLElement>('.statement-word', statement);
-            const capabilityItems = gsap.utils.toArray<HTMLElement>(
-                '[data-what-capability]',
-                capabilityListRef.current ?? undefined
+                    const words = gsap.utils.toArray<HTMLElement>('.statement-word', statement);
+                    const capabilities = gsap.utils.toArray<HTMLElement>('[data-what-capability]', capabilityListRef.current ?? undefined);
+                    gsap.timeline({
+                        defaults: { ease: 'none' },
+                        scrollTrigger: {
+                            trigger: section,
+                            start: desktop ? 'top top' : 'top 70%',
+                            end: desktop ? () => `+=${Math.max(window.innerHeight, 800)}` : 'bottom 80%',
+                            pin: desktop,
+                            scrub: 0.6,
+                            invalidateOnRefresh: true,
+                        },
+                    })
+                        .fromTo(gsap.utils.toArray<HTMLElement>('[data-what-line]', header), { scaleX: 0 }, { scaleX: 1, transformOrigin: 'left center', duration: 0.15 }, 0)
+                        .fromTo(words, { autoAlpha: 0.12 }, { autoAlpha: 1, duration: 0.06, stagger: 0.55 / Math.max(1, words.length) }, 0.05)
+                        .fromTo(capabilities, { autoAlpha: 0, y: 26 }, { autoAlpha: 1, y: 0, ease: 'power3.out', duration: 0.18, stagger: 0.06 }, 0.66);
+                },
+                section,
             );
-            let isSectionArmed = true;
-
-            const setInitialState = () => {
-                gsap.set(header, { autoAlpha: 0, y: 10 });
-                gsap.set(headerLines, { scaleX: 0, transformOrigin: 'left center' });
-                gsap.set(capabilityItems, { autoAlpha: 0, y: 14 });
-            };
-
-            const setStatementInitialState = () => {
-                gsap.set(statementWords, {
-                    autoAlpha: 0,
-                    y: 20,
-                    willChange: 'transform, opacity',
-                });
-            };
-
-            setInitialState();
-            setStatementInitialState();
-
-            const timeline = gsap.timeline({
-                paused: true,
-                defaults: { overwrite: 'auto', force3D: true },
-            });
-
-            timeline
-                .to(header, {
-                    autoAlpha: 1,
-                    y: 0,
-                    duration: 0.56,
-                    ease: 'power3.out',
-                }, 0)
-                .to(headerLines, {
-                    scaleX: 1,
-                    duration: 0.7,
-                    ease: 'power3.out',
-                    stagger: 0.04,
-                }, 0.08)
-                .to(capabilityItems, {
-                    autoAlpha: 1,
-                    y: 0,
-                    duration: 0.52,
-                    ease: 'power3.out',
-                    stagger: 0.07,
-                }, 0.3);
-
-            const statementTimeline = gsap.timeline({
-                paused: true,
-                defaults: { overwrite: 'auto', force3D: true },
-            });
-
-            statementTimeline.to(statementWords, {
-                autoAlpha: 1,
-                y: 0,
-                duration: 0.64,
-                ease: 'power3.out',
-                stagger: {
-                    each: 0.024,
-                    from: 'start',
-                },
-                clearProps: 'transform,opacity,visibility,willChange',
-            });
-
-            const resetReveal = () => {
-                timeline.pause(0, true);
-                isSectionArmed = true;
-                setInitialState();
-            };
-
-            const resetStatementReveal = () => {
-                statementTimeline.pause(0, true);
-                setStatementInitialState();
-            };
-
-            const playStatementReveal = () => {
-                resetStatementReveal();
-                statementTimeline.restart(true);
-            };
-
-            const trigger = ScrollTrigger.create({
-                trigger: section,
-                start: 'top 88%',
-                end: 'bottom top',
-                onEnter: () => {
-                    if (!isSectionArmed) return;
-                    isSectionArmed = false;
-                    setInitialState();
-                    timeline.restart(true);
-                },
-            });
-
-            const statementTrigger = ScrollTrigger.create({
-                trigger: statement,
-                start: 'top 96%',
-                end: 'bottom top',
-                invalidateOnRefresh: true,
-                onEnter: playStatementReveal,
-                onLeaveBack: resetStatementReveal,
-            });
-
-            const resetObserver = new IntersectionObserver(
-                ([entry]) => {
-                    if (!entry.isIntersecting && entry.boundingClientRect.top >= window.innerHeight - 16) {
-                        resetReveal();
-                    }
-                },
-                { rootMargin: '0px 0px -16px 0px', threshold: 0 }
-            );
-            resetObserver.observe(section);
-
-            return () => {
-                resetObserver.disconnect();
-                trigger.kill(false);
-                statementTrigger.kill(false);
-                timeline.kill();
-                statementTimeline.kill();
-            };
+            return () => mm.revert();
         },
         { scope: sectionRef }
     );

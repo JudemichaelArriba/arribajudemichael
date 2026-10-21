@@ -1,6 +1,7 @@
 'use client';
 
 import {
+    Fragment,
     useCallback,
     useRef,
     useState,
@@ -26,7 +27,9 @@ import {
     type ContactChannel,
     type ContactChannelId,
 } from '@/lib/site';
-import { rearmOnExitBelow } from '@/lib/animations/rearmOnExitBelow';
+
+/** Split so the scroll animation can raise the heading word by word. */
+const CONTACT_HEADING_WORDS = ["Let's", 'build', 'something', 'reliable.'] as const;
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
@@ -149,123 +152,80 @@ export default function Contact() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [turnstileResetKey, setTurnstileResetKey] = useState(0);
 
+    // Scroll animation page: everything is scrubbed with the scroll — heading word by word, intro and
+    // channels, then the message panel, its fields and the Send button. Side by side (desktop) both
+    // columns follow the section; stacked (phones, tablets) the form sits a screen or more below the
+    // heading, so each part follows itself and plays while it is actually on screen. Safety: the
+    // moment a field is focused (typing, autofill, keyboard), the form snaps to fully shown and stops
+    // following the scroll.
     useGSAP(
         () => {
             const section = sectionRef.current;
             if (!section) return;
-
-            const heading = section.querySelector<HTMLElement>('.contact-heading');
-            const intro = section.querySelector<HTMLElement>('.contact-intro');
-            const formPanel = section.querySelector<HTMLElement>('.contact-form-panel');
-            const lines = gsap.utils.toArray<HTMLElement>('[data-contact-line]', section);
-            const channels = gsap.utils.toArray<HTMLElement>('.contact-channel', section);
-            const fields = gsap.utils.toArray<HTMLElement>('[data-contact-field]', section);
-            const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-            const revealTargets = [heading, intro, formPanel].filter(
-                (target): target is HTMLElement => target !== null
-            );
             const refreshFrame = window.requestAnimationFrame(() => ScrollTrigger.refresh());
 
-            if (prefersReducedMotion) {
-                gsap.set([...revealTargets, ...lines, ...channels, ...fields], {
-                    autoAlpha: 1,
-                    x: 0,
-                    y: 0,
-                    scaleX: 1,
-                    clearProps: 'transform,opacity,visibility,willChange',
-                });
-                return () => window.cancelAnimationFrame(refreshFrame);
-            }
+            const mm = gsap.matchMedia();
+            mm.add(
+                // `any` always matches: matchMedia only runs the callback when at least one condition does.
+                { any: 'all', wide: '(min-width: 1024px)', reduce: '(prefers-reduced-motion: reduce)' },
+                (context) => {
+                    const { wide, reduce } = context.conditions as { wide: boolean; reduce: boolean };
+                    if (reduce) return;
+                    const scrubbed = (trigger: Element, start: string, end: string) => gsap.timeline({
+                        defaults: { ease: 'none' },
+                        scrollTrigger: { trigger, start, end, scrub: 0.6, invalidateOnRefresh: true },
+                    });
+                    const intro = section.querySelector('.contact-intro') ?? section;
+                    const channels = section.querySelector('.contact-channel')?.parentElement ?? section;
 
-            const setInitialState = () => {
-                gsap.set(heading, { autoAlpha: 0, y: 14 });
-                gsap.set(intro, { autoAlpha: 0, y: 20 });
-                gsap.set(channels, { autoAlpha: 0, x: -16, y: 8 });
-                gsap.set(formPanel, { autoAlpha: 0, y: 26 });
-                gsap.set(fields, { autoAlpha: 0, y: 14 });
-                gsap.set(lines, { scaleX: 0, transformOrigin: 'left center' });
-            };
+                    const heading = wide ? scrubbed(section, 'top 80%', 'top 5%') : scrubbed(intro, 'top 90%', 'top 35%');
+                    heading
+                        .fromTo('[data-contact-line]', { scaleX: 0 }, { scaleX: 1, transformOrigin: 'left center', duration: 0.25 }, 0)
+                        .fromTo('[data-contact-word]', { yPercent: 110 }, { yPercent: 0, ease: 'power3.out', duration: 0.3, stagger: 0.05 }, 0.05)
+                        .fromTo('.contact-intro p', { autoAlpha: 0, y: 18 }, { autoAlpha: 1, y: 0, duration: 0.25, stagger: 0.08 }, 0.25);
+                    (wide ? heading : scrubbed(channels, 'top 92%', 'top 60%'))
+                        .fromTo('.contact-channel', { autoAlpha: 0, x: -24 }, { autoAlpha: 1, x: 0, ease: 'power2.out', duration: 0.2, stagger: 0.06 }, wide ? 0.35 : 0);
 
-            setInitialState();
+                    const panel = section.querySelector<HTMLElement>('.contact-form-panel');
+                    if (!panel) return;
+                    const button = panel.querySelector<HTMLElement>('button[type="submit"]');
+                    const fields = gsap.utils.toArray<HTMLElement>('[data-contact-field]', panel);
+                    const panelFrom = { autoAlpha: 0, y: 60 };
+                    const panelTo = { autoAlpha: 1, y: 0, ease: 'power3.out', duration: 0.35 };
+                    const fieldFrom = { autoAlpha: 0, y: 16 };
+                    const fieldTo = { autoAlpha: 1, y: 0, duration: 0.18 };
+                    const buttonFrom = { clipPath: 'inset(0% 100% 0% 0%)' };
+                    const buttonTo = { clipPath: 'inset(0% 0% 0% 0%)', ease: 'power2.inOut', duration: 0.25 };
+                    const form: gsap.core.Timeline[] = [];
 
-            const timeline = gsap.timeline({
-                paused: true,
-                defaults: { overwrite: 'auto', force3D: true },
-            });
+                    if (wide) {
+                        const timeline = scrubbed(section, 'top 80%', 'top 5%')
+                            .fromTo(panel, panelFrom, panelTo, 0.2)
+                            .fromTo(fields, fieldFrom, { ...fieldTo, stagger: 0.06 }, 0.42);
+                        if (button) timeline.fromTo(button, buttonFrom, buttonTo, 0.72);
+                        timeline.to({}, { duration: 0.03 }, 0.97);
+                        form.push(timeline);
+                    } else {
+                        form.push(scrubbed(panel, 'top 92%', 'top 55%').fromTo(panel, panelFrom, panelTo));
+                        fields.forEach((field) => form.push(scrubbed(field, 'top 95%', 'top 75%').fromTo(field, fieldFrom, fieldTo)));
+                        if (button) form.push(scrubbed(button, 'top 95%', 'top 70%').fromTo(button, buttonFrom, buttonTo));
+                    }
 
-            timeline
-                .to(heading, {
-                    autoAlpha: 1,
-                    y: 0,
-                    duration: 0.56,
-                    ease: 'power3.out',
-                    clearProps: 'transform,opacity,visibility,willChange',
-                }, 0)
-                .to(lines, {
-                    scaleX: 1,
-                    duration: 0.68,
-                    ease: 'power3.out',
-                    stagger: 0.04,
-                    clearProps: 'transform,willChange',
-                }, 0.06)
-                .to(intro, {
-                    autoAlpha: 1,
-                    y: 0,
-                    duration: 0.64,
-                    ease: 'power3.out',
-                    clearProps: 'transform,opacity,visibility,willChange',
-                }, 0.12)
-                .to(channels, {
-                    autoAlpha: 1,
-                    x: 0,
-                    y: 0,
-                    duration: 0.56,
-                    ease: 'power3.out',
-                    stagger: 0.07,
-                    clearProps: 'transform,opacity,visibility,willChange',
-                }, 0.22)
-                .to(formPanel, {
-                    autoAlpha: 1,
-                    y: 0,
-                    duration: 0.66,
-                    ease: 'power3.out',
-                    clearProps: 'transform,opacity,visibility,willChange',
-                }, 0.18)
-                .to(fields, {
-                    autoAlpha: 1,
-                    y: 0,
-                    duration: 0.52,
-                    ease: 'power3.out',
-                    stagger: 0.055,
-                    clearProps: 'transform,opacity,visibility,willChange',
-                }, 0.34);
-
-            const resetReveal = () => {
-                timeline.pause(0, true);
-                setInitialState();
-            };
-
-            const playReveal = () => {
-                resetReveal();
-                timeline.restart(true);
-            };
-
-            const trigger = ScrollTrigger.create({
-                trigger: section,
-                start: 'top 86%',
-                end: 'bottom top',
-                invalidateOnRefresh: true,
-                onEnter: playReveal,
-                onLeaveBack: resetReveal,
-            });
-
-            const disconnectRearm = rearmOnExitBelow(section, resetReveal);
+                    const settle = () => {
+                        form.forEach((timeline) => {
+                            timeline.scrollTrigger?.kill(false);
+                            timeline.progress(1);
+                        });
+                    };
+                    panel.addEventListener('focusin', settle);
+                    return () => panel.removeEventListener('focusin', settle);
+                },
+                section,
+            );
 
             return () => {
-                disconnectRearm();
                 window.cancelAnimationFrame(refreshFrame);
-                trigger.kill(false);
-                timeline.kill();
+                mm.revert();
             };
         },
         { scope: sectionRef }
@@ -407,7 +367,17 @@ export default function Contact() {
                                 id="contact-heading"
                                 className="font-display text-4xl font-bold leading-[1.05] tracking-[-0.025em] text-[var(--text)] sm:text-5xl lg:text-[3.4rem]"
                             >
-                                Let&apos;s build something reliable.
+                                {CONTACT_HEADING_WORDS.map((word, index) => (
+                                    <Fragment key={word}>
+                                        <span className="inline-block overflow-hidden pb-[0.06em] align-bottom">
+                                            <span data-contact-word className="inline-block">
+                                                {word}
+                                            </span>
+                                        </span>
+                                        {/* The space sits outside the mask: inside an inline-block it collapses. */}
+                                        {index < CONTACT_HEADING_WORDS.length - 1 ? ' ' : null}
+                                    </Fragment>
+                                ))}
                             </h2>
                             <p className="mt-5 max-w-xl text-base leading-[1.75] text-[var(--muted)] sm:text-lg">
                                 Have a project, role, or collaboration in mind? Share the context and start the conversation.

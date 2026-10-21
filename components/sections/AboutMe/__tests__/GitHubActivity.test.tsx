@@ -38,7 +38,8 @@ describe('GitHubActivity', () => {
       screen.getByRole('img', { name: /1,477 contributions between mar 8, 2026 and mar 9, 2026/i }),
     ).toBeInTheDocument();
     expect(screen.getByText('Longest streak')).toBeInTheDocument();
-    expect(screen.getByText('1 day')).toBeInTheDocument();
+    // The number sits in its own span (the scroll count-up animates it), so match the whole value.
+    expect(screen.getByText((_, element) => element?.tagName === 'DD' && element.textContent === '1 day')).toBeInTheDocument();
     expect(screen.getByText('Mar 2026')).toBeInTheDocument();
   });
 

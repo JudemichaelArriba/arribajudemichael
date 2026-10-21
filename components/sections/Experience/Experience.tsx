@@ -5,7 +5,6 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useGSAP } from '@gsap/react';
 import { ArrowUpRight } from 'lucide-react';
-import { rearmOnExitBelow } from '@/lib/animations/rearmOnExitBelow';
 import type { PublicExperienceDto } from '@/features/admin/experiences/types';
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
@@ -23,94 +22,42 @@ export default function Experience({
   const milestoneCount = String(experiences.length).padStart(2, '0');
   const hasTimeline = !experiencesUnavailable && experiences.length > 0;
 
+  // One scrubbed timeline over the whole list: the header arrives, then each milestone wipes in
+  // from the left as it reaches its place. Rebuilt when the data changes (revertOnUpdate).
   useGSAP(
     () => {
       const section = sectionRef.current;
       if (!section) return;
 
-      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      const headingTargets = gsap.utils.toArray<HTMLElement>(
-        '.experience-heading-copy, .experience-title, .experience-summary, .experience-intro, .experience-state',
-        section
-      );
-      const headingLines = gsap.utils.toArray<HTMLElement>('[data-experience-line]', section);
-      const rows = gsap.utils.toArray<HTMLElement>('.experience-row', section);
-
-      if (prefersReducedMotion) {
-        gsap.set([...headingTargets, ...rows], {
-          autoAlpha: 1,
-          y: 0,
-          clearProps: 'transform,opacity,visibility,willChange,clipPath',
+      const mm = gsap.matchMedia();
+      mm.add('(prefers-reduced-motion: no-preference)', () => {
+        const rows = gsap.utils.toArray<HTMLElement>('.experience-row', section);
+        const total = Math.max(1, section.offsetHeight);
+        const timeline = gsap.timeline({
+          defaults: { ease: 'none' },
+          scrollTrigger: { trigger: section, start: 'top 75%', end: 'bottom 85%', scrub: 0.6, invalidateOnRefresh: true },
         });
-        gsap.set(headingLines, { scaleX: 1, clearProps: 'transform' });
-        return;
-      }
 
-      const setInitialState = () => {
-        gsap.set(headingTargets, { autoAlpha: 0, y: 14 });
-        gsap.set(headingLines, { scaleX: 0, transformOrigin: 'left center' });
-        gsap.set(rows, {
-          autoAlpha: 0,
-          y: 34,
-          clipPath: 'inset(0% 100% 0% 0%)',
+        timeline
+          .fromTo('[data-experience-line]', { scaleX: 0 }, { scaleX: 1, transformOrigin: 'left center', duration: 0.05 }, 0)
+          .fromTo('.experience-title', { autoAlpha: 0, y: 40 }, { autoAlpha: 1, y: 0, ease: 'power3.out', duration: 0.08 }, 0.01)
+          .fromTo('.experience-summary', { autoAlpha: 0, y: 12 }, { autoAlpha: 1, y: 0, duration: 0.06 }, 0.02)
+          .fromTo('.experience-intro, .experience-state', { autoAlpha: 0, y: 20 }, { autoAlpha: 1, y: 0, duration: 0.06 }, 0.05);
+
+        rows.forEach((row) => {
+          const at = Math.min(0.92, Math.max(0.08, (row.offsetTop - 200) / total));
+          timeline.fromTo(row, { clipPath: 'inset(0% 100% 0% 0%)', x: -24 }, { clipPath: 'inset(0% 0% 0% 0%)', x: 0, ease: 'power2.out', duration: 0.07 }, at);
         });
-      };
+      }, section);
 
-      setInitialState();
-
-      const timeline = gsap.timeline({
-        paused: true,
-        defaults: { overwrite: 'auto', force3D: true },
+      // Streams in after the sections below were set up: re-sort triggers into document order.
+      const refreshFrame = window.requestAnimationFrame(() => {
+        ScrollTrigger.sort();
+        ScrollTrigger.refresh();
       });
-
-      timeline
-        .to(headingTargets, {
-          autoAlpha: 1,
-          y: 0,
-          duration: 0.6,
-          ease: 'power3.out',
-          stagger: 0.08,
-        }, 0)
-        .to(headingLines, {
-          scaleX: 1,
-          duration: 0.75,
-          ease: 'power3.out',
-        }, 0.08)
-        // Each row wipes open left-to-right as it rises, so the list builds
-        // itself rather than just fading in.
-        .to(rows, {
-          autoAlpha: 1,
-          y: 0,
-          clipPath: 'inset(0% 0% 0% 0%)',
-          duration: 0.95,
-          ease: 'expo.out',
-          stagger: 0.11,
-          clearProps: 'clipPath',
-        }, 0.28);
-
-      const resetReveal = () => {
-        timeline.pause(0, true);
-        setInitialState();
-      };
-
-      const trigger = ScrollTrigger.create({
-        trigger: section,
-        start: 'top 86%',
-        end: 'bottom top',
-        invalidateOnRefresh: true,
-        onEnter: () => {
-          setInitialState();
-          timeline.restart(true);
-        },
-        onLeaveBack: resetReveal,
-      });
-
-      const disconnectRearm = rearmOnExitBelow(section, resetReveal);
-
       return () => {
-        disconnectRearm();
-        trigger.kill(false);
-        timeline.kill();
+        window.cancelAnimationFrame(refreshFrame);
+        mm.revert();
       };
     },
     {

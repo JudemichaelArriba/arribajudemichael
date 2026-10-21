@@ -11,7 +11,47 @@ interface CertificatePdfPreviewProps {
     source: string | File | null;
     label: string;
     eager?: boolean;
+    /** White page behind the canvas (default). Off when the surrounding frame provides the surface. */
+    paper?: boolean;
     className?: string;
+}
+
+let pdfRuntime: Promise<typeof import('pdfjs-dist')> | null = null;
+
+function loadPdfRuntime() {
+    pdfRuntime ??= import('pdfjs-dist').catch((error: unknown) => {
+        pdfRuntime = null;
+        throw error;
+    });
+    return pdfRuntime;
+}
+
+/** Fetches PDF.js ahead of time (e.g. on intent to open certificates). Safe as an event handler. */
+export function preloadPdfRuntime(): void {
+    void loadPdfRuntime().catch(() => undefined);
+}
+
+/**
+ * PDF.js paints on the main thread, so previews take turns, each in an idle moment: a list of them
+ * mounting at once (a tab switch) never lands as one long task. Downloads still run in parallel.
+ */
+let paintQueue: Promise<void> = Promise.resolve();
+
+function idleMoment(): Promise<void> {
+    return new Promise((resolve) => {
+        if (typeof window.requestIdleCallback === 'function') window.requestIdleCallback(() => resolve(), { timeout: 500 });
+        else window.setTimeout(resolve, 16);
+    });
+}
+
+function waitForPaintTurn(): Promise<() => void> {
+    let release: () => void = () => undefined;
+    const finished = new Promise<void>((resolve) => {
+        release = resolve;
+    });
+    const turn = paintQueue.then(idleMoment);
+    paintQueue = turn.then(() => finished);
+    return turn.then(() => release);
 }
 
 type PreviewStatus = 'idle' | 'loading' | 'ready' | 'error';
@@ -20,6 +60,7 @@ export default function CertificatePdfPreview({
     source,
     label,
     eager = false,
+    paper = true,
     className = '',
 }: CertificatePdfPreviewProps) {
     const containerRef = useRef<HTMLDivElement>(null);
@@ -120,7 +161,7 @@ export default function CertificatePdfPreview({
             setStatus('loading');
 
             try {
-                const pdfjs = await import('pdfjs-dist');
+                const pdfjs = await loadPdfRuntime();
                 if (disposed) return;
 
                 pdfjs.GlobalWorkerOptions.workerSrc =
@@ -140,7 +181,13 @@ export default function CertificatePdfPreview({
                 pageProxy = await documentProxy.getPage(1);
                 if (disposed) return;
 
-                await renderPreview();
+                const release = await waitForPaintTurn();
+                try {
+                    if (disposed) return;
+                    await renderPreview();
+                } finally {
+                    release();
+                }
 
                 if (typeof ResizeObserver !== 'undefined') {
                     resizeObserver = new ResizeObserver(() => {
@@ -178,7 +225,7 @@ export default function CertificatePdfPreview({
     return (
         <div
             ref={containerRef}
-            className={`relative flex h-full w-full items-center justify-center overflow-hidden bg-white ${className}`}
+            className={`relative flex h-full w-full items-center justify-center overflow-hidden ${paper ? 'bg-white' : ''} ${className}`}
         >
             <canvas
                 ref={canvasRef}
@@ -188,7 +235,7 @@ export default function CertificatePdfPreview({
             />
 
             {displayStatus !== 'ready' ? (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#f4f4f5] px-4 text-center text-black/50">
+                <div className={`absolute inset-0 flex flex-col items-center justify-center px-4 text-center ${paper ? 'bg-[#f4f4f5] text-black/50' : 'bg-[var(--surface-muted)] text-[var(--faint)]'}`}>
                     {displayStatus === 'loading' || displayStatus === 'idle' ? (
                         <>
                             <LoaderCircle

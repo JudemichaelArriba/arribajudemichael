@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState, type PointerEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent } from 'react';
 import { ArrowUpRight } from 'lucide-react';
 
 import {
@@ -48,10 +48,6 @@ const TOOLTIP_HALF_WIDTH = 124;
 function describeCount(count: number): string {
     if (count === 0) return 'No contributions';
     return count === 1 ? '1 contribution' : `${count.toLocaleString('en-US')} contributions`;
-}
-
-function pluralizeDays(count: number): string {
-    return count === 1 ? '1 day' : `${count} days`;
 }
 
 export default function GitHubActivity({ contributions }: GitHubActivityProps) {
@@ -104,8 +100,12 @@ export default function GitHubActivity({ contributions }: GitHubActivityProps) {
 
     const activeDay = tooltip ? days[tooltip.dayIndex] : undefined;
     const statItems = [
-        { label: 'Active days', value: stats.activeDays.toLocaleString('en-US') },
-        { label: 'Longest streak', value: pluralizeDays(stats.longestStreak) },
+        // data-count-to: the About scroll animation counts these up (final text is always the real value).
+        { label: 'Active days', value: <span data-count-to={stats.activeDays}>{stats.activeDays.toLocaleString('en-US')}</span> },
+        {
+            label: 'Longest streak',
+            value: <><span data-count-to={stats.longestStreak}>{stats.longestStreak}</span>{stats.longestStreak === 1 ? ' day' : ' days'}</>,
+        },
         ...(stats.busiestMonth
             ? [{ label: 'Busiest month', value: formatContributionMonth(stats.busiestMonth.month) }]
             : []),
@@ -122,7 +122,9 @@ export default function GitHubActivity({ contributions }: GitHubActivityProps) {
                         GitHub activity
                     </p>
                     <h3 className="mt-3.5 font-display text-3xl font-bold leading-[1.05] tracking-[-0.025em] text-[var(--text)] sm:text-4xl lg:text-[2.5rem]">
-                        {describeCount(totalContributions)} in the last year
+                        {totalContributions > 0 ? (
+                            <><span data-count-to={totalContributions}>{totalContributions.toLocaleString('en-US')}</span>{totalContributions === 1 ? ' contribution' : ' contributions'}</>
+                        ) : 'No contributions'}{' '}in the last year
                     </h3>
                 </div>
                 <a
@@ -179,6 +181,7 @@ export default function GitHubActivity({ contributions }: GitHubActivityProps) {
 
                         <div
                             role="img"
+                            data-calendar-grid
                             aria-label={`GitHub contribution calendar: ${describeCount(totalContributions).toLowerCase()} between ${firstLabel} and ${lastLabel}.`}
                             className="grid grid-rows-[repeat(7,var(--cell))] gap-[var(--gap)]"
                             style={columnTemplate}
@@ -194,7 +197,15 @@ export default function GitHubActivity({ contributions }: GitHubActivityProps) {
                                             ? 'outline outline-2 outline-offset-1 outline-[var(--text)]'
                                             : ''
                                     }`}
-                                    style={{ gridColumn: day.weekIndex + 1, gridRow: day.weekday + 1 }}
+                                    // --reveal (set by the About scroll animation, default: everything shown) fades
+                                    // the columns in left to right with one CSS variable instead of hundreds of tweens.
+                                    style={{
+                                        gridColumn: day.weekIndex + 1,
+                                        gridRow: day.weekday + 1,
+                                        '--col': day.weekIndex,
+                                        opacity: 'clamp(0, calc(var(--reveal, 999) - var(--col)), 1)',
+                                        scale: 'clamp(0.3, calc(0.3 + (var(--reveal, 999) - var(--col)) * 0.7), 1)',
+                                    } as CSSProperties}
                                 />
                             ))}
                         </div>

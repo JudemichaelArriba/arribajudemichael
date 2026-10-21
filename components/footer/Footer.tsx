@@ -13,6 +13,7 @@ import {
     type ContactChannelId,
 } from '@/lib/site';
 import { NAV_LINK_UNDERLINE_CLASS } from '@/components/ui/navigationStyles';
+import FooterMotion from './FooterMotion';
 
 const CONTACT_ICONS: Record<ContactChannelId, LucideIcon> = {
     github: GitFork,
@@ -86,7 +87,7 @@ export default function Footer() {
                 className="pointer-events-none absolute inset-x-5 top-0 h-px bg-[var(--hairline)] md:inset-x-8"
             />
 
-            <div className="mx-auto max-w-7xl">
+            <FooterMotion className="mx-auto max-w-7xl">
                 <div className="flex flex-col gap-6 border-b border-[var(--hairline)] pb-8 sm:flex-row sm:items-end sm:justify-between md:pb-10">
                     <Link
                         href="/#home"
@@ -192,7 +193,7 @@ export default function Footer() {
                 <p className="mt-4 text-xs leading-relaxed text-[var(--faint)]">
                     This site keeps anonymous visit statistics. No ads, no tracking across sites.
                 </p>
-            </div>
+            </FooterMotion>
         </footer>
     );
 }
