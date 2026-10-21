@@ -60,6 +60,21 @@ describe('Navbar', () => {
     expect(target.scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth' });
   });
 
+  it('takes Home to the very top of the page, not the end of its pinned section', () => {
+    const scrollTo = jest.fn();
+    window.scrollTo = scrollTo as unknown as typeof window.scrollTo;
+    const home = document.createElement('section');
+    home.id = 'home';
+    home.scrollIntoView = jest.fn();
+    document.body.appendChild(home);
+    render(<Navbar />);
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Home' })[0]);
+
+    expect(scrollTo).toHaveBeenCalledWith({ top: 0, behavior: 'smooth' });
+    expect(home.scrollIntoView).not.toHaveBeenCalled();
+  });
+
   it('opens the mobile menu, locks scrolling, and closes on Escape', () => {
     render(<Navbar />);
     const trigger = screen.getByRole('button', { name: 'Open menu' });

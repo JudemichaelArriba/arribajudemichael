@@ -10,6 +10,7 @@ import {
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { primeStagger } from '@/lib/animations/primeStagger';
 import {
     ArrowUpRight,
     BriefcaseBusiness,
@@ -181,10 +182,10 @@ export default function Contact() {
                     const heading = wide ? scrubbed(section, 'top 80%', 'top 5%') : scrubbed(intro, 'top 90%', 'top 35%');
                     heading
                         .fromTo('[data-contact-line]', { scaleX: 0 }, { scaleX: 1, transformOrigin: 'left center', duration: 0.25 }, 0)
-                        .fromTo('[data-contact-word]', { yPercent: 110 }, { yPercent: 0, ease: 'power3.out', duration: 0.3, stagger: 0.05 }, 0.05)
-                        .fromTo('.contact-intro p', { autoAlpha: 0, y: 18 }, { autoAlpha: 1, y: 0, duration: 0.25, stagger: 0.08 }, 0.25);
+                        .fromTo('[data-contact-word]', primeStagger('[data-contact-word]', { yPercent: 110 }), { yPercent: 0, ease: 'power3.out', duration: 0.3, stagger: 0.05 }, 0.05)
+                        .fromTo('.contact-intro p', primeStagger('.contact-intro p', { autoAlpha: 0, y: 18 }), { autoAlpha: 1, y: 0, duration: 0.25, stagger: 0.08 }, 0.25);
                     (wide ? heading : scrubbed(channels, 'top 92%', 'top 60%'))
-                        .fromTo('.contact-channel', { autoAlpha: 0, x: -24 }, { autoAlpha: 1, x: 0, ease: 'power2.out', duration: 0.2, stagger: 0.06 }, wide ? 0.35 : 0);
+                        .fromTo('.contact-channel', primeStagger('.contact-channel', { autoAlpha: 0, x: -24 }), { autoAlpha: 1, x: 0, ease: 'power2.out', duration: 0.2, stagger: 0.06 }, wide ? 0.35 : 0);
 
                     const panel = section.querySelector<HTMLElement>('.contact-form-panel');
                     if (!panel) return;
@@ -201,7 +202,7 @@ export default function Contact() {
                     if (wide) {
                         const timeline = scrubbed(section, 'top 80%', 'top 5%')
                             .fromTo(panel, panelFrom, panelTo, 0.2)
-                            .fromTo(fields, fieldFrom, { ...fieldTo, stagger: 0.06 }, 0.42);
+                            .fromTo(fields, primeStagger(fields, fieldFrom), { ...fieldTo, stagger: 0.06 }, 0.42);
                         if (button) timeline.fromTo(button, buttonFrom, buttonTo, 0.72);
                         timeline.to({}, { duration: 0.03 }, 0.97);
                         form.push(timeline);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
@@ -8,7 +8,8 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 import { usePreloaderPhase } from '@/components/loader/Preloader';
 import { useTheme } from '@/components/theme/ThemeProvider';
-import { holdPreloader } from '@/lib/animations/preloaderHold';
+import { holdPreloader, type PreloaderHold } from '@/lib/animations/preloaderHold';
+import { primeStagger } from '@/lib/animations/primeStagger';
 import { TECH_CATEGORIES } from '@/lib/techStack';
 import { useMediaQuery } from '@/lib/useMediaQuery';
 import { labelForKey, readoutGlyph, shouldMirrorKey, toolLetter, toolsForKey, TOOL_NAMES } from './keyboard/layout';
@@ -22,6 +23,8 @@ const KeyboardCanvas = dynamic(() => import('./keyboard/KeyboardCanvas'), { ssr:
 const DESKTOP_QUERY = '(min-width: 1024px)';
 /** Longest the preloader waits for the board before revealing the page anyway. */
 const PRELOADER_HOLD_MAX_MS = 7000;
+/** The board's share of the preloader's progress (the page itself counts as 1). */
+const KEYBOARD_PROGRESS_WEIGHT = 3;
 /** Camera framing: where the scroll dolly starts and where it settles. */
 // Scroll animation page: the camera dollies in from far away and settles on the Keyboard page framing.
 const DESKTOP_VIEW = { from: { dist: 32, offX: 0.5, offY: 0.42 }, to: { dist: 17, offX: 0.5, offY: 0.18 } };
@@ -82,23 +85,28 @@ export default function TechStack() {
         };
     }, []);
 
-    // The 3D board is the heaviest thing on the page, so it is built while the preloader holds
-    // (after its logo has drawn, so the drawing never stutters) and the page is revealed once the
-    // board has rendered: scrolling here never waits on it. Capped so a slow device isn't stuck.
+    // The 3D board is the heaviest thing on the page, so it is built while the preloader is up
+    // (the preloader draws its logo by the board's loading progress) and the page is revealed once
+    // the board has rendered: scrolling here never waits on it. Capped so a slow device isn't stuck.
     const keyboardAllowed = preloaderPhase !== 'intro';
-    const releaseHoldRef = useRef<(() => void) | null>(null);
-    useEffect(() => {
-        const release = holdPreloader();
-        releaseHoldRef.current = release;
-        const cap = window.setTimeout(release, PRELOADER_HOLD_MAX_MS);
+    const holdRef = useRef<PreloaderHold | null>(null);
+    // A layout effect, so the hold exists before the preloader first reads the progress.
+    useLayoutEffect(() => {
+        const hold = holdPreloader(KEYBOARD_PROGRESS_WEIGHT);
+        holdRef.current = hold;
+        const cap = window.setTimeout(hold.release, PRELOADER_HOLD_MAX_MS);
         return () => {
             window.clearTimeout(cap);
-            release();
+            hold.release();
         };
     }, []);
     useEffect(() => {
-        if (boardReady || boardUnavailable) releaseHoldRef.current?.();
+        if (keyboardAllowed) holdRef.current?.progress(0.05);
+    }, [keyboardAllowed]);
+    useEffect(() => {
+        if (boardReady || boardUnavailable) holdRef.current?.release();
     }, [boardReady, boardUnavailable]);
+    const handleProgress = useCallback((value: number) => holdRef.current?.progress(value), []);
 
     // Typing mirrors onto the board only while the section is on screen. Never blocks the key,
     // never reads fields or dialogs, and nothing typed is stored or sent anywhere.
@@ -157,9 +165,9 @@ export default function TechStack() {
                             scrollTrigger: { trigger: section, start: 'top top', end: () => `+=${Math.max(window.innerHeight * 1.4, 1100)}`, pin: true, scrub: 0.6, invalidateOnRefresh: true },
                         })
                             .fromTo('[data-tech-rule]', { scaleX: 0 }, { scaleX: 1, transformOrigin: 'left center', duration: 0.15 }, 0)
-                            .fromTo('[data-tech-line]', { yPercent: 110 }, { yPercent: 0, ease: 'power3.out', duration: 0.2, stagger: 0.06 }, 0.04)
+                            .fromTo('[data-tech-line]', primeStagger('[data-tech-line]', { yPercent: 110 }), { yPercent: 0, ease: 'power3.out', duration: 0.2, stagger: 0.06 }, 0.04)
                             .fromTo('[data-tech-lead]', { autoAlpha: 0, y: 16 }, { autoAlpha: 1, y: 0, duration: 0.15 }, 0.14)
-                            .fromTo('[data-tech-group]', { autoAlpha: 0, y: 20 }, { autoAlpha: 1, y: 0, duration: 0.12, stagger: 0.04 }, 0.2)
+                            .fromTo('[data-tech-group]', primeStagger('[data-tech-group]', { autoAlpha: 0, y: 20 }), { autoAlpha: 1, y: 0, duration: 0.12, stagger: 0.04 }, 0.2)
                             .fromTo(proxy, { p: 0 }, cameraTween, 0);
                     } else {
                         // Phones / short screens: the copy finishes as soon as the heading is on screen,
@@ -169,7 +177,7 @@ export default function TechStack() {
                             scrollTrigger: { trigger: section, start: 'top 85%', end: 'top 35%', scrub: 0.6, invalidateOnRefresh: true },
                         })
                             .fromTo('[data-tech-rule]', { scaleX: 0 }, { scaleX: 1, transformOrigin: 'left center', duration: 0.3 }, 0)
-                            .fromTo('[data-tech-line]', { yPercent: 110 }, { yPercent: 0, ease: 'power3.out', duration: 0.5, stagger: 0.12 }, 0.1)
+                            .fromTo('[data-tech-line]', primeStagger('[data-tech-line]', { yPercent: 110 }), { yPercent: 0, ease: 'power3.out', duration: 0.5, stagger: 0.12 }, 0.1)
                             .fromTo('[data-tech-lead]', { autoAlpha: 0, y: 16 }, { autoAlpha: 1, y: 0, duration: 0.4 }, 0.4);
                         const stage = section.querySelector('[data-tech-stage]');
                         gsap.timeline({
@@ -255,6 +263,7 @@ export default function TechStack() {
                                 onPress={handlePress}
                                 onReady={handleReady}
                                 onUnavailable={handleUnavailable}
+                                onProgress={handleProgress}
                             />
                         ) : null}
                         <p className="sr-only">

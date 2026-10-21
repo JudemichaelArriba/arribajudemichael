@@ -40,7 +40,6 @@ const DROPLETS: Droplet[] = [
 const ThemeTransition = forwardRef<ThemeTransitionHandle>(function ThemeTransition(_props, ref) {
     const rootRef = useRef<SVGSVGElement>(null);
     const groupRef = useRef<SVGGElement>(null);
-    const poolRef = useRef<SVGCircleElement>(null);
     const circleRefs = useRef<Array<SVGCircleElement | null>>([]);
     const timelineRef = useRef<gsap.core.Timeline | null>(null);
 
@@ -48,20 +47,17 @@ const ThemeTransition = forwardRef<ThemeTransitionHandle>(function ThemeTransiti
         run: (next, origin, apply) => {
             const root = rootRef.current;
             const group = groupRef.current;
-            const pool = poolRef.current;
             const circles = circleRefs.current.filter(
                 (circle): circle is SVGCircleElement => circle !== null
             );
 
-            if (!root || !group || !pool || circles.length !== DROPLETS.length) {
+            if (!root || !group || circles.length !== DROPLETS.length) {
                 apply();
                 return;
             }
 
             timelineRef.current?.kill();
             group.setAttribute('fill', THEME_BACKGROUND[next]);
-            pool.setAttribute('fill', THEME_BACKGROUND[next]);
-            gsap.set(pool, { attr: { cx: origin.x, cy: origin.y, r: 0 } });
             gsap.set(root, { autoAlpha: 1 });
 
             // Far enough to cover the whole viewport from wherever it was clicked.
@@ -97,21 +93,13 @@ const ThemeTransition = forwardRef<ThemeTransitionHandle>(function ThemeTransiti
                     ease: 'power2.out',
                 }, droplet.delay);
 
-                // ...then they run together into one pool...
+                // ...then they run together into one pool that floods the page.
                 timeline.to(circle, {
-                    attr: { cx: origin.x, cy: origin.y, r: spread * 0.6 },
+                    attr: { cx: origin.x, cy: origin.y, r: maxRadius },
                     duration: 0.66,
                     ease: 'power2.inOut',
                 }, 0.42);
             });
-
-            // ...that floods the page. The pool sits outside the goo filter: filtering a circle the
-            // size of the screen re-blurred the whole viewport every frame (60-80ms frames).
-            timeline.to(pool, {
-                attr: { r: maxRadius },
-                duration: 0.66,
-                ease: 'power2.inOut',
-            }, 0.42);
 
             // Swap the palette under full cover, then lift the ink away.
             timeline.add(apply, 0.98);
@@ -151,7 +139,6 @@ const ThemeTransition = forwardRef<ThemeTransitionHandle>(function ThemeTransiti
                     />
                 ))}
             </g>
-            <circle ref={poolRef} cx="0" cy="0" r="0" fill={THEME_BACKGROUND.light} />
         </svg>
     );
 });

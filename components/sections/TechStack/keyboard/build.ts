@@ -77,9 +77,9 @@ export interface BuiltKeyboard {
     /** Pickable meshes for raycasting (keys + knob). */
     pickables: Object3D[];
     /** Adds the keys row by row, yielding between rows so loading never blocks scrolling. */
-    buildKeys: (isAlive: () => boolean) => Promise<void>;
+    buildKeys: (isAlive: () => boolean, onProgress?: (fraction: number) => void) => Promise<void>;
     /** Paints the keycap legends in small batches; resolves when done or when `isAlive` turns false. */
-    paintLegends: (fontStack: string, maxAnisotropy: number, isAlive: () => boolean) => Promise<void>;
+    paintLegends: (fontStack: string, maxAnisotropy: number, isAlive: () => boolean, onProgress?: (fraction: number) => void) => Promise<void>;
     /** Recolours the existing board for another theme: colours only, no repaint, no rebuild. */
     applyLook: (palette: BoardPalette, lighting: StageLighting) => void;
     dispose: () => void;
@@ -537,15 +537,16 @@ export function buildKeyboard(palette: BoardPalette, lighting: StageLighting, mo
         byLabel.set(slot.label, [...(byLabel.get(slot.label) ?? []), mesh]);
     };
 
-    async function buildKeys(isAlive: () => boolean) {
+    async function buildKeys(isAlive: () => boolean, onProgress?: (fraction: number) => void) {
         for (let row = 0; row < KEY_ROWS.length; row++) {
             if (!isAlive()) return;
             slots.filter((slot) => slot.row === row).forEach(addKey);
+            onProgress?.((row + 1) / KEY_ROWS.length);
             await yieldToBrowser();
         }
     }
 
-    async function paintLegends(fontStack: string, maxAnisotropy: number, isAlive: () => boolean) {
+    async function paintLegends(fontStack: string, maxAnisotropy: number, isAlive: () => boolean, onProgress?: (fraction: number) => void) {
         for (let i = 0; i < keys.length; i++) {
             if (!isAlive()) return;
             const mesh = keys[i];
@@ -555,7 +556,10 @@ export function buildKeyboard(palette: BoardPalette, lighting: StageLighting, mo
             state.topMat.map = legendTexture(state.label, tw, td, fontStack, maxAnisotropy);
             state.topMat.color.set(0xffffff);
             state.topMat.needsUpdate = true;
-            if (i % 12 === 11) await yieldToBrowser();
+            if (i % 12 === 11) {
+                onProgress?.((i + 1) / keys.length);
+                await yieldToBrowser();
+            }
         }
     }
 

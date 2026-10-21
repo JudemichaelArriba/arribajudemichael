@@ -90,7 +90,7 @@ export default function Footer() {
             <FooterMotion className="mx-auto max-w-7xl">
                 <div className="flex flex-col gap-6 border-b border-[var(--hairline)] pb-8 sm:flex-row sm:items-end sm:justify-between md:pb-10">
                     <Link
-                        href="/#home"
+                        href="/#top"
                         aria-label="Jude Michael Arriba - go to home"
                         className="group inline-flex min-h-12 w-fit items-center font-name text-4xl font-extrabold tracking-tight text-[var(--text)] transition-transform duration-300 hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--text)]/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--site-bg)] motion-reduce:transition-none sm:text-5xl"
                     >

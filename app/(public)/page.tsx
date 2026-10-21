@@ -14,6 +14,9 @@ import Contact from '@/components/sections/Contact/Contact';
 export default function HomePage() {
     return (
         <>
+            {/* Link target for the very top: Home is pinned, so #home lands where its pin ends
+                and the name has already scrolled away. */}
+            <span id="top" aria-hidden="true" />
             <Home />
             <WhatIDo />
             <Suspense fallback={<AboutMe contributions={null} />}>

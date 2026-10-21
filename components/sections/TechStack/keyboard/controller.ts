@@ -3,6 +3,7 @@ import { CubeUVReflectionMapping, LinearFilter, Plane, Raycaster, SRGBColorSpace
 import type { Theme } from '@/lib/theme';
 import { buildKeyboard, CAP_Y, TRAVEL, type BuiltKeyboard, type KeyMesh } from './build';
 import { keyboardLook } from './palette';
+import { playKeyClick, prepareKeyboardSound } from './sound';
 
 export interface KeyboardView {
     /** Camera distance from the board. */
@@ -30,6 +31,8 @@ export interface ControllerOptions {
     onPress: (label: string) => void;
     /** Called once the board is built, painted and compiled, i.e. when it becomes visible. */
     onReady?: () => void;
+    /** Loading progress, 0–1, reported stage by stage (the preloader draws its logo by it). */
+    onProgress?: (value: number) => void;
 }
 
 /** Reads the site's Geist stack (set by next/font on <html>) so keycap legends match the UI. */
@@ -86,7 +89,6 @@ export class KeyboardController {
     private readonly panTarget = new Vector3();
     private readonly ray = new Raycaster();
     private readonly pointer = new Vector2();
-    private audio: AudioContext | null = null;
     /** Shadows only change when something on the board moves, not when the camera does. */
     private shadowDirty = true;
     private readyPending = false;
@@ -111,13 +113,20 @@ export class KeyboardController {
         });
 
         this.attachPointer(gl.domElement);
+        prepareKeyboardSound();
 
         // Legends need the UI font; the board stays hidden until they're painted (no blank keycaps).
         const stack = this.fontStack;
         const isAlive = () => this.alive;
-        const legends = this.built.buildKeys(isAlive)
+        // Progress by stage: set-up 0.25, keys to 0.5, legends to 0.7, reflections 0.75,
+        // shaders 0.9; the first rendered frame completes it (onReady).
+        const report = (value: number) => {
+            if (this.alive) this.options.onProgress?.(value);
+        };
+        report(0.25);
+        const legends = this.built.buildKeys(isAlive, (fraction) => report(0.25 + fraction * 0.25))
             .then(() => waitForFont(stack))
-            .then(() => this.built.paintLegends(stack, gl.capabilities.getMaxAnisotropy(), isAlive));
+            .then(() => this.built.paintLegends(stack, gl.capabilities.getMaxAnisotropy(), isAlive, (fraction) => report(0.5 + fraction * 0.2)));
         void Promise.all([legends, loadEnvironment()])
             .then(([, environment]) => {
                 if (!environment) return;
@@ -135,10 +144,12 @@ export class KeyboardController {
                     environment.dispose();
                 });
             })
+            .then(() => report(0.75))
             // Shaders are compiled once the environment is in place, as it changes them.
             .then(() => this.warmUp())
             .then(() => {
                 if (!this.alive) return;
+                report(0.9);
                 this.built.stage.visible = true;
                 this.shadowDirty = true;
                 // Ready is reported once the first full frame has been drawn (see frame()), so that
@@ -171,7 +182,7 @@ export class KeyboardController {
         await pending.catch(() => undefined);
     }
 
-    /** Presses a key. `silent` skips the click (scroll-driven presses). */
+    /** Presses a key. `silent` skips the click (scroll-driven presses are never heard). */
     press(label: string, options?: { silent?: boolean; rightSide?: boolean }) {
         const meshes = this.built.byLabel.get(label);
         if (!meshes) return;
@@ -184,10 +195,10 @@ export class KeyboardController {
         if (!mesh) return;
         if (this.options.mobile && this.focus(mesh)) {
             window.setTimeout(() => {
-                if (this.alive) this.pressMesh(mesh, false);
+                if (this.alive) this.pressMesh(mesh);
             }, 420);
         } else {
-            this.pressMesh(mesh, false);
+            this.pressMesh(mesh);
         }
     }
 
@@ -295,13 +306,11 @@ export class KeyboardController {
         scene.remove(this.built.stage);
         this.cleanups.forEach((cleanup) => cleanup());
         this.built.dispose();
-        void this.audio?.close().catch(() => undefined);
-        this.audio = null;
     }
 
-    private pressMesh(mesh: KeyMesh, silent: boolean) {
+    private pressMesh(mesh: KeyMesh, silent = false) {
         mesh.userData.press = 1;
-        if (!silent) this.click(mesh.userData.label === 'Space' || mesh.userData.label.length > 3);
+        if (!silent) playKeyClick(mesh.userData.label === 'Space' || mesh.userData.label.length > 3);
         this.options.onPress(mesh.userData.label);
         this.get().invalidate();
     }
@@ -342,9 +351,24 @@ export class KeyboardController {
         const { yaw, pitch, mobile } = this.options;
         const canDrag = (event: PointerEvent) => !mobile && event.pointerType !== 'touch';
 
+        let pressedOnDown = false;
+        const tapTarget = (event: PointerEvent) => {
+            const object = this.pick(el, event);
+            if (!object) return;
+            if (this.isKey(object)) {
+                this.pressMesh(object);
+            } else if (this.built.knob) {
+                this.built.knob.target += Math.PI / 6;
+                playKeyClick(true);
+                this.get().invalidate();
+            }
+        };
         const onDown = (event: PointerEvent) => {
             m.dragging = canDrag(event);
             m.moved = 0;
+            // Mouse and pen press on the way down, like a real key, so the click is immediate.
+            pressedOnDown = event.pointerType !== 'touch' && event.button === 0;
+            if (pressedOnDown) tapTarget(event);
             m.startX = event.clientX;
             m.startY = event.clientY;
             if (m.dragging) {
@@ -379,16 +403,9 @@ export class KeyboardController {
         const onUp = (event: PointerEvent) => {
             const wasTap = m.moved < 6;
             m.dragging = false;
-            if (!wasTap) return;
-            const object = this.pick(el, event);
-            if (!object) return;
-            if (this.isKey(object)) {
-                this.pressMesh(object, false);
-            } else if (this.built.knob) {
-                this.built.knob.target += Math.PI / 6;
-                this.click(true);
-                this.get().invalidate();
-            }
+            // Touch presses on release, and only for a tap (a swipe is a scroll).
+            if (!wasTap || pressedOnDown) return;
+            tapTarget(event);
         };
         const onLeave = () => {
             if (this.hovered) {
@@ -415,34 +432,5 @@ export class KeyboardController {
             el.removeEventListener('pointerleave', onLeave);
             el.removeEventListener('pointercancel', onCancel);
         });
-    }
-
-    /** Short filtered noise burst, a keyswitch click. Only for presses the visitor makes. */
-    private click(deep: boolean) {
-        try {
-            const AudioCtor = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-            if (!AudioCtor) return;
-            this.audio = this.audio ?? new AudioCtor();
-            const context = this.audio;
-            const length = Math.floor(context.sampleRate * 0.07);
-            const buffer = context.createBuffer(1, length, context.sampleRate);
-            const data = buffer.getChannelData(0);
-            for (let i = 0; i < length; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / length) ** 8;
-            const source = context.createBufferSource();
-            source.buffer = buffer;
-            const band = context.createBiquadFilter();
-            band.type = 'bandpass';
-            band.frequency.value = (deep ? 700 : 1200) + Math.random() * 400;
-            band.Q.value = 1.3;
-            const low = context.createBiquadFilter();
-            low.type = 'lowpass';
-            low.frequency.value = 3200;
-            const gain = context.createGain();
-            gain.gain.value = 0.7;
-            source.connect(band).connect(low).connect(gain).connect(context.destination);
-            source.start();
-        } catch {
-            // Sound is decoration; failing silently is correct.
-        }
     }
 }

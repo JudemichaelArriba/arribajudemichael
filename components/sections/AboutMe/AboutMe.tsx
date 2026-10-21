@@ -4,6 +4,7 @@ import { useRef } from 'react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { primeStagger } from '@/lib/animations/primeStagger';
 import type { GitHubContributionsDto } from '@/features/github/types';
 import GitHubActivity from './GitHubActivity';
 
@@ -38,6 +39,7 @@ export default function AboutMe({ contributions }: AboutMeProps) {
 
             const mm = gsap.matchMedia();
             mm.add('(prefers-reduced-motion: no-preference)', () => {
+                const proofs = gsap.utils.toArray<HTMLElement>('[data-about-proof]', proofListRef.current ?? undefined);
                 gsap.timeline({
                     defaults: { ease: 'none' },
                     scrollTrigger: { trigger: section, start: 'top 85%', end: 'top 20%', scrub: 0.6, invalidateOnRefresh: true },
@@ -45,7 +47,7 @@ export default function AboutMe({ contributions }: AboutMeProps) {
                     .fromTo(gsap.utils.toArray<HTMLElement>('[data-about-line]', sectionHeaderRef.current ?? undefined), { scaleX: 0 }, { scaleX: 1, transformOrigin: 'left center', duration: 0.3 }, 0)
                     .fromTo(heading, { autoAlpha: 0, y: 48 }, { autoAlpha: 1, y: 0, ease: 'power3.out', duration: 0.5 }, 0.05)
                     .fromTo(introRef.current, { autoAlpha: 0, y: 24 }, { autoAlpha: 1, y: 0, duration: 0.4 }, 0.25)
-                    .fromTo(gsap.utils.toArray<HTMLElement>('[data-about-proof]', proofListRef.current ?? undefined), { autoAlpha: 0, scale: 0.7 }, { autoAlpha: 1, scale: 1, ease: 'back.out(2)', duration: 0.3, stagger: 0.08 }, 0.5);
+                    .fromTo(proofs, primeStagger(proofs, { autoAlpha: 0, scale: 0.7 }), { autoAlpha: 1, scale: 1, ease: 'back.out(2)', duration: 0.3, stagger: 0.08 }, 0.5);
 
                 const blocks = gsap.utils.toArray<HTMLElement>('[data-about-activity]', section);
                 const activity = blocks[0]?.parentElement;
@@ -93,7 +95,7 @@ export default function AboutMe({ contributions }: AboutMeProps) {
                     }, 0.1);
                 });
 
-                calendar.fromTo(blocks.slice(2), { autoAlpha: 0, y: 16 }, { autoAlpha: 1, y: 0, duration: 0.15, stagger: 0.05 }, 0.8);
+                calendar.fromTo(blocks.slice(2), primeStagger(blocks.slice(2), { autoAlpha: 0, y: 16 }), { autoAlpha: 1, y: 0, duration: 0.15, stagger: 0.05 }, 0.8);
                 // On breakpoint change / unmount, show the whole calendar again.
                 return () => grid?.style.removeProperty('--reveal');
             }, section);

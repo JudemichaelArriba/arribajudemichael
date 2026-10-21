@@ -5,8 +5,8 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useGSAP } from '@gsap/react';
 import { urbanist } from '@/lib/fonts';
-import { buildPreloaderTimeline } from '@/lib/animations/preloader';
-import { whenPreloaderReleased } from '@/lib/animations/preloaderHold';
+import { buildPreloaderReveal, drawPreloaderProgress } from '@/lib/animations/preloader';
+import { holdPreloader, preloaderProgress, subscribePreloaderProgress } from '@/lib/animations/preloaderHold';
 import { PreloaderLogo } from './PreloaderLogo';
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
@@ -24,8 +24,8 @@ export function usePreloaderReady() {
 }
 
 /**
- * `intro` while the logo draws, `loading` while it holds for heavy pieces (they may start loading
- * now, nothing else animates on the main thread), `done` once the reveal starts. Defaults to `done`.
+ * `intro` while the page hydrates, `loading` once heavy pieces may start loading (the logo is
+ * drawn by their progress), `done` once the reveal starts. Defaults to `done`.
  */
 export type PreloaderPhase = 'intro' | 'loading' | 'done';
 const PreloaderPhaseContext = createContext<PreloaderPhase>('done');
@@ -39,66 +39,61 @@ export default function Preloader({ children }: { children: React.ReactNode }) {
     const [ready, setReady] = useState(false);
     const [phase, setPhase] = useState<PreloaderPhase>('intro');
     const overlayRef = useRef<HTMLDivElement>(null);
-    const logoRef = useRef<HTMLDivElement>(null);
     const outlineRef = useRef<SVGTextElement>(null);
     const colorRef = useRef<SVGTextElement>(null);
 
     useGSAP(() => {
         document.body.style.overflow = 'hidden';
+        let revealed = false;
 
-        // Web fonts swap in after the sections have already measured themselves.
-        // Without this every ScrollTrigger keeps its pre-swap start position, so
-        // reveals below the fold fire early (behind this overlay) and there is
-        // nothing left to watch by the time you scroll to them.
-        void document.fonts?.ready.then(() => ScrollTrigger.refresh());
+        // The page itself is one piece of the progress: hydrated now, finished once the web
+        // fonts are in. Fonts arriving after the reveal still re-measure every ScrollTrigger,
+        // otherwise reveals below the fold keep their pre-swap start positions.
+        const page = holdPreloader(1);
+        page.progress(0.4);
+        void (document.fonts?.ready ?? Promise.resolve()).then(() => {
+            page.release();
+            if (revealed) ScrollTrigger.refresh();
+        });
 
-        let cancelWait = () => {};
-        let settle: gsap.core.Tween | null = null;
-        const timeline = buildPreloaderTimeline(
-            {
-                overlay: overlayRef.current,
-                outline: outlineRef.current,
-                color: colorRef.current,
-            },
-            {
-                onHold: (resume) => {
-                    const logo = logoRef.current;
-                    // While held, the logo breathes with a CSS opacity animation: it runs on the
-                    // compositor, so it stays smooth while the keyboard builds on the main thread.
-                    logo?.setAttribute('data-holding', '');
-                    setPhase('loading');
-                    cancelWait = whenPreloaderReleased(() => {
-                        const current = logo ? Number(getComputedStyle(logo).opacity) : 1;
-                        logo?.removeAttribute('data-holding');
-                        const reveal = () => {
-                            // Measure the page with its scrollbar back before the curtain lifts,
-                            // so nothing re-measures (and stalls) during the reveal.
-                            document.body.style.overflow = '';
-                            ScrollTrigger.refresh();
-                            resume();
-                        };
-                        if (!logo || current > 0.99) {
-                            reveal();
-                            return;
-                        }
-                        settle = gsap.fromTo(logo, { opacity: current }, { opacity: 1, duration: 0.25, ease: 'power1.out', clearProps: 'opacity', onComplete: reveal });
-                    });
+        // The JM outline is drawn by the real loading progress (never backwards); when it is
+        // complete the letters fill in and the curtain lifts.
+        let drawn = 0;
+        let draw: gsap.core.Tween | null = null;
+        let reveal: gsap.core.Timeline | null = null;
+        const finish = () => {
+            if (revealed) return;
+            revealed = true;
+            // Measure the page with its scrollbar back before the curtain lifts, so nothing
+            // re-measures (and stalls) during the reveal.
+            document.body.style.overflow = '';
+            ScrollTrigger.refresh();
+            reveal = buildPreloaderReveal(
+                { overlay: overlayRef.current, outline: outlineRef.current, color: colorRef.current },
+                {
+                    onReveal: () => {
+                        setReady(true);
+                        setPhase('done');
+                    },
+                    onComplete: () => {
+                        document.body.style.overflow = '';
+                        setLoading(false);
+                    },
                 },
-                onReveal: () => {
-                    setReady(true);
-                    setPhase('done');
-                },
-                onComplete: () => {
-                    document.body.style.overflow = '';
-                    setLoading(false);
-                },
-            }
-        );
+            );
+        };
+        const update = () => {
+            if (revealed) return;
+            const progress = preloaderProgress();
+            if (progress <= drawn) return;
+            drawn = progress;
+            draw = drawPreloaderProgress(outlineRef.current, progress, progress >= 1 ? finish : undefined);
+        };
+        const unsubscribe = subscribePreloaderProgress(update);
+        update();
 
-        // Hydration and the first section setups run right after mount: draw the logo once the
-        // main thread is free, so the stroke animation never stutters.
-        timeline.pause();
-        const start = () => timeline.play();
+        // Heavy pieces (the keyboard) start once hydration and the first section setups are done.
+        const start = () => setPhase('loading');
         let cancelStart: () => void;
         if (typeof window.requestIdleCallback === 'function') {
             const idleId = window.requestIdleCallback(start, { timeout: 700 });
@@ -110,23 +105,20 @@ export default function Preloader({ children }: { children: React.ReactNode }) {
 
         return () => {
             cancelStart();
-            cancelWait();
-            settle?.kill();
-            timeline.kill();
+            unsubscribe();
+            page.release();
+            draw?.kill();
+            reveal?.kill();
         };
     }, []);
 
     return (
         <PreloaderReadyContext.Provider value={ready}>
             <PreloaderPhaseContext.Provider value={phase}>
-            {loading && (
-                <div
-                    ref={overlayRef}
-                    className="fixed inset-0 z-[100] flex items-center justify-center bg-[var(--site-bg)]"
-                >
+                {loading && (
                     <div
-                        ref={logoRef}
-                        className="will-change-[opacity] data-[holding]:animate-preloader-breathe motion-reduce:data-[holding]:animate-none"
+                        ref={overlayRef}
+                        className="fixed inset-0 z-[100] flex items-center justify-center bg-[var(--site-bg)]"
                     >
                         <PreloaderLogo
                             outlineRef={outlineRef}
@@ -134,9 +126,8 @@ export default function Preloader({ children }: { children: React.ReactNode }) {
                             fontFamily={urbanist.style.fontFamily}
                         />
                     </div>
-                </div>
-            )}
-            {children}
+                )}
+                {children}
             </PreloaderPhaseContext.Provider>
         </PreloaderReadyContext.Provider>
     );

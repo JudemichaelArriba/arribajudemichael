@@ -4,6 +4,7 @@ import { useRef, type ReactNode } from 'react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { primeStagger } from '@/lib/animations/primeStagger';
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
@@ -17,9 +18,10 @@ export default function FooterMotion({ className, children }: { className?: stri
             if (!root) return;
             const mm = gsap.matchMedia();
             mm.add('(prefers-reduced-motion: no-preference)', () => {
+                const items = Array.from(root.children);
                 gsap.fromTo(
-                    Array.from(root.children),
-                    { autoAlpha: 0, y: 30 },
+                    items,
+                    primeStagger(items, { autoAlpha: 0, y: 30 }),
                     {
                         autoAlpha: 1,
                         y: 0,

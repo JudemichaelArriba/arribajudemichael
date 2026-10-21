@@ -4,6 +4,7 @@ import { useRef } from 'react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { primeStagger } from '@/lib/animations/primeStagger';
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
@@ -73,8 +74,8 @@ export default function WhatIDo({ sentence = DEFAULT_SENTENCE }: WhatIDoProps) {
                         },
                     })
                         .fromTo(gsap.utils.toArray<HTMLElement>('[data-what-line]', header), { scaleX: 0 }, { scaleX: 1, transformOrigin: 'left center', duration: 0.15 }, 0)
-                        .fromTo(words, { autoAlpha: 0.12 }, { autoAlpha: 1, duration: 0.06, stagger: 0.55 / Math.max(1, words.length) }, 0.05)
-                        .fromTo(capabilities, { autoAlpha: 0, y: 26 }, { autoAlpha: 1, y: 0, ease: 'power3.out', duration: 0.18, stagger: 0.06 }, 0.66);
+                        .fromTo(words, primeStagger(words, { autoAlpha: 0.12 }), { autoAlpha: 1, duration: 0.06, stagger: 0.55 / Math.max(1, words.length) }, 0.05)
+                        .fromTo(capabilities, primeStagger(capabilities, { autoAlpha: 0, y: 26 }), { autoAlpha: 1, y: 0, ease: 'power3.out', duration: 0.18, stagger: 0.06 }, 0.66);
                 },
                 section,
             );

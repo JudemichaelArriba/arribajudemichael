@@ -110,6 +110,12 @@ export default function Navbar() {
         // back the same value, so nothing changes mid-scroll.
         document.body.style.overflow = '';
         setMenuOpen(false);
+        // Home is pinned: once scrolled past, the section sits at the end of its pin, where the
+        // name has already scrolled away. The page's very top is where Home starts.
+        if (id === 'home') {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            return;
+        }
         document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
     }, []);
 

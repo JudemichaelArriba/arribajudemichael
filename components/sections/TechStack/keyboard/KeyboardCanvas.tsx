@@ -10,7 +10,7 @@ import { KeyboardController, type KeyboardView, type StageState } from './contro
 export type { KeyboardView } from './controller';
 
 export interface KeyboardHandle {
-    /** Presses a key. `silent` skips the click sound (scroll-driven presses). */
+    /** Presses a key. `silent` skips the click (scroll-driven presses are never heard). */
     press: (label: string, options?: { silent?: boolean; rightSide?: boolean }) => void;
     /** A press the visitor asked for (tool chip): on phones it also pans the key into view. */
     focusPress: (label: string) => void;
@@ -30,19 +30,23 @@ export interface KeyboardCanvasProps {
     onReady?: () => void;
     /** Fires when this device cannot draw the board (no WebGL, or the renderer failed). */
     onUnavailable?: () => void;
+    /** Loading progress, 0–1. */
+    onProgress?: (value: number) => void;
 }
 
-function KeyboardScene({ theme, mobile, getInitialView, yaw, pitch, handleRef, onPress, onReady }: Omit<KeyboardCanvasProps, 'onUnavailable'>) {
+function KeyboardScene({ theme, mobile, getInitialView, yaw, pitch, handleRef, onPress, onReady, onProgress }: Omit<KeyboardCanvasProps, 'onUnavailable'>) {
     const getState = useThree((state) => state.get);
     const controllerRef = useRef<KeyboardController | null>(null);
     const onPressRef = useRef(onPress);
     const onReadyRef = useRef(onReady);
+    const onProgressRef = useRef(onProgress);
     const themeRef = useRef(theme);
 
     useEffect(() => {
         onPressRef.current = onPress;
         onReadyRef.current = onReady;
-    }, [onPress, onReady]);
+        onProgressRef.current = onProgress;
+    }, [onPress, onReady, onProgress]);
 
     // Theme changes recolour the existing board in the same commit as the page (no rebuild, no
     // repaint), so it never shows the old colours or blinks out.
@@ -65,6 +69,7 @@ function KeyboardScene({ theme, mobile, getInitialView, yaw, pitch, handleRef, o
             startView: getInitialView(),
             onPress: (label) => onPressRef.current(label),
             onReady: () => onReadyRef.current?.(),
+            onProgress: (value) => onProgressRef.current?.(value),
         });
         controllerRef.current = controller;
         return () => {

@@ -22,19 +22,6 @@
     }
   }
 
-  /* Preloader hold: the logo breathes while heavy pieces finish loading. Opacity only, so the
-     compositor keeps it smooth even while the main thread is busy. */
-  --animate-preloader-breathe: preloader-breathe 1.4s ease-in-out 0.15s infinite;
-
-  @keyframes preloader-breathe {
-    0%,
-    100% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0.45;
-    }
-  }
 }
 
 /* Theme swap: colours change in one step (under the ink cover) instead of starting a transition
