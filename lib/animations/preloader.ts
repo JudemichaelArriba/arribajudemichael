@@ -10,6 +10,11 @@ interface PreloaderRefs {
 
 interface PreloaderCallbacks {
     /**
+     * The logo is fully drawn and the timeline is paused. Call `resume` when the page is ready to
+     * be revealed (heavy pieces load during this hold, while nothing animates on the main thread).
+     */
+    onHold: (resume: () => void) => void;
+    /**
      * Fires as the overlay starts fading, not when it finishes — the page
      * underneath animates in *with* the reveal rather than after a dead beat.
      */
@@ -19,7 +24,7 @@ interface PreloaderCallbacks {
 
 export function buildPreloaderTimeline(
     refs: PreloaderRefs,
-    { onReveal, onComplete }: PreloaderCallbacks
+    { onHold, onReveal, onComplete }: PreloaderCallbacks
 ) {
     const tl = gsap.timeline({ onComplete });
 
@@ -36,6 +41,7 @@ export function buildPreloaderTimeline(
             '-=0.3'
         )
         .to({}, { duration: 0.1 })
+        .addPause('+=0', () => onHold(() => tl.resume()))
         .to(refs.outline, {
             attr: { 'stroke-dashoffset': PRELOADER_DASH_LENGTH },
             duration: 0.42,

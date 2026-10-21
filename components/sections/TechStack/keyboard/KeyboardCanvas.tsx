@@ -1,6 +1,6 @@
 'use client';
 
-import { Component, useEffect, useImperativeHandle, useRef, type ReactNode, type Ref } from 'react';
+import { Component, useEffect, useImperativeHandle, useLayoutEffect, useRef, useState, type ReactNode, type Ref } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import type { PerspectiveCamera } from 'three';
 
@@ -44,8 +44,9 @@ function KeyboardScene({ theme, mobile, getInitialView, yaw, pitch, handleRef, o
         onReadyRef.current = onReady;
     }, [onPress, onReady]);
 
-    // Theme changes recolour the existing board (no rebuild, so it never blinks out).
-    useEffect(() => {
+    // Theme changes recolour the existing board in the same commit as the page (no rebuild, no
+    // repaint), so it never shows the old colours or blinks out.
+    useLayoutEffect(() => {
         themeRef.current = theme;
         controllerRef.current?.setTheme(theme);
     }, [theme]);
@@ -99,6 +100,20 @@ function supportsWebGL(): boolean {
     return webglSupport;
 }
 
+/** Approximate CSS height of the phone stage (the board canvas there is not full screen). */
+const PHONE_STAGE_HEIGHT = 360;
+
+/**
+ * Sharp on high-density screens, but bounded by a pixel budget so a large or weak screen keeps a
+ * smooth frame rate: a full-screen desktop canvas stays near 4 MP, the small phone stage near 1.6 MP.
+ */
+function pickDpr(mobile: boolean): number {
+    const device = window.devicePixelRatio || 1;
+    const area = window.innerWidth * (mobile ? PHONE_STAGE_HEIGHT : window.innerHeight);
+    const budget = mobile ? 1.6e6 : 4.2e6;
+    return Math.max(1, Math.min(device, mobile ? 3 : 2, Math.sqrt(budget / area)));
+}
+
 /** A renderer failure only removes the board; it never takes the page down with it. */
 class KeyboardBoundary extends Component<{ onError?: () => void; children: ReactNode }, { failed: boolean }> {
     state = { failed: false };
@@ -119,6 +134,8 @@ class KeyboardBoundary extends Component<{ onError?: () => void; children: React
 /** Client-only and lazily loaded, so three.js and R3F stay out of the first page load. */
 export default function KeyboardCanvas({ onUnavailable, ...props }: KeyboardCanvasProps) {
     const supported = supportsWebGL();
+    // Fixed per mount (the canvas is remounted when the layout switches between phone and desktop).
+    const [dpr] = useState(() => pickDpr(props.mobile));
     useEffect(() => {
         if (!supported) onUnavailable?.();
     }, [supported, onUnavailable]);
@@ -130,7 +147,7 @@ export default function KeyboardCanvas({ onUnavailable, ...props }: KeyboardCanv
                 aria-hidden="true"
                 frameloop="demand"
                 shadows="percentage"
-                dpr={[1, 1.25]}
+                dpr={dpr}
                 // 'default' avoids waking a discrete GPU on laptops just for this section.
                 gl={{ antialias: true, alpha: true, powerPreference: 'default' }}
                 camera={{ fov: 22, near: 0.1, far: 100, position: [0, 12, 12] }}

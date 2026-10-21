@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+/* Desktop-width screens of ordinary height (e.g. 1440×900, 1920×950): the Tech Stack tightens its
+   spacing so the whole pinned section fits. Declared before `short` so `short` wins below 820px. */
+@custom-variant compact (@media (min-width: 1024px) and (max-height: 980px));
+
 /* Desktop-width screens that are short (laptops at 100% zoom, e.g. 1366×630, 1536×730):
    pinned sections switch to a compact layout so they always fit one screen. */
 @custom-variant short (@media (min-width: 1024px) and (max-height: 820px));
@@ -17,6 +21,29 @@
       opacity: 1;
     }
   }
+
+  /* Preloader hold: the logo breathes while heavy pieces finish loading. Opacity only, so the
+     compositor keeps it smooth even while the main thread is busy. */
+  --animate-preloader-breathe: preloader-breathe 1.4s ease-in-out 0.15s infinite;
+
+  @keyframes preloader-breathe {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.45;
+    }
+  }
+}
+
+/* Theme swap: colours change in one step (under the ink cover) instead of starting a transition
+   on every element that has one — thousands of them, each restyled every frame. */
+[data-theme-switching],
+[data-theme-switching] *,
+[data-theme-switching] *::before,
+[data-theme-switching] *::after {
+  transition: none !important;
 }
 
 /* Monochrome token set. `:root` is the light default; `[data-theme]` re-scopes

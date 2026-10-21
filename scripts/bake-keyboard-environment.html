@@ -1,0 +1,95 @@
+<!doctype html>
+<!--
+  Bakes the Tech Stack keyboard's studio reflections into public/keyboard/environment.png.
+
+  At runtime three's PMREM pass compiles a 256-sample GGX filter that takes seconds on Windows
+  (Direct3D), so the result is baked once here and the keyboard loads it as a ready-made
+  CubeUV environment. Re-run this whenever the scene or settings below change.
+
+  Serve the repository root with any static file server, open /scripts/bake-keyboard-environment.html
+  and save the downloaded PNG as public/keyboard/environment.png.
+
+  Encoding: linear radiance × ENVIRONMENT_SCALE, sRGB-encoded to 8 bits, top row first. Keep
+  ENVIRONMENT_SCALE in sync with components/sections/TechStack/keyboard/controller.ts.
+-->
+<meta charset="utf-8">
+<title>Bake keyboard environment</title>
+<script type="importmap">{ "imports": { "three": "/node_modules/three/build/three.module.js" } }</script>
+<p id="status">Baking…</p>
+<script type="module">
+import * as THREE from 'three';
+
+const ENVIRONMENT_SCALE = 0.5;
+
+// A soft studio: dim surround plus three bright panels (top, left, back-right).
+function createEnvironmentScene() {
+    const scene = new THREE.Scene();
+    scene.add(new THREE.Mesh(new THREE.SphereGeometry(15, 32, 16), new THREE.MeshBasicMaterial({ color: 0x5a5a5a, side: THREE.BackSide })));
+    const panel = (x, y, z, w, h, v) => {
+        const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ color: new THREE.Color(v, v, v), side: THREE.DoubleSide }));
+        mesh.position.set(x, y, z);
+        mesh.lookAt(0, 0, 0);
+        scene.add(mesh);
+    };
+    panel(0, 10, 2, 16, 10, 1.6);
+    panel(-10, 4, 2, 10, 6, 1.1);
+    panel(8, 3, -6, 8, 4, 0.9);
+    return scene;
+}
+
+const renderer = new THREE.WebGLRenderer();
+const pmrem = new THREE.PMREMGenerator(renderer);
+// The materials are rough, so a 64px cube is indistinguishable from the 256px default.
+const environment = pmrem.fromScene(createEnvironmentScene(), 0.04, 0.1, 100, { size: 64 });
+const { width, height } = environment;
+
+// Copy the half-float result texel for texel into a float target and read it back.
+const copy = new THREE.WebGLRenderTarget(width, height, { type: THREE.FloatType, minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, depthBuffer: false });
+const quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMaterial({
+    uniforms: { map: { value: environment.texture } },
+    vertexShader: 'void main() { gl_Position = vec4(position.xy, 0.0, 1.0); }',
+    fragmentShader: 'uniform sampler2D map; void main() { gl_FragColor = texelFetch(map, ivec2(gl_FragCoord.xy), 0); }',
+    depthTest: false,
+    depthWrite: false,
+    toneMapped: false,
+}));
+const quadScene = new THREE.Scene();
+quadScene.add(quad);
+renderer.setRenderTarget(copy);
+renderer.render(quadScene, new THREE.Camera());
+const linear = new Float32Array(width * height * 4);
+renderer.readRenderTargetPixels(copy, 0, 0, width, height, linear);
+renderer.setRenderTarget(null);
+
+const encode = (value) => {
+    const v = Math.min(1, Math.max(0, value * ENVIRONMENT_SCALE));
+    const s = v <= 0.0031308 ? v * 12.92 : 1.055 * v ** (1 / 2.4) - 0.055;
+    return Math.round(s * 255);
+};
+const canvas = document.createElement('canvas');
+canvas.width = width;
+canvas.height = height;
+const context = canvas.getContext('2d');
+const pixels = context.createImageData(width, height);
+for (let y = 0; y < height; y++) {
+    // Read-back rows start at the bottom of the texture; images start at the top.
+    const row = height - 1 - y;
+    for (let x = 0; x < width; x++) {
+        const from = (row * width + x) * 4;
+        const to = (y * width + x) * 4;
+        pixels.data[to] = encode(linear[from]);
+        pixels.data[to + 1] = encode(linear[from + 1]);
+        pixels.data[to + 2] = encode(linear[from + 2]);
+        pixels.data[to + 3] = 255;
+    }
+}
+context.putImageData(pixels, 0, 0);
+
+const url = canvas.toDataURL('image/png');
+window.bakedEnvironment = url;
+const link = document.createElement('a');
+link.href = url;
+link.download = 'environment.png';
+link.textContent = `Download environment.png (${width}×${height})`;
+document.getElementById('status').replaceChildren(link);
+</script>

@@ -6,7 +6,9 @@ import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
+import { usePreloaderPhase } from '@/components/loader/Preloader';
 import { useTheme } from '@/components/theme/ThemeProvider';
+import { holdPreloader } from '@/lib/animations/preloaderHold';
 import { TECH_CATEGORIES } from '@/lib/techStack';
 import { useMediaQuery } from '@/lib/useMediaQuery';
 import { labelForKey, readoutGlyph, shouldMirrorKey, toolLetter, toolsForKey, TOOL_NAMES } from './keyboard/layout';
@@ -14,10 +16,12 @@ import type { KeyboardHandle, KeyboardView } from './keyboard/KeyboardCanvas';
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
-// three.js + R3F load only when the section approaches the viewport.
+// three.js + R3F stay out of the first page load; they load while the preloader holds.
 const KeyboardCanvas = dynamic(() => import('./keyboard/KeyboardCanvas'), { ssr: false, loading: () => null });
 
 const DESKTOP_QUERY = '(min-width: 1024px)';
+/** Longest the preloader waits for the board before revealing the page anyway. */
+const PRELOADER_HOLD_MAX_MS = 7000;
 /** Camera framing: where the scroll dolly starts and where it settles. */
 // Scroll animation page: the camera dollies in from far away and settles on the Keyboard page framing.
 const DESKTOP_VIEW = { from: { dist: 32, offX: 0.5, offY: 0.42 }, to: { dist: 17, offX: 0.5, offY: 0.18 } };
@@ -45,7 +49,7 @@ export default function TechStack() {
     const inViewRef = useRef(false);
     const { theme } = useTheme();
     const isDesktop = useMediaQuery(DESKTOP_QUERY);
-    const [keyboardAllowed, setKeyboardAllowed] = useState(false);
+    const preloaderPhase = usePreloaderPhase();
     const [boardReady, setBoardReady] = useState(false);
     const handleReady = useCallback(() => setBoardReady(true), []);
     // No WebGL (or a renderer failure): the board is dropped and the tools work on their own.
@@ -78,18 +82,23 @@ export default function TechStack() {
         };
     }, []);
 
-    // The 3D board is the heaviest thing on the page, so it is built while the preloader covers
-    // the screen: by the time anyone scrolls here it is ready and scrolling never waits on it.
+    // The 3D board is the heaviest thing on the page, so it is built while the preloader holds
+    // (after its logo has drawn, so the drawing never stutters) and the page is revealed once the
+    // board has rendered: scrolling here never waits on it. Capped so a slow device isn't stuck.
+    const keyboardAllowed = preloaderPhase !== 'intro';
+    const releaseHoldRef = useRef<(() => void) | null>(null);
     useEffect(() => {
-        if (keyboardAllowed) return;
-        const idle = window as Window & { requestIdleCallback?: (cb: () => void, options?: { timeout: number }) => number; cancelIdleCallback?: (id: number) => void };
-        if (idle.requestIdleCallback) {
-            const id = idle.requestIdleCallback(() => setKeyboardAllowed(true), { timeout: 400 });
-            return () => idle.cancelIdleCallback?.(id);
-        }
-        const id = window.setTimeout(() => setKeyboardAllowed(true), 100);
-        return () => window.clearTimeout(id);
-    }, [keyboardAllowed]);
+        const release = holdPreloader();
+        releaseHoldRef.current = release;
+        const cap = window.setTimeout(release, PRELOADER_HOLD_MAX_MS);
+        return () => {
+            window.clearTimeout(cap);
+            release();
+        };
+    }, []);
+    useEffect(() => {
+        if (boardReady || boardUnavailable) releaseHoldRef.current?.();
+    }, [boardReady, boardUnavailable]);
 
     // Typing mirrors onto the board only while the section is on screen. Never blocks the key,
     // never reads fields or dialogs, and nothing typed is stored or sent anywhere.
@@ -195,7 +204,7 @@ export default function TechStack() {
             id="techstack"
             data-analytics-section="techstack"
             aria-labelledby="techstack-heading"
-            className="relative w-full overflow-hidden bg-[var(--site-bg)] pb-10 pt-24 lg:flex lg:min-h-svh lg:flex-col lg:pb-12 short:pb-6 short:pt-[4.5rem]"
+            className="relative w-full overflow-hidden bg-[var(--site-bg)] pb-10 pt-24 lg:flex lg:min-h-svh lg:flex-col lg:pb-12 compact:pb-8 compact:pt-20 short:pb-6 short:pt-[4.5rem]"
         >
             <div className="relative z-[2] mx-auto flex w-full max-w-7xl items-center gap-4 px-5 md:px-8 pointer-events-none">
                 <p className="shrink-0 font-display text-xs font-bold uppercase leading-none tracking-[0.14em] text-[var(--text)]">
@@ -208,10 +217,13 @@ export default function TechStack() {
             </div>
 
             <div className="mx-auto mt-8 w-full max-w-7xl px-5 md:px-8 lg:mt-12 short:mt-5">
-                <div className="lg:w-[min(44rem,52%)]">
+                {/* Desktop: as wide as the free space allows. The board sits at the right and grows with
+                    the screen's height (its left edge lands near 100vw - 0.9 × 100svh), so the column
+                    stops 2.5rem short of it; the left term is this container's own left edge. */}
+                <div className="lg:w-[max(26rem,min(44rem,52%,calc(100vw-90svh-2.5rem-max(2rem,50vw-38rem))))]">
                     <h2
                         id="techstack-heading"
-                        className="relative z-[3] m-0 font-display text-[2.9rem] font-extrabold leading-[0.95] tracking-[-0.035em] text-[var(--text)] lg:text-[clamp(3.6rem,5.6vw,5.1rem)] short:text-[clamp(2.4rem,7.5svh,3.6rem)]"
+                        className="relative z-[3] m-0 font-display text-[2.9rem] font-extrabold leading-[0.95] tracking-[-0.035em] text-[var(--text)] lg:text-[clamp(3.6rem,5.6vw,5.1rem)] compact:text-[clamp(2.8rem,7svh,4.4rem)] short:text-[clamp(2.4rem,7.5svh,3.6rem)]"
                     >
                         <span className="block overflow-hidden pb-[0.06em]">
                             <span data-tech-line className="block">The tools</span>
@@ -222,7 +234,7 @@ export default function TechStack() {
                             </span>
                         </span>
                     </h2>
-                    <p data-tech-lead className="relative z-[3] mt-4 max-w-[40ch] text-sm leading-relaxed text-[var(--muted)] lg:mt-6 lg:text-[0.95rem] short:hidden">
+                    <p data-tech-lead className="relative z-[3] mt-4 max-w-[40ch] text-sm leading-relaxed text-[var(--muted)] lg:mt-6 lg:text-[0.95rem] compact:mt-4 short:hidden">
                         <span className="lg:hidden">Tap a tool to find it on the keyboard, or tap a dotted key.</span>
                         <span className="hidden lg:inline">
                             Every project on this site started on a keyboard. Tap a dotted key, or type on yours, to find the tools behind the work.
@@ -275,9 +287,9 @@ export default function TechStack() {
                         </div>
                     </div>
 
-                    <div className="relative z-[3] mt-2 lg:mt-7 short:mt-4">
+                    <div className="relative z-[3] mt-2 lg:mt-7 compact:mt-5 short:mt-4">
                         {TECH_CATEGORIES.map((category, categoryIndex) => (
-                            <div key={category.name} data-tech-group className="border-t border-[var(--hairline)] pb-4 pt-3.5 lg:pb-[1.125rem] lg:pt-4 short:pb-2.5 short:pt-2">
+                            <div key={category.name} data-tech-group className="border-t border-[var(--hairline)] pb-4 pt-3.5 lg:pb-[1.125rem] lg:pt-4 compact:pb-3 compact:pt-3 short:pb-2.5 short:pt-2">
                                 <h3 className="mb-2.5 short:mb-1.5 flex items-baseline gap-3.5 font-mono text-[10px] font-normal uppercase tracking-[0.12em] text-[var(--text)] lg:text-xs">
                                     <span className="text-[var(--faint)]">{String(categoryIndex + 1).padStart(2, '0')}</span>
                                     <span>{category.name}</span>
@@ -296,7 +308,7 @@ export default function TechStack() {
                                                         if (keyboardRef.current && !boardUnavailable) keyboardRef.current.focusPress(letter);
                                                         else handlePress(letter);
                                                     }}
-                                                    className={`border px-3 py-3 text-[13px] leading-none transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--text)]/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--site-bg)] motion-reduce:transition-none lg:px-3.5 lg:py-2.5 lg:text-[15px] short:px-3 short:py-[7px] short:text-sm ${lit
+                                                    className={`border px-3 py-3 text-[13px] leading-none transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--text)]/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--site-bg)] motion-reduce:transition-none lg:px-3.5 lg:py-2.5 lg:text-[15px] compact:py-2 short:px-3 short:py-[7px] short:text-sm ${lit
                                                         ? 'border-[var(--inverse-bg)] bg-[var(--inverse-bg)] text-[var(--inverse-text)]'
                                                         : 'border-[var(--hairline-strong)] text-[var(--muted)] hover:border-[var(--text)] hover:text-[var(--text)]'}`}
                                                 >

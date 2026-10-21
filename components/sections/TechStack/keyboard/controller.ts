@@ -1,7 +1,7 @@
-import { PMREMGenerator, Plane, Raycaster, Vector2, Vector3, type Object3D, type PerspectiveCamera, type Scene, type WebGLRenderer } from 'three';
+import { CubeUVReflectionMapping, LinearFilter, Plane, Raycaster, SRGBColorSpace, TextureLoader, Vector2, Vector3, type Object3D, type PerspectiveCamera, type Scene, type Texture, type WebGLRenderer } from 'three';
 
 import type { Theme } from '@/lib/theme';
-import { buildKeyboard, CAP_Y, createEnvironmentScene, disposeObject, TRAVEL, type BuiltKeyboard, type KeyMesh } from './build';
+import { buildKeyboard, CAP_Y, TRAVEL, type BuiltKeyboard, type KeyMesh } from './build';
 import { keyboardLook } from './palette';
 
 export interface KeyboardView {
@@ -38,6 +38,29 @@ function siteFontStack(): string {
     return stack || 'system-ui, sans-serif';
 }
 
+/**
+ * Studio reflections, baked by scripts/bake-keyboard-environment.html: generating them at runtime
+ * (three's PMREM pass) compiles a GGX filter that takes seconds on Windows. Stored as linear
+ * radiance × ENVIRONMENT_SCALE in 8-bit sRGB; the scene's environmentIntensity undoes the scale.
+ */
+const ENVIRONMENT_URL = '/keyboard/environment.png';
+const ENVIRONMENT_SCALE = 0.5;
+
+/** Resolves to null if the image can't load: the board still renders, just without reflections. */
+function loadEnvironment(): Promise<Texture | null> {
+    return new TextureLoader().loadAsync(ENVIRONMENT_URL).then(
+        (texture) => {
+            texture.mapping = CubeUVReflectionMapping;
+            texture.colorSpace = SRGBColorSpace;
+            texture.minFilter = LinearFilter;
+            texture.magFilter = LinearFilter;
+            texture.generateMipmaps = false;
+            return texture;
+        },
+        () => null,
+    );
+}
+
 function waitForFont(stack: string): Promise<unknown> {
     if (!document.fonts?.load) return Promise.resolve();
     return Promise.race([
@@ -66,6 +89,7 @@ export class KeyboardController {
     private audio: AudioContext | null = null;
     /** Shadows only change when something on the board moves, not when the camera does. */
     private shadowDirty = true;
+    private readyPending = false;
     private readonly fontStack = siteFontStack();
     private readonly cleanups: (() => void)[] = [];
 
@@ -86,34 +110,41 @@ export class KeyboardController {
             gl.shadowMap.autoUpdate = true;
         });
 
-        // Studio reflections.
-        const pmrem = new PMREMGenerator(gl);
-        const envScene = createEnvironmentScene();
-        // 0.04 is the largest blur PMREM supports without clipping (the r128 original asked for 0.08 and was clipped).
-        const envTarget = pmrem.fromScene(envScene, 0.04);
-        scene.environment = envTarget.texture;
-        this.cleanups.push(() => {
-            if (scene.environment === envTarget.texture) scene.environment = null;
-            envTarget.dispose();
-            pmrem.dispose();
-            disposeObject(envScene);
-        });
-
         this.attachPointer(gl.domElement);
 
         // Legends need the UI font; the board stays hidden until they're painted (no blank keycaps).
         const stack = this.fontStack;
         const isAlive = () => this.alive;
-        void this.built.buildKeys(isAlive)
+        const legends = this.built.buildKeys(isAlive)
             .then(() => waitForFont(stack))
-            .then(() => this.built.paintLegends(stack, gl.capabilities.getMaxAnisotropy(), isAlive))
+            .then(() => this.built.paintLegends(stack, gl.capabilities.getMaxAnisotropy(), isAlive));
+        void Promise.all([legends, loadEnvironment()])
+            .then(([, environment]) => {
+                if (!environment) return;
+                if (!this.alive) {
+                    environment.dispose();
+                    return;
+                }
+                scene.environment = environment;
+                scene.environmentIntensity = 1 / ENVIRONMENT_SCALE;
+                this.cleanups.push(() => {
+                    if (scene.environment === environment) {
+                        scene.environment = null;
+                        scene.environmentIntensity = 1;
+                    }
+                    environment.dispose();
+                });
+            })
+            // Shaders are compiled once the environment is in place, as it changes them.
             .then(() => this.warmUp())
             .then(() => {
                 if (!this.alive) return;
                 this.built.stage.visible = true;
                 this.shadowDirty = true;
+                // Ready is reported once the first full frame has been drawn (see frame()), so that
+                // costly first render never overlaps whatever the page does next (the preloader reveal).
+                this.readyPending = true;
                 invalidate();
-                this.options.onReady?.();
             });
         invalidate();
     }
@@ -130,7 +161,9 @@ export class KeyboardController {
         stage.visible = true;
         let pending: Promise<unknown> = Promise.resolve();
         try {
-            pending = gl.compileAsync(stage, camera, scene);
+            // The whole scene, exactly as it will be rendered: compiling the stage against the scene
+            // would count its lights twice and build programs the first frame can't reuse.
+            pending = gl.compileAsync(scene, camera);
         } catch {
             // Older drivers: fall back to compiling on first render.
         }
@@ -164,7 +197,8 @@ export class KeyboardController {
         this.options.theme = theme;
         const { gl, invalidate } = this.get();
         const { lighting, palette } = keyboardLook(theme);
-        this.built.applyLook(palette, lighting, this.fontStack, gl.capabilities.getMaxAnisotropy());
+        // Colours only (the legend masks are theme-neutral), so the swap is instant.
+        this.built.applyLook(palette, lighting);
         gl.toneMappingExposure = lighting.exposure;
         this.shadowDirty = true;
         invalidate();
@@ -246,6 +280,13 @@ export class KeyboardController {
             this.shadowDirty = false;
         }
         if (busy || m.dragging) invalidate();
+        if (this.readyPending) {
+            this.readyPending = false;
+            // frame() runs just before the render: the next animation frame comes after it.
+            requestAnimationFrame(() => {
+                if (this.alive) this.options.onReady?.();
+            });
+        }
     }
 
     dispose() {

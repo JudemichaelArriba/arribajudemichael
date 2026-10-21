@@ -52,7 +52,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         if (getSnapshot() === next) return;
 
         const apply = () => {
-            document.documentElement.setAttribute('data-theme', next);
+            const root = document.documentElement;
+            // Transitions stay off until the new colours have been painted (see globals.css).
+            root.setAttribute('data-theme-switching', '');
+            root.setAttribute('data-theme', next);
+            requestAnimationFrame(() => requestAnimationFrame(() => root.removeAttribute('data-theme-switching')));
             try {
                 window.localStorage.setItem(THEME_STORAGE_KEY, next);
             } catch {

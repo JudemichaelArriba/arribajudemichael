@@ -11,8 +11,6 @@ interface CertificatePdfPreviewProps {
     source: string | File | null;
     label: string;
     eager?: boolean;
-    /** White page behind the canvas (default). Off when the surrounding frame provides the surface. */
-    paper?: boolean;
     className?: string;
 }
 
@@ -26,6 +24,18 @@ function loadPdfRuntime() {
     return pdfRuntime;
 }
 
+/**
+ * One PDF.js worker for every preview: by default each document starts its own worker (script +
+ * WebAssembly start-up each time), which made opening a list of certificates take seconds.
+ * Kept for the page's lifetime; a destroyed loading task leaves a worker it was given running.
+ */
+let sharedWorker: import('pdfjs-dist').PDFWorker | null = null;
+
+function previewWorker(pdfjs: typeof import('pdfjs-dist')) {
+    if (!sharedWorker || sharedWorker.destroyed) sharedWorker = pdfjs.PDFWorker.create({ name: 'certificate-previews' });
+    return sharedWorker;
+}
+
 /** Fetches PDF.js ahead of time (e.g. on intent to open certificates). Safe as an event handler. */
 export function preloadPdfRuntime(): void {
     void loadPdfRuntime().catch(() => undefined);
@@ -33,9 +43,16 @@ export function preloadPdfRuntime(): void {
 
 /**
  * PDF.js paints on the main thread, so previews take turns, each in an idle moment: a list of them
- * mounting at once (a tab switch) never lands as one long task. Downloads still run in parallel.
+ * mounting at once (a tab switch) never lands as one long task. A preview that is on screen goes
+ * first. Downloads still run in parallel.
  */
-let paintQueue: Promise<void> = Promise.resolve();
+interface PaintWaiter {
+    isVisible: () => boolean;
+    start: (release: () => void) => void;
+}
+
+const paintWaiters: PaintWaiter[] = [];
+let painting = false;
 
 function idleMoment(): Promise<void> {
     return new Promise((resolve) => {
@@ -44,14 +61,28 @@ function idleMoment(): Promise<void> {
     });
 }
 
-function waitForPaintTurn(): Promise<() => void> {
-    let release: () => void = () => undefined;
-    const finished = new Promise<void>((resolve) => {
-        release = resolve;
+function pumpPaints() {
+    if (painting || !paintWaiters.length) return;
+    painting = true;
+    void idleMoment().then(() => {
+        const visible = paintWaiters.findIndex((waiter) => waiter.isVisible());
+        const [next] = paintWaiters.splice(Math.max(visible, 0), 1);
+        let released = false;
+        next.start(() => {
+            if (released) return;
+            released = true;
+            painting = false;
+            pumpPaints();
+        });
     });
-    const turn = paintQueue.then(idleMoment);
-    paintQueue = turn.then(() => finished);
-    return turn.then(() => release);
+}
+
+/** Resolves with a release function once it is this preview's turn to paint. */
+function waitForPaintTurn(isVisible: () => boolean): Promise<() => void> {
+    return new Promise((resolve) => {
+        paintWaiters.push({ isVisible, start: resolve });
+        pumpPaints();
+    });
 }
 
 type PreviewStatus = 'idle' | 'loading' | 'ready' | 'error';
@@ -60,7 +91,6 @@ export default function CertificatePdfPreview({
     source,
     label,
     eager = false,
-    paper = true,
     className = '',
 }: CertificatePdfPreviewProps) {
     const containerRef = useRef<HTMLDivElement>(null);
@@ -112,6 +142,14 @@ export default function CertificatePdfPreview({
         let documentProxy: import('pdfjs-dist').PDFDocumentProxy | null = null;
         let pageProxy: import('pdfjs-dist').PDFPageProxy | null = null;
         let renderTask: import('pdfjs-dist').RenderTask | null = null;
+        // Whether the preview is on screen right now (decides who paints first).
+        let onScreen = false;
+        const visibility = typeof IntersectionObserver === 'undefined'
+            ? null
+            : new IntersectionObserver(([entry]) => {
+                onScreen = entry.isIntersecting;
+            });
+        visibility?.observe(container);
 
         const renderPreview = async () => {
             if (disposed || !pageProxy) return;
@@ -174,6 +212,7 @@ export default function CertificatePdfPreview({
                 loadingTask = pdfjs.getDocument({
                     url: pdfUrl,
                     wasmUrl: '/vendor/pdfjs/wasm/',
+                    worker: previewWorker(pdfjs),
                 });
                 documentProxy = await loadingTask.promise;
                 if (disposed) return;
@@ -181,7 +220,7 @@ export default function CertificatePdfPreview({
                 pageProxy = await documentProxy.getPage(1);
                 if (disposed) return;
 
-                const release = await waitForPaintTurn();
+                const release = await waitForPaintTurn(() => onScreen);
                 try {
                     if (disposed) return;
                     await renderPreview();
@@ -207,6 +246,7 @@ export default function CertificatePdfPreview({
 
         return () => {
             disposed = true;
+            visibility?.disconnect();
             window.cancelAnimationFrame(resizeFrame);
             resizeObserver?.disconnect();
             renderTask?.cancel();
@@ -225,7 +265,7 @@ export default function CertificatePdfPreview({
     return (
         <div
             ref={containerRef}
-            className={`relative flex h-full w-full items-center justify-center overflow-hidden ${paper ? 'bg-white' : ''} ${className}`}
+            className={`relative flex h-full w-full items-center justify-center overflow-hidden bg-white ${className}`}
         >
             <canvas
                 ref={canvasRef}
@@ -235,7 +275,7 @@ export default function CertificatePdfPreview({
             />
 
             {displayStatus !== 'ready' ? (
-                <div className={`absolute inset-0 flex flex-col items-center justify-center px-4 text-center ${paper ? 'bg-[#f4f4f5] text-black/50' : 'bg-[var(--surface-muted)] text-[var(--faint)]'}`}>
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#f4f4f5] px-4 text-center text-black/50">
                     {displayStatus === 'loading' || displayStatus === 'idle' ? (
                         <>
                             <LoaderCircle

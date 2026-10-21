@@ -1,12 +1,10 @@
 import {
-    BackSide,
     BoxGeometry,
     BufferGeometry,
     CanvasTexture,
     Color,
     CylinderGeometry,
     DirectionalLight,
-    DoubleSide,
     ExtrudeGeometry,
     Float32BufferAttribute,
     Group,
@@ -21,11 +19,8 @@ import {
     Path,
     PlaneGeometry,
     Quaternion,
-    Scene,
     ShadowMaterial,
     Shape,
-    SphereGeometry,
-    SRGBColorSpace,
     Vector3,
     type Object3D,
     type Texture,
@@ -51,11 +46,16 @@ export interface KeyState {
     hover: number;
     sideMat: MeshStandardMaterial;
     topMat: MeshStandardMaterial;
-    bg: string;
-    fg: string;
-    dot: string;
+    /** Legend colours, read by the keycap shader: a theme change only updates these. */
+    legend: LegendColours;
     /** Fixed ±1.5% lightness offset so the board looks the same after a theme change. */
     jitter: number;
+}
+
+export interface LegendColours {
+    bg: Color;
+    fg: Color;
+    dot: Color;
 }
 
 export type KeyMesh = Mesh<BufferGeometry, MeshStandardMaterial[]> & { userData: KeyState };
@@ -80,8 +80,8 @@ export interface BuiltKeyboard {
     buildKeys: (isAlive: () => boolean) => Promise<void>;
     /** Paints the keycap legends in small batches; resolves when done or when `isAlive` turns false. */
     paintLegends: (fontStack: string, maxAnisotropy: number, isAlive: () => boolean) => Promise<void>;
-    /** Recolours the existing board for another theme (no rebuild, so it never disappears). */
-    applyLook: (palette: BoardPalette, lighting: StageLighting, fontStack: string, maxAnisotropy: number) => void;
+    /** Recolours the existing board for another theme: colours only, no repaint, no rebuild. */
+    applyLook: (palette: BoardPalette, lighting: StageLighting) => void;
     dispose: () => void;
 }
 
@@ -239,7 +239,11 @@ function keyColours(palette: BoardPalette, kind: KeyKind, jitterAmount: number) 
     };
 }
 
-function legendTexture(state: KeyState, tw: number, td: number, fontStack: string, maxAnisotropy: number): Texture {
+/**
+ * Legends are painted once as a theme-neutral mask: red = glyph, green = dot, black = keycap.
+ * The keycap shader turns the mask into colours, so switching theme never repaints a texture.
+ */
+function legendTexture(label: string, tw: number, td: number, fontStack: string, maxAnisotropy: number): Texture {
     const LS = 256;
     const ch = 512;
     const cw = (512 * tw) / td;
@@ -249,10 +253,9 @@ function legendTexture(state: KeyState, tw: number, td: number, fontStack: strin
     const ctx = canvas.getContext('2d');
     if (ctx) {
         ctx.scale(LS / 512, LS / 512);
-        ctx.fillStyle = state.bg;
+        ctx.fillStyle = '#000000';
         ctx.fillRect(0, 0, cw, ch);
-        ctx.fillStyle = state.fg;
-        const { label } = state;
+        ctx.fillStyle = '#ff0000';
         if (label !== 'Space') {
             if (/[←-↓]/.test(label)) {
                 ctx.textAlign = 'center';
@@ -272,36 +275,43 @@ function legendTexture(state: KeyState, tw: number, td: number, fontStack: strin
             }
         }
         if (MARKED_KEYS.has(label)) {
-            ctx.fillStyle = state.dot;
+            ctx.fillStyle = '#00ff00';
             ctx.beginPath();
             ctx.arc(cw - 96, ch - 96, 18, 0, Math.PI * 2);
             ctx.fill();
         }
     }
     const texture = new CanvasTexture(canvas);
-    texture.colorSpace = SRGBColorSpace;
     texture.anisotropy = maxAnisotropy;
     texture.minFilter = LinearMipmapLinearFilter;
     return texture;
 }
 
-/** A soft studio environment for reflections, rendered once by the caller through PMREM. */
-export function createEnvironmentScene(): Scene {
-    const scene = new Scene();
-    scene.add(new Mesh(new SphereGeometry(15, 32, 16), new MeshBasicMaterial({ color: 0x5a5a5a, side: BackSide })));
-    const panel = (x: number, y: number, z: number, w: number, h: number, v: number) => {
-        const m = new Mesh(new PlaneGeometry(w, h), new MeshBasicMaterial({ color: new Color(v, v, v), side: DoubleSide }));
-        m.position.set(x, y, z);
-        m.lookAt(0, 0, 0);
-        scene.add(m);
+const LEGEND_UNIFORMS = `uniform vec3 legendBg;
+uniform vec3 legendFg;
+uniform vec3 legendDot;`;
+const LEGEND_MAP_FRAGMENT = `#ifdef USE_MAP
+    vec4 legendMask = texture2D( map, vMapUv );
+    diffuseColor.rgb *= mix( mix( legendBg, legendFg, legendMask.r ), legendDot, legendMask.g );
+#endif`;
+
+/** Keycap top: plain colour until its legend mask arrives, then the mask is coloured by `legend`. */
+function keycapTopMaterial(legend: LegendColours, keyEnv: number): MeshStandardMaterial {
+    const material = new MeshStandardMaterial({ color: legend.bg, emissive: legend.bg, emissiveIntensity: 0, roughness: 0.94, envMapIntensity: keyEnv });
+    const uniforms = { legendBg: { value: legend.bg }, legendFg: { value: legend.fg }, legendDot: { value: legend.dot } };
+    material.onBeforeCompile = (shader) => {
+        Object.assign(shader.uniforms, uniforms);
+        shader.fragmentShader = shader.fragmentShader
+            .replace('#include <common>', `#include <common>
+${LEGEND_UNIFORMS}`)
+            .replace('#include <map_fragment>', LEGEND_MAP_FRAGMENT);
     };
-    panel(0, 10, 2, 16, 10, 1.6);
-    panel(-10, 4, 2, 10, 6, 1.1);
-    panel(8, 3, -6, 8, 4, 0.9);
-    return scene;
+    // Every keycap shares one compiled program; only the uniform values differ.
+    material.customProgramCacheKey = () => 'keycap-legend';
+    return material;
 }
 
-export function disposeObject(object: Object3D) {
+function disposeObject(object: Object3D) {
     object.traverse((child) => {
         const mesh = child as Mesh;
         if (mesh.geometry) mesh.geometry.dispose();
@@ -513,13 +523,14 @@ export function buildKeyboard(palette: BoardPalette, lighting: StageLighting, mo
         }
         const keyJitter = (jitter() - 0.5) * 0.03;
         const { bg, fg, dot } = keyColours(palette, slot.kind, keyJitter);
+        const legend: LegendColours = { bg: new Color(bg), fg: new Color(fg), dot: new Color(dot) };
         const sideMat = new MeshStandardMaterial({ color: bg, emissive: bg, emissiveIntensity: 0, roughness: 0.95, envMapIntensity: palette.keyEnv });
-        const topMat = new MeshStandardMaterial({ color: bg, emissive: bg, emissiveIntensity: 0, roughness: 0.94, envMapIntensity: palette.keyEnv });
+        const topMat = keycapTopMaterial(legend, palette.keyEnv);
         const mesh = new Mesh(geometry, [sideMat, topMat]) as KeyMesh;
         mesh.castShadow = true;
         mesh.receiveShadow = true;
         mesh.position.set(slot.cx, CAP_Y, slot.z);
-        mesh.userData = { label: slot.label, kind: slot.kind, press: 0, hover: 0, sideMat, topMat, bg, fg, dot, jitter: keyJitter };
+        mesh.userData = { label: slot.label, kind: slot.kind, press: 0, hover: 0, sideMat, topMat, legend, jitter: keyJitter };
         board.add(mesh);
         keys.push(mesh);
         pickables.push(mesh);
@@ -541,14 +552,14 @@ export function buildKeyboard(palette: BoardPalette, lighting: StageLighting, mo
             const state = mesh.userData;
             const { tw, td } = mesh.geometry.userData as { tw: number; td: number };
             state.topMat.map?.dispose();
-            state.topMat.map = legendTexture(state, tw, td, fontStack, maxAnisotropy);
+            state.topMat.map = legendTexture(state.label, tw, td, fontStack, maxAnisotropy);
             state.topMat.color.set(0xffffff);
             state.topMat.needsUpdate = true;
             if (i % 12 === 11) await yieldToBrowser();
         }
     }
 
-    function applyLook(nextPalette: BoardPalette, nextLighting: StageLighting, fontStack: string, maxAnisotropy: number) {
+    function applyLook(nextPalette: BoardPalette, nextLighting: StageLighting) {
         key.intensity = nextLighting.key;
         rim.intensity = nextLighting.rim;
         fill.intensity = nextLighting.fill;
@@ -569,22 +580,16 @@ export function buildKeyboard(palette: BoardPalette, lighting: StageLighting, mo
         for (const mesh of keys) {
             const state = mesh.userData;
             const colours = keyColours(nextPalette, state.kind, state.jitter);
-            state.bg = colours.bg;
-            state.fg = colours.fg;
-            state.dot = colours.dot;
+            state.legend.bg.set(colours.bg);
+            state.legend.fg.set(colours.fg);
+            state.legend.dot.set(colours.dot);
             state.sideMat.color.set(colours.bg);
             state.sideMat.emissive.set(colours.bg);
             state.sideMat.envMapIntensity = nextPalette.keyEnv;
             state.topMat.emissive.set(colours.bg);
             state.topMat.envMapIntensity = nextPalette.keyEnv;
-            if (state.topMat.map) {
-                const { tw, td } = mesh.geometry.userData as { tw: number; td: number };
-                state.topMat.map.dispose();
-                state.topMat.map = legendTexture(state, tw, td, fontStack, maxAnisotropy);
-                state.topMat.needsUpdate = true;
-            } else {
-                state.topMat.color.set(colours.bg);
-            }
+            // Painted keycaps take the new colours through their legend uniforms (shared objects).
+            if (!state.topMat.map) state.topMat.color.set(colours.bg);
         }
     }
 
