@@ -4,12 +4,20 @@ import { createContext, useContext, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useGSAP } from '@gsap/react';
-import { urbanist } from '@/lib/fonts';
-import { buildPreloaderReveal, drawPreloaderProgress } from '@/lib/animations/preloader';
-import { holdPreloader, preloaderProgress, subscribePreloaderProgress } from '@/lib/animations/preloaderHold';
-import { PreloaderLogo } from './PreloaderLogo';
+import { createPreloaderWorker, liftPreloaderCurtain, startPreloaderCanvas } from '@/lib/animations/preloader';
+import { holdPreloader, preloaderProgress, setPreloading } from '@/lib/animations/preloaderHold';
+import { rememberScrollPosition, takeSavedScrollPosition } from '@/lib/animations/scrollRestore';
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
+
+// Started while the page's scripts load, before hydration: see `createPreloaderWorker`. Only the
+// first preloader takes it; a later mount (or React's dev double-mount) starts its own.
+let earlyWorker = createPreloaderWorker();
+function takePreloaderWorker() {
+    const worker = earlyWorker ?? createPreloaderWorker();
+    earlyWorker = null;
+    return worker;
+}
 
 /**
  * True from the moment the curtain starts lifting. Sections that reveal on
@@ -39,12 +47,15 @@ export default function Preloader({ children }: { children: React.ReactNode }) {
     const [ready, setReady] = useState(false);
     const [phase, setPhase] = useState<PreloaderPhase>('intro');
     const overlayRef = useRef<HTMLDivElement>(null);
-    const outlineRef = useRef<SVGTextElement>(null);
-    const colorRef = useRef<SVGTextElement>(null);
+    const stageRef = useRef<HTMLDivElement>(null);
+    const meterRef = useRef<HTMLParagraphElement>(null);
 
     useGSAP(() => {
         document.body.style.overflow = 'hidden';
+        setPreloading(true);
         let revealed = false;
+        const forgetScrollPosition = rememberScrollPosition();
+        const savedScroll = takeSavedScrollPosition();
 
         // The page itself is one piece of the progress: hydrated now, finished once the web
         // fonts are in. Fonts arriving after the reveal still re-measure every ScrollTrigger,
@@ -56,41 +67,51 @@ export default function Preloader({ children }: { children: React.ReactNode }) {
             if (revealed) ScrollTrigger.refresh();
         });
 
-        // The JM outline is drawn by the real loading progress (never backwards); when it is
-        // complete the letters fill in and the curtain lifts.
-        let drawn = 0;
-        let draw: gsap.core.Tween | null = null;
-        let reveal: gsap.core.Timeline | null = null;
+        // The JM outline and the counter under it are drawn together, off the main thread, gliding
+        // toward the real loading progress (never backwards). At 100% the letters fill and clear
+        // while the page is measured, then the curtain lifts.
+        let cancelLift: () => void = () => undefined;
         const finish = () => {
             if (revealed) return;
             revealed = true;
             // Measure the page with its scrollbar back before the curtain lifts, so nothing
-            // re-measures (and stalls) during the reveal.
+            // re-measures (and stalls) during the reveal. Sections skipped their own refreshes
+            // while the preloader was up; this one covers them all.
+            setPreloading(false);
             document.body.style.overflow = '';
             ScrollTrigger.refresh();
-            reveal = buildPreloaderReveal(
-                { overlay: overlayRef.current, outline: outlineRef.current, color: colorRef.current },
-                {
-                    onReveal: () => {
-                        setReady(true);
-                        setPhase('done');
-                    },
-                    onComplete: () => {
-                        document.body.style.overflow = '';
-                        setLoading(false);
-                    },
-                },
-            );
+            // A reload part-way down: return to where the visitor was, now that every pin is
+            // measured (the browser's own restore ran too early and landed too high).
+            if (savedScroll !== null) {
+                window.scrollTo({ top: Math.min(savedScroll, ScrollTrigger.maxScroll(window)), behavior: 'instant' });
+                ScrollTrigger.update();
+            }
         };
-        const update = () => {
-            if (revealed) return;
-            const progress = preloaderProgress();
-            if (progress <= drawn) return;
-            drawn = progress;
-            draw = drawPreloaderProgress(outlineRef.current, progress, progress >= 1 ? finish : undefined);
-        };
-        const unsubscribe = subscribePreloaderProgress(update);
-        update();
+        const overlay = overlayRef.current;
+        const palette = overlay ? getComputedStyle(overlay) : null;
+        const stopCanvas = stageRef.current
+            ? startPreloaderCanvas({
+                  stage: stageRef.current,
+                  palette: {
+                      text: palette?.getPropertyValue('--text').trim() || '#141414',
+                      muted: palette?.getPropertyValue('--muted').trim() || '#565656',
+                  },
+                  target: preloaderProgress,
+                  worker: takePreloaderWorker(),
+                  events: {
+                      percent: (value) => meterRef.current?.setAttribute('aria-valuenow', String(value)),
+                      complete: finish,
+                      revealed: () => {
+                          setReady(true);
+                          setPhase('done');
+                          cancelLift = liftPreloaderCurtain(overlayRef.current, () => {
+                              document.body.style.overflow = '';
+                              setLoading(false);
+                          });
+                      },
+                  },
+              })
+            : () => undefined;
 
         // Heavy pieces (the keyboard) start once hydration and the first section setups are done.
         const start = () => setPhase('loading');
@@ -104,11 +125,12 @@ export default function Preloader({ children }: { children: React.ReactNode }) {
         }
 
         return () => {
+            forgetScrollPosition();
             cancelStart();
-            unsubscribe();
+            stopCanvas();
+            cancelLift();
+            setPreloading(false);
             page.release();
-            draw?.kill();
-            reveal?.kill();
         };
     }, []);
 
@@ -120,10 +142,17 @@ export default function Preloader({ children }: { children: React.ReactNode }) {
                         ref={overlayRef}
                         className="fixed inset-0 z-[100] flex items-center justify-center bg-[var(--site-bg)]"
                     >
-                        <PreloaderLogo
-                            outlineRef={outlineRef}
-                            colorRef={colorRef}
-                            fontFamily={urbanist.style.fontFamily}
+                        {/* The JM and the percentage under it, drawn on a canvas (see startPreloaderCanvas).
+                            Blank until the outline starts, so there is never a lone "0%". */}
+                        <div ref={stageRef} aria-hidden="true" className="aspect-[520/160] w-[280px] md:w-[380px]" />
+                        <p
+                            ref={meterRef}
+                            role="progressbar"
+                            aria-label="Loading the page"
+                            aria-valuemin={0}
+                            aria-valuemax={100}
+                            aria-valuenow={0}
+                            className="sr-only"
                         />
                     </div>
                 )}

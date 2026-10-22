@@ -8,6 +8,9 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { ArrowUpRight, BadgeCheck, PanelsTopLeft } from 'lucide-react';
 
 import CertificatePdfPreview, { preloadPdfRuntime } from '@/components/ui/CertificatePdfPreview/CertificatePdfPreview';
+import { primeStagger } from '@/lib/animations/primeStagger';
+import { isPreloading } from '@/lib/animations/preloaderHold';
+import { resyncAfterRefresh } from '@/lib/animations/resyncAfterRefresh';
 import type { PublicCertificateDto } from '@/features/admin/certificates/types';
 import type { PublicProjectDto } from '@/features/admin/projects/types';
 
@@ -22,9 +25,14 @@ interface ProjectsProps {
     certificatesUnavailable?: boolean;
 }
 
-/** Pinned card stack wherever a spread fits on screen (phones in portrait too); otherwise spreads scroll. */
-const STACK_QUERY = '(min-height: 560px)';
+/**
+ * Pinned card stack on desktop screens tall enough for a whole spread. Phones, tablets and short
+ * screens get a plain list instead: easy to scroll, nothing pinned, every spread reveals once.
+ */
+const STACK_QUERY = '(min-width: 1024px) and (min-height: 560px)';
 const NO_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
+/** Plays on enter, and also on leave: a jump straight past a reveal (a reload lower down, a fast fling) still shows it. */
+const PLAY_ONCE = 'play play none none';
 
 /** Re-measures only the triggers inside `section` and after it (the sections above are unaffected). */
 function refreshTriggersFrom(section: HTMLElement) {
@@ -62,20 +70,17 @@ function Spread({ panel, index, flip, frame, meta, title, description, rows, act
         <article
             data-showcase-item
             data-panel={panel}
-            className={`grid grid-cols-1 items-start gap-6 border-t border-[var(--hairline)] py-8 sm:py-12 lg:gap-14 lg:py-14 group-data-[stack=on]/showcase:absolute group-data-[stack=on]/showcase:inset-x-0 group-data-[stack=on]/showcase:top-0 group-data-[stack=on]/showcase:origin-top group-data-[stack=on]/showcase:bg-[var(--site-bg)] lg:group-data-[stack=on]/showcase:pb-12 lg:group-data-[stack=on]/showcase:pt-7 short:group-data-[stack=on]/showcase:pb-8 short:group-data-[stack=on]/showcase:pt-4 short:gap-10 max-lg:group-data-[stack=on]/showcase:bottom-0 max-lg:group-data-[stack=on]/showcase:flex max-lg:group-data-[stack=on]/showcase:flex-col max-lg:group-data-[stack=on]/showcase:items-stretch max-lg:group-data-[stack=on]/showcase:gap-3 max-lg:group-data-[stack=on]/showcase:pb-4 max-lg:group-data-[stack=on]/showcase:pt-4 ${flip
+            className={`grid grid-cols-1 items-start gap-6 border-t border-[var(--hairline)] py-8 sm:py-12 lg:gap-14 lg:py-14 group-data-[stack=on]/showcase:absolute group-data-[stack=on]/showcase:inset-x-0 group-data-[stack=on]/showcase:top-0 group-data-[stack=on]/showcase:origin-top group-data-[stack=on]/showcase:bg-[var(--site-bg)] group-data-[stack=on]/showcase:pb-12 group-data-[stack=on]/showcase:pt-7 short:group-data-[stack=on]/showcase:pb-8 short:group-data-[stack=on]/showcase:pt-4 short:gap-10 ${flip
                 ? 'lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]'
                 : 'lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]'}`}
         >
-            {/* Phones (stacked): this box starts at the frame's natural height (full width) and only
-                shrinks when the screen is too short for the whole spread; the frame is then sized to
-                fit it with container units, so frame, number and copy always fit on screen. */}
             <div
                 style={{ '--ratio': FRAME_RATIO } as CSSProperties}
-                className={`min-w-0 self-start ${flip ? 'lg:order-2' : ''} max-lg:group-data-[stack=on]/showcase:min-h-0 max-lg:group-data-[stack=on]/showcase:w-full max-lg:group-data-[stack=on]/showcase:flex-[0_1_calc((100vw-4.25rem)/var(--ratio)+4.375rem)] sm:max-lg:group-data-[stack=on]/showcase:flex-[0_1_calc((100vw-4.25rem)/var(--ratio)+5.125rem)] md:max-lg:group-data-[stack=on]/showcase:flex-[0_1_calc((100vw-5.75rem)/var(--ratio)+5.125rem)] max-lg:group-data-[stack=on]/showcase:pb-6 sm:max-lg:group-data-[stack=on]/showcase:pb-9 max-lg:group-data-[stack=on]/showcase:[container-type:size]`}
+                className={`min-w-0 self-start ${flip ? 'lg:order-2' : ''}`}
             >
                 <div
                     data-spread-frame
-                    className="relative mx-auto w-full border border-[var(--hairline)] bg-[var(--surface)] p-3 sm:p-3.5 lg:group-data-[stack=on]/showcase:max-w-[calc((var(--stage-h,60svh)-10rem)*var(--ratio)+2rem)] max-lg:group-data-[stack=on]/showcase:max-w-[min(100cqw,calc((100cqh-2.875rem)*var(--ratio)+1.75rem))] max-lg:group-data-[stack=on]/showcase:p-3"
+                    className="relative mx-auto w-full border border-[var(--hairline)] bg-[var(--surface)] p-3 sm:p-3.5 group-data-[stack=on]/showcase:max-w-[calc((var(--stage-h,60svh)-10rem)*var(--ratio)+2rem)]"
                 >
                     <div aria-hidden="true" className="flex gap-1.5">
                         <i className="size-2 border border-[var(--hairline)]" />
@@ -91,15 +96,15 @@ function Spread({ panel, index, flip, frame, meta, title, description, rows, act
                 </div>
             </div>
 
-            <div data-spread-copy className="flex min-w-0 flex-col pt-1 max-lg:group-data-[stack=on]/showcase:shrink-0 max-lg:group-data-[stack=on]/showcase:pt-0">
+            <div data-spread-copy className="flex min-w-0 flex-col pt-1">
                 <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-[var(--faint)]">{meta}</span>
-                <h3 className="mt-3.5 font-display text-[1.9rem] font-bold leading-[1.02] tracking-[-0.03em] text-[var(--text)] sm:text-[2.4rem] lg:text-[clamp(2.2rem,3.2vw,2.9rem)] short:mt-2.5 short:text-[clamp(1.6rem,4.4svh,2.2rem)] max-lg:group-data-[stack=on]/showcase:mt-2 max-lg:group-data-[stack=on]/showcase:text-[clamp(1.35rem,3.4svh,1.75rem)]">
+                <h3 className="mt-3.5 font-display text-[1.9rem] font-bold leading-[1.02] tracking-[-0.03em] text-[var(--text)] sm:text-[2.4rem] lg:text-[clamp(2.2rem,3.2vw,2.9rem)] short:mt-2.5 short:text-[clamp(1.6rem,4.4svh,2.2rem)]">
                     {title}
                 </h3>
-                <p className="mt-4 text-[0.95rem] leading-[1.75] text-[var(--muted)] sm:text-base lg:group-data-[stack=on]/showcase:line-clamp-4 max-lg:group-data-[stack=on]/showcase:mt-2 max-lg:group-data-[stack=on]/showcase:line-clamp-2 max-lg:group-data-[stack=on]/showcase:text-sm max-lg:group-data-[stack=on]/showcase:leading-relaxed short:mt-3 short:text-sm short:leading-relaxed short:group-data-[stack=on]/showcase:line-clamp-3">
+                <p className="mt-4 text-[0.95rem] leading-[1.75] text-[var(--muted)] sm:text-base group-data-[stack=on]/showcase:line-clamp-4 short:mt-3 short:text-sm short:leading-relaxed short:group-data-[stack=on]/showcase:line-clamp-3">
                     {description}
                 </p>
-                <dl className="mt-6 border-t border-[var(--hairline)] short:mt-4 max-lg:group-data-[stack=on]/showcase:hidden">
+                <dl className="mt-6 border-t border-[var(--hairline)] short:mt-4">
                     {rows.map((row) => (
                         <div key={row.label} className="grid grid-cols-[7.5rem_minmax(0,1fr)] border-b border-[var(--hairline)] py-3 text-sm short:py-2">
                             <dt className="pt-0.5 font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--faint)]">{row.label}</dt>
@@ -107,7 +112,7 @@ function Spread({ panel, index, flip, frame, meta, title, description, rows, act
                         </div>
                     ))}
                 </dl>
-                <div className="mt-7 short:mt-4 max-lg:group-data-[stack=on]/showcase:mt-3">{action}</div>
+                <div className="mt-7 short:mt-4">{action}</div>
             </div>
         </article>
     );
@@ -207,9 +212,9 @@ export default function Projects({
     useGSAP(
         () => {
             const section = sectionRef.current;
-            const header = headerRef.current;
+            const headerEl = headerRef.current;
             const stage = stageRef.current;
-            if (!section || !header || !stage) return;
+            if (!section || !headerEl || !stage) return;
 
             const mm = gsap.matchMedia();
             // `any` always matches: matchMedia only runs the callback when at least one condition does.
@@ -219,43 +224,50 @@ export default function Projects({
                 const steps = Math.max(projectSlots, certificateSlots);
                 const stacked = stack && steps >= 2;
 
-                const intro = gsap.timeline({
-                    defaults: { ease: 'none' },
-                    paused: stacked,
-                    scrollTrigger: stacked ? undefined : { trigger: section, start: 'top 85%', end: 'top 35%', scrub: 0.6 },
-                });
-                intro
+                const header = (vars: gsap.TimelineVars) => gsap.timeline(vars)
                     .fromTo('[data-showcase-line]', { scaleX: 0 }, { scaleX: 1, transformOrigin: 'left center', duration: 0.3 }, 0)
                     .fromTo('#projects-heading', { autoAlpha: 0, y: 36 }, { autoAlpha: 1, y: 0, ease: 'power3.out', duration: 0.5 }, 0)
                     .fromTo('[data-showcase-intro]', { autoAlpha: 0, y: 16 }, { autoAlpha: 1, y: 0, duration: 0.4 }, 0.2)
                     .fromTo('[data-showcase-switch]', { autoAlpha: 0, y: 16 }, { autoAlpha: 1, y: 0, duration: 0.4 }, 0.3);
 
                 if (!stacked) {
-                    // Short screens (e.g. a phone held sideways): spreads scroll normally. Frame and copy
-                    // are each timed to themselves so every reveal plays while it is on screen; the wipe
-                    // runs past the frame's bottom edge so the index number below it is uncovered too.
-                    let reveals: gsap.core.Tween[] = [];
-                    const build = () => {
-                        reveals.forEach((tween) => tween.revert());
+                    // Phones, tablets and short screens: a plain list that is easy to scroll. The header
+                    // and each spread play a short reveal once, as they come into view, then stay put:
+                    // no pin, no scrubbing, nothing left half-played after a reload or a tab switch.
+                    // Frame and copy have their own triggers, so on a phone the copy (a screen below
+                    // its frame) reveals when it is actually reached.
+                    header({ defaults: { ease: 'power2.out' }, scrollTrigger: { trigger: section, start: 'top 80%', toggleActions: PLAY_ONCE, once: true } });
+
+                    let reveals: gsap.core.Timeline[] = [];
+                    const revealOnce = (target: Element, build: (timeline: gsap.core.Timeline) => void) => {
+                        const timeline = gsap.timeline({ defaults: { ease: 'power3.out' }, scrollTrigger: { trigger: target, start: 'top 88%', toggleActions: PLAY_ONCE, once: true } });
+                        build(timeline);
+                        reveals.push(timeline);
+                    };
+                    const build = (afterSwitch: boolean) => {
+                        reveals.forEach((timeline) => timeline.revert());
                         reveals = [];
-                        const reveal = (target: Element, from: gsap.TweenVars, to: gsap.TweenVars, start: string, end: string) => {
-                            reveals.push(gsap.fromTo(target, from, {
-                                ...to,
-                                ease: 'none',
-                                scrollTrigger: { trigger: target, start, end, scrub: 0.6, invalidateOnRefresh: true },
-                            }));
-                        };
                         gsap.utils.toArray<HTMLElement>('[data-showcase-item]', section).forEach((item) => {
                             const frame = item.querySelector('[data-spread-frame]');
                             const copy = item.querySelector('[data-spread-copy]');
-                            if (frame) reveal(frame, { clipPath: 'inset(0% 0% 100% 0%)' }, { clipPath: 'inset(0% 0% -25% 0%)' }, 'top 92%', 'top 40%');
-                            if (copy) reveal(copy, { autoAlpha: 0, y: 24 }, { autoAlpha: 1, y: 0 }, 'top 95%', 'top 65%');
-                            if (!frame && !copy) reveal(item, { autoAlpha: 0, y: 24 }, { autoAlpha: 1, y: 0 }, 'top 92%', 'top 60%');
+                            // After a tab switch, whatever is already on screen is simply shown.
+                            const shown = (element: Element) => afterSwitch && element.getBoundingClientRect().top < window.innerHeight * 0.88;
+                            if (frame && !shown(frame)) {
+                                // The wipe runs past the frame's bottom so the index number below it uncovers too.
+                                revealOnce(frame, (timeline) => timeline.fromTo(frame, { clipPath: 'inset(0% 0% 100% 0%)' }, { clipPath: 'inset(0% 0% -25% 0%)', duration: 0.9, ease: 'power2.inOut' }));
+                            }
+                            if (copy && !shown(copy)) {
+                                const parts = Array.from(copy.children);
+                                revealOnce(copy, (timeline) => timeline.fromTo(parts, primeStagger(parts, { autoAlpha: 0, y: 18 }), { autoAlpha: 1, y: 0, duration: 0.6, stagger: 0.07 }));
+                            }
+                            if (!frame && !copy && !shown(item)) {
+                                revealOnce(item, (timeline) => timeline.fromTo(item, { autoAlpha: 0, y: 24 }, { autoAlpha: 1, y: 0, duration: 0.6 }));
+                            }
                         });
                     };
-                    build();
+                    build(false);
                     const rebuild = context.add('rebuild', () => {
-                        build();
+                        build(true);
                         // The list's height changed: re-measure only what sits below it.
                         refreshTriggersFrom(section);
                     }) as () => void;
@@ -265,14 +277,17 @@ export default function Projects({
                     };
                 }
 
-                // Card stack (phones included, like the scroll animation page): pin the section and
-                // slide each spread of the open tab over the previous one.
+                // The header reveals as the section comes up the screen and is done when the pin
+                // starts, so the section never arrives as a bare eyebrow over an empty stage.
+                header({ defaults: { ease: 'none' }, scrollTrigger: { trigger: section, start: 'top 85%', end: 'top top', scrub: 0.6, invalidateOnRefresh: true } });
+
+                // Desktop card stack: pin the section and slide each spread of the open tab over the
+                // previous one.
                 section.dataset.stack = 'on';
                 // Size the stacked spreads from the real space under the header, so the frame and its
                 // big index number always fit.
                 const measureStage = () => {
-                    const gap = window.innerWidth < 1024 ? 12 : 24;
-                    stage.style.top = `${header.offsetTop + header.offsetHeight + gap}px`;
+                    stage.style.top = `${headerEl.offsetTop + headerEl.offsetHeight + 24}px`;
                     section.style.setProperty('--stage-h', `${stage.clientHeight}px`);
                 };
                 measureStage();
@@ -284,20 +299,26 @@ export default function Projects({
                 const build = () => {
                     items?.revert();
                     const list = gsap.utils.toArray<HTMLElement>('[data-showcase-item]', section);
-                    const step = 0.92 / Math.max(list.length, 1);
+                    // The first spread is already in place when the pin starts; each later one slides
+                    // over the one before it.
+                    const step = 0.92 / Math.max(list.length - 1, 1);
                     const timeline = gsap.timeline({ paused: true, defaults: { ease: 'none' } });
                     list.forEach((item, index) => {
-                        const at = 0.06 + index * step;
+                        if (index === 0) return;
+                        const at = 0.04 + (index - 1) * step;
                         const inner = item.querySelectorAll('[data-spread-frame], [data-spread-copy]');
                         timeline.fromTo(item, { yPercent: 105 }, { yPercent: 0, ease: 'power2.out', duration: step * 0.8 }, at);
                         if (inner.length) timeline.fromTo(inner, { autoAlpha: 0.2 }, { autoAlpha: 1, duration: step * 0.6 }, at + step * 0.2);
-                        if (index > 0) timeline.fromTo(list[index - 1], { scale: 1, autoAlpha: 1 }, { scale: 0.94, autoAlpha: 0, duration: step * 0.8 }, at);
+                        timeline.fromTo(list[index - 1], { scale: 1, autoAlpha: 1 }, { scale: 0.94, autoAlpha: 0, duration: step * 0.8 }, at);
                     });
                     timeline.to({}, { duration: Math.max(0, 1 - timeline.duration()) });
                     timeline.progress(progress.value);
                     items = timeline;
                 };
                 build();
+                const syncToProgress = () => {
+                    items?.progress(progress.value);
+                };
 
                 ScrollTrigger.create({
                     trigger: section,
@@ -310,19 +331,16 @@ export default function Projects({
                     scrub: 0.6,
                     invalidateOnRefresh: true,
                     onRefreshInit: measureStage,
-                    animation: gsap.to(progress, {
-                        value: 1,
-                        ease: 'none',
-                        onUpdate: () => {
-                            intro.progress(Math.min(1, progress.value / 0.06));
-                            items?.progress(progress.value);
-                        },
-                    }),
+                    animation: gsap.to(progress, { value: 1, ease: 'none', onUpdate: syncToProgress }),
                 });
+                // After a refresh (e.g. reloading part-way down) the open list follows the restored
+                // scroll progress instead of staying rewound with its spreads off stage.
+                const stopResync = resyncAfterRefresh(syncToProgress);
 
                 const rebuild = context.add('rebuild', build) as () => void;
                 showcaseRef.current = { rebuild };
                 return () => {
+                    stopResync();
                     showcaseRef.current = null;
                     delete section.dataset.stack;
                     stage.style.top = '';
@@ -334,7 +352,7 @@ export default function Projects({
             // (and the pins below) is measured in document order, then refresh.
             const refreshFrame = window.requestAnimationFrame(() => {
                 ScrollTrigger.sort();
-                ScrollTrigger.refresh();
+                if (!isPreloading()) ScrollTrigger.refresh();
             });
             return () => {
                 window.cancelAnimationFrame(refreshFrame);
@@ -361,7 +379,7 @@ export default function Projects({
             data-analytics-section="projects"
             ref={sectionRef}
             aria-labelledby="projects-heading"
-            className="group/showcase relative w-full scroll-mt-[calc(var(--nav-height,80px)+2rem)] px-5 py-24 md:px-8 md:py-32 data-[stack=on]:h-svh data-[stack=on]:overflow-hidden data-[stack=on]:py-0 lg:data-[stack=on]:pt-24 short:data-[stack=on]:pt-[4.5rem] max-lg:data-[stack=on]:pt-[4.75rem]"
+            className="group/showcase relative w-full scroll-mt-[calc(var(--nav-height,80px)+2rem)] px-5 py-24 md:px-8 md:py-32 data-[stack=on]:h-svh data-[stack=on]:overflow-hidden data-[stack=on]:py-0 data-[stack=on]:pt-24 short:data-[stack=on]:pt-[4.5rem]"
         >
             <div className="relative mx-auto h-full max-w-7xl">
                 <div ref={headerRef}>
@@ -375,12 +393,12 @@ export default function Projects({
                         </span>
                     </div>
 
-                    <div className="mt-12 grid items-end gap-8 lg:mt-14 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-12 short:mt-5 max-lg:group-data-[stack=on]/showcase:mt-5 max-lg:group-data-[stack=on]/showcase:gap-4">
+                    <div className="mt-12 grid items-end gap-8 lg:mt-14 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-12 short:mt-5">
                         <div className="max-w-3xl">
-                            <h2 id="projects-heading" className="font-display text-4xl font-bold leading-[1.05] tracking-[-0.025em] text-[var(--text)] sm:text-5xl lg:text-[3.4rem] short:text-[clamp(2rem,5.5svh,2.6rem)] max-lg:group-data-[stack=on]/showcase:text-[clamp(1.75rem,4.4svh,2.25rem)]">
+                            <h2 id="projects-heading" className="font-display text-4xl font-bold leading-[1.05] tracking-[-0.025em] text-[var(--text)] sm:text-5xl lg:text-[3.4rem] short:text-[clamp(2rem,5.5svh,2.6rem)]">
                                 Selected work. Verified learning.
                             </h2>
-                            <p data-showcase-intro className="mt-5 max-w-2xl text-base leading-[1.7] text-[var(--muted)] sm:text-lg short:hidden max-lg:group-data-[stack=on]/showcase:hidden">
+                            <p data-showcase-intro className="mt-5 max-w-2xl text-base leading-[1.7] text-[var(--muted)] sm:text-lg short:hidden">
                                 A focused archive of shipped interfaces, operational systems, and credentials earned along the way.
                             </p>
                         </div>
@@ -393,7 +411,7 @@ export default function Projects({
                             onPointerEnter={showCertificates ? preloadPdfRuntime : undefined}
                             onFocus={showCertificates ? preloadPdfRuntime : undefined}
                             onTouchStart={showCertificates ? preloadPdfRuntime : undefined}
-                            className="relative grid h-[3.25rem] w-full grid-cols-2 max-lg:group-data-[stack=on]/showcase:h-11 border border-[var(--hairline)] p-1 sm:w-[22rem]"
+                            className="relative grid h-[3.25rem] w-full grid-cols-2 border border-[var(--hairline)] p-1 sm:w-[22rem]"
                         >
                             <span
                                 aria-hidden="true"

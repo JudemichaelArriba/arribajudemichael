@@ -5,6 +5,7 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useGSAP } from '@gsap/react';
 import { ArrowUpRight } from 'lucide-react';
+import { isPreloading } from '@/lib/animations/preloaderHold';
 import type { PublicExperienceDto } from '@/features/admin/experiences/types';
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
@@ -53,7 +54,7 @@ export default function Experience({
       // Streams in after the sections below were set up: re-sort triggers into document order.
       const refreshFrame = window.requestAnimationFrame(() => {
         ScrollTrigger.sort();
-        ScrollTrigger.refresh();
+        if (!isPreloading()) ScrollTrigger.refresh();
       });
       return () => {
         window.cancelAnimationFrame(refreshFrame);

@@ -65,8 +65,7 @@ arribajudemichael/
 │   │   ├── Navbar.tsx            # Main navigation bar
 │   │   └── Navbar.module.css     # Complex transitions (keep native CSS)
 │   ├── loader/                   # Loading components
-│   │   ├── Preloader.tsx         # Page preloader wrapper
-│   │   └── PreloaderLogo.tsx
+│   │   └── Preloader.tsx         # Page preloader wrapper (canvas stage, worker start, curtain)
 │   ├── footer/                   # Semantic public-site footer
 │   │   └── Footer.tsx            # Server-rendered navigation + contact placeholders
 │   ├── chat/                     # "Ask" AI assistant UI
@@ -92,7 +91,8 @@ arribajudemichael/
 │   ├── useActiveSection.ts       # Hook for active section detection
 │   └── animations/
 │       ├── useRoleCycle.ts       # Text role cycling animation
-│       └── preloader.ts          # Preloader animation logic
+│       └── preloader.ts          # Preloader canvas host (worker or main-thread fallback) + curtain lift
+│                                 #   preloaderCanvas.ts (painter), preloader.worker.ts, preloaderGlyphs.ts (generated)
 ├── public/                       # Static assets
 │   ├── profile.jpeg              # About/profile image
 │   ├── tech/                     # Locally hosted original-color technology SVGs

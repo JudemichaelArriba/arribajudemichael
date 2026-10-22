@@ -10,6 +10,7 @@ import { usePreloaderPhase } from '@/components/loader/Preloader';
 import { useTheme } from '@/components/theme/ThemeProvider';
 import { holdPreloader, type PreloaderHold } from '@/lib/animations/preloaderHold';
 import { primeStagger } from '@/lib/animations/primeStagger';
+import { resyncAfterRefresh } from '@/lib/animations/resyncAfterRefresh';
 import { TECH_CATEGORIES } from '@/lib/techStack';
 import { useMediaQuery } from '@/lib/useMediaQuery';
 import { labelForKey, readoutGlyph, shouldMirrorKey, toolLetter, toolsForKey, TOOL_NAMES } from './keyboard/layout';
@@ -194,6 +195,9 @@ export default function TechStack() {
                         });
                     }
                     applyProgress();
+                    // After a refresh (e.g. reloading part-way down) the camera follows the restored
+                    // scroll progress instead of staying at the rewound, far-away view.
+                    return resyncAfterRefresh(applyProgress);
                 },
                 section,
             );

@@ -5,6 +5,7 @@ import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { primeStagger } from '@/lib/animations/primeStagger';
+import { resyncAfterRefresh } from '@/lib/animations/resyncAfterRefresh';
 import type { GitHubContributionsDto } from '@/features/github/types';
 import GitHubActivity from './GitHubActivity';
 
@@ -66,17 +67,17 @@ export default function AboutMe({ contributions }: AboutMeProps) {
                     },
                 });
                 calendar.fromTo(blocks[0], { autoAlpha: 0, y: 24 }, { autoAlpha: 1, y: 0, duration: 0.15 }, 0);
+                // What the calendar's callbacks draw, re-applied after a refresh (see resyncAfterRefresh).
+                const syncs: (() => void)[] = [];
 
                 // One CSS variable drives every cell (see GitHubActivity): cheap to scrub and to refresh.
                 const grid = activity.querySelector<HTMLElement>('[data-calendar-grid]');
                 if (grid) {
                     const weeks = getComputedStyle(grid).gridTemplateColumns.split(' ').length || 53;
                     const reveal = { value: 0 };
-                    calendar.fromTo(reveal, { value: 0 }, {
-                        value: weeks + 1,
-                        duration: 0.75,
-                        onUpdate: () => grid.style.setProperty('--reveal', reveal.value.toFixed(2)),
-                    }, 0.1);
+                    const syncReveal = () => grid.style.setProperty('--reveal', reveal.value.toFixed(2));
+                    syncs.push(syncReveal);
+                    calendar.fromTo(reveal, { value: 0 }, { value: weeks + 1, duration: 0.75, onUpdate: syncReveal }, 0.1);
                 }
 
                 // Count-ups write only the number's own text node and always end on the real value.
@@ -86,18 +87,20 @@ export default function AboutMe({ contributions }: AboutMeProps) {
                     if (!Number.isFinite(target) || !node) return;
                     const final = node.nodeValue;
                     const counter = { value: 0 };
-                    calendar.fromTo(counter, { value: 0 }, {
-                        value: 1,
-                        duration: 0.75,
-                        onUpdate: () => {
-                            node.nodeValue = counter.value >= 1 ? final : Math.round(target * counter.value).toLocaleString('en-US');
-                        },
-                    }, 0.1);
+                    const syncCounter = () => {
+                        node.nodeValue = counter.value >= 1 ? final : Math.round(target * counter.value).toLocaleString('en-US');
+                    };
+                    syncs.push(syncCounter);
+                    calendar.fromTo(counter, { value: 0 }, { value: 1, duration: 0.75, onUpdate: syncCounter }, 0.1);
                 });
 
                 calendar.fromTo(blocks.slice(2), primeStagger(blocks.slice(2), { autoAlpha: 0, y: 16 }), { autoAlpha: 1, y: 0, duration: 0.15, stagger: 0.05 }, 0.8);
+                const stopResync = resyncAfterRefresh(() => syncs.forEach((sync) => sync()));
                 // On breakpoint change / unmount, show the whole calendar again.
-                return () => grid?.style.removeProperty('--reveal');
+                return () => {
+                    stopResync();
+                    grid?.style.removeProperty('--reveal');
+                };
             }, section);
 
             return () => mm.revert();

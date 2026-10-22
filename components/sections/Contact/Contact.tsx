@@ -11,6 +11,7 @@ import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { primeStagger } from '@/lib/animations/primeStagger';
+import { isPreloading } from '@/lib/animations/preloaderHold';
 import {
     ArrowUpRight,
     BriefcaseBusiness,
@@ -163,7 +164,9 @@ export default function Contact() {
         () => {
             const section = sectionRef.current;
             if (!section) return;
-            const refreshFrame = window.requestAnimationFrame(() => ScrollTrigger.refresh());
+            const refreshFrame = window.requestAnimationFrame(() => {
+                if (!isPreloading()) ScrollTrigger.refresh();
+            });
 
             const mm = gsap.matchMedia();
             mm.add(
