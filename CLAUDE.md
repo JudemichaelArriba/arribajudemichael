@@ -3,7 +3,7 @@
 > **Primary Documentation:** See `AGENTS.md` for complete project structure, patterns, and guidelines.
 
 ## Quick Context
-This is Jude Michael Arriba's personal portfolio website built with Next.js 16.2.12 (App Router), React 19, TypeScript 5, Tailwind CSS 4, and GSAP 3.15. The site showcases full-stack engineering expertise with advanced interactive effects.
+This is Jude Michael Arriba's personal portfolio website built with Next.js 16.2.12 (App Router), React 19, TypeScript 5, Tailwind CSS 4, and GSAP 3.15. The site showcases full-stack development expertise with advanced interactive effects.
 
 ## Critical Information for AI Assistants
 
@@ -380,7 +380,7 @@ See `.github/workflows/test.yml` for workflow configuration.
 ### Brand Voice & Content
 
 #### Jude Michael Arriba's Professional Identity
-- **Title:** Full-Stack Software Engineer
+- **Title:** Full-Stack Developer (web, backend, mobile). Never "Software Engineer" or any engineer title, on the site or in Nero
 - **Focus:** Backend APIs, Mobile/Web clients, System architecture
 - **Values:** Clean code, performance, maintainability, long-term reliability
 
@@ -388,7 +388,7 @@ See `.github/workflows/test.yml` for workflow configuration.
 - Professional but approachable
 - Technical competency emphasized
 - Clear, concise explanations
-- Focus on engineering excellence
+- Focus on development excellence
 
 ### Known Patterns in Codebase
 

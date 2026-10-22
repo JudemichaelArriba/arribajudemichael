@@ -23,4 +23,14 @@ describe('buildProfileContext', () => {
     expect(context).toContain('Age: 21.');
     expect(context).not.toMatch(/2005|January|26/);
   });
+
+  it('presents him as a developer, never as an engineer', () => {
+    const context = buildProfileContext(new Date('2026-10-20T04:00:00Z'));
+
+    expect(context).toContain('Role: Full-Stack Developer.');
+    // The only mention of "engineer" is the explicit denial.
+    for (const line of context.split('\n').filter((item) => /engineer/i.test(item))) {
+      expect(line).toMatch(/not a software engineer/);
+    }
+  });
 });

@@ -4,7 +4,7 @@
 **Name:** arribajudemichael  
 **Type:** Personal Portfolio Website  
 **Tech Stack:** Next.js 16.2.12 (App Router), React 19, TypeScript 5, Tailwind CSS 4, GSAP 3.15, Three.js 0.185  
-**Owner:** Jude Michael Arriba - Full-Stack Software Engineer
+**Owner:** Jude Michael Arriba - Full-Stack Developer
 
 ## Critical Framework Information
 <!-- BEGIN:nextjs-agent-rules -->
@@ -268,7 +268,7 @@ export default function Component({ title, onAction }: ComponentProps) {
 
 ### Brand Identity
 - **Name:** Jude Michael Arriba
-- **Role:** Full-Stack Software Engineer
+- **Role:** Full-Stack Developer (web, backend, mobile; never "engineer")
 - **Specialties:** 
   - Robust Backend APIs
   - Fluid Mobile/Web Clients
@@ -280,7 +280,7 @@ export default function Component({ title, onAction }: ComponentProps) {
 - Professional yet approachable
 - Technical competency emphasized
 - Focus on reliability, performance, scalability
-- Engineering excellence and long-term maintainability
+- Development excellence and long-term maintainability
 
 ### Design Aesthetic
 - Modern, clean, minimalist

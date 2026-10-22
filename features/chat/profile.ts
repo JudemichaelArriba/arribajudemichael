@@ -8,10 +8,11 @@ import { TECH_CATEGORIES } from '@/lib/techStack';
 // two in sync, and never add anything here that the site itself does not say.
 const BIO = [
     'Name: Jude Michael T. Arriba.',
-    'Role: Full-Stack Software Engineer.',
+    'Role: Full-Stack Developer.',
+    'Titles he uses: full-stack developer, web developer, backend developer, mobile developer. He is not a software engineer and does not hold any engineer title.',
     'Focus: backend APIs, web and mobile clients, and system architecture.',
     'What he builds: scalable APIs, resilient backend infrastructure, and fluid digital experiences that bridge technical excellence with intuitive design.',
-    'Core capabilities: system architecture (scalable APIs and dependable data flows); backend engineering (resilient services and practical integrations); product delivery (responsive web and mobile experiences).',
+    'Core capabilities: system architecture (scalable APIs and dependable data flows); backend development (resilient services and practical integrations); product delivery (responsive web and mobile experiences).',
     // Achievements (capstone, competitions, awards) deliberately live only in the Experience
     // records, so the assistant always reads the current, owner-written wording.
     'About: a current IT (BSIT) student at ACES Tagum College in Tagum, Davao del Norte, Philippines. Teaching himself to code since 2023. Always looking for the next real problem to build for.',

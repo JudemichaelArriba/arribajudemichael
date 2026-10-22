@@ -29,7 +29,7 @@ const CAPABILITIES: Capability[] = [
     },
     {
         code: '02',
-        label: 'Backend engineering',
+        label: 'Backend development',
         detail: 'Resilient services and practical integrations',
     },
     {

@@ -111,7 +111,7 @@ export default function Footer() {
                             Jude Michael Arriba
                         </p>
                         <p className="mt-1.5 font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--faint)]">
-                            Full-Stack Software Engineer
+                            Full-Stack Developer
                         </p>
                     </div>
                 </div>
@@ -124,7 +124,7 @@ export default function Footer() {
                                 id="footer-focus-heading"
                                 className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--text)]"
                             >
-                                Engineering focus
+                                Development focus
                             </h2>
                         </div>
                         <p className="mt-5 text-base leading-[1.8] text-[var(--muted)] sm:text-lg">
@@ -186,7 +186,7 @@ export default function Footer() {
                         &copy; {currentYear} Jude Michael Arriba. All rights reserved.
                     </p>
                     <p className="font-mono text-[9px] uppercase tracking-[0.1em] text-[var(--faint)]">
-                        Full-Stack Software Engineer
+                        Full-Stack Developer
                     </p>
                 </div>
 
