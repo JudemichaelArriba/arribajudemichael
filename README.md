@@ -4,7 +4,7 @@ A modern, performant personal portfolio website built with Next.js 16, React 19,
 
 ## Tech Stack
 
-- **Framework:** Next.js 16.2.12 (App Router)
+- **Framework:** Next.js 16.4.2 (App Router)
 - **UI Library:** React 19
 - **Language:** TypeScript 5
 - **Styling:** Tailwind CSS 4

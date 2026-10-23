@@ -3,7 +3,7 @@
 > **Primary Documentation:** See `AGENTS.md` for complete project structure, patterns, and guidelines.
 
 ## Quick Context
-This is Jude Michael Arriba's personal portfolio website built with Next.js 16.2.12 (App Router), React 19, TypeScript 5, Tailwind CSS 4, and GSAP 3.15. The site showcases full-stack development expertise with advanced interactive effects.
+This is Jude Michael Arriba's personal portfolio website built with Next.js 16.4.2 (App Router), React 19, TypeScript 5, Tailwind CSS 4, and GSAP 3.15. The site showcases full-stack development expertise with advanced interactive effects.
 
 ## Critical Information for AI Assistants
 

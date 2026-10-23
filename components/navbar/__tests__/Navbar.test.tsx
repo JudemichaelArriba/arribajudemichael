@@ -3,7 +3,7 @@ import { act, fireEvent, render as rtlRender, screen } from '@testing-library/re
 import { ThemeProvider } from '@/components/theme/ThemeProvider';
 import Navbar from '../Navbar';
 
-const useActiveSection = jest.fn(() => 'home');
+const useActiveSection = jest.fn<string, unknown[]>(() => 'home');
 
 jest.mock('@/lib/useActiveSection', () => ({
   useActiveSection: (...args: unknown[]) => useActiveSection(...args),

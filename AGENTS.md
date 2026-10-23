@@ -3,13 +3,13 @@
 ## Project Overview
 **Name:** arribajudemichael  
 **Type:** Personal Portfolio Website  
-**Tech Stack:** Next.js 16.2.12 (App Router), React 19, TypeScript 5, Tailwind CSS 4, GSAP 3.15, Three.js 0.185  
+**Tech Stack:** Next.js 16.4.2 (App Router), React 19, TypeScript 5, Tailwind CSS 4, GSAP 3.15, Three.js 0.185  
 **Owner:** Jude Michael Arriba - Full-Stack Developer
 
 ## Critical Framework Information
 <!-- BEGIN:nextjs-agent-rules -->
 ### Next.js Version Notice
-This project uses **Next.js 16.2.12** with the App Router. This version may have breaking changes from your training data:
+This project uses **Next.js 16.4.2** with the App Router. This version may have breaking changes from your training data:
 - App Router conventions (not Pages Router)
 - React Server Components by default
 - New routing, layouts, and data fetching patterns
@@ -324,7 +324,7 @@ export default function Component({ title, onAction }: ComponentProps) {
 ## Dependencies Reference
 
 ### Core
-- `next@16.2.12` - Framework
+- `next@16.4.2` - Framework
 - `react@19.2.4` - UI library
 - `react-dom@19.2.4` - React renderer
 - `typescript@5` - Type safety
