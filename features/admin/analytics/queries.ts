@@ -477,24 +477,6 @@ export function getAnalyticsSectionHighlights(
     };
 }
 
-export async function getAnalyticsOverview(
-    period: AnalyticsPeriod,
-): Promise<AnalyticsOverview> {
-    return queryOverview(await createAnalyticsQueryContext(period));
-}
-
-export async function getAnalyticsTrend(
-    period: AnalyticsPeriod,
-): Promise<AnalyticsTrendPoint[]> {
-    return queryTrend(await createAnalyticsQueryContext(period));
-}
-
-export async function getAnalyticsSectionSummary(
-    period: AnalyticsPeriod,
-): Promise<AnalyticsSectionSummary[]> {
-    return querySections(await createAnalyticsQueryContext(period));
-}
-
 export async function getAnalyticsDashboardData(
     period: AnalyticsPeriod,
 ): Promise<AnalyticsDashboardData> {

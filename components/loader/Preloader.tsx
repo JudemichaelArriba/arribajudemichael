@@ -138,9 +138,12 @@ export default function Preloader({ children }: { children: React.ReactNode }) {
         <PreloaderReadyContext.Provider value={ready}>
             <PreloaderPhaseContext.Provider value={phase}>
                 {loading && (
+                    // Full window width (100vw), not `inset-0`: while scrolling is locked the html keeps
+                    // the scrollbar's gutter reserved, and `inset-0` would stop at it, putting the JM
+                    // half a scrollbar left of the window's centre.
                     <div
                         ref={overlayRef}
-                        className="fixed inset-0 z-[100] flex items-center justify-center bg-[var(--site-bg)]"
+                        className="fixed inset-y-0 left-0 z-[100] flex w-screen items-center justify-center bg-[var(--site-bg)]"
                     >
                         {/* The JM and the percentage under it, drawn on a canvas (see startPreloaderCanvas).
                             Blank until the outline starts, so there is never a lone "0%". */}

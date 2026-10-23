@@ -31,6 +31,8 @@ const recordSessionMock = jest.mocked(recordAnalyticsSession);
 const cookiesMock = jest.mocked(cookies);
 const VISITOR_ID = '123e4567-e89b-42d3-a456-426614174000';
 const SESSION_ID = '223e4567-e89b-42d3-a456-426614174000';
+// Next.js types NODE_ENV as read-only; tests switch it through this writable view.
+const env = process.env as Record<string, string | undefined>;
 
 describe('POST /api/analytics/session', () => {
   const originalNodeEnvironment = process.env.NODE_ENV;
@@ -43,7 +45,7 @@ describe('POST /api/analytics/session', () => {
   });
 
   afterEach(() => {
-    process.env.NODE_ENV = originalNodeEnvironment;
+    env.NODE_ENV = originalNodeEnvironment;
     jest.restoreAllMocks();
   });
 
@@ -76,7 +78,7 @@ describe('POST /api/analytics/session', () => {
   });
 
   it('issues secure, HTTP-only visitor and inactivity-bounded session cookies', async () => {
-    process.env.NODE_ENV = 'production';
+    env.NODE_ENV = 'production';
     const set = jest.fn();
     cookiesMock.mockResolvedValue({ get: jest.fn(() => undefined), set } as never);
     recordSessionMock.mockResolvedValue({

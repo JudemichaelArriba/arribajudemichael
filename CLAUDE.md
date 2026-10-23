@@ -3,7 +3,7 @@
 > **Primary Documentation:** See `AGENTS.md` for complete project structure, patterns, and guidelines.
 
 ## Quick Context
-This is Jude Michael Arriba's personal portfolio website built with Next.js 16.2.12 (App Router), React 19, TypeScript 5, Tailwind CSS 4, and GSAP 3.15. The site showcases full-stack development expertise with advanced interactive effects.
+This is Jude Michael Arriba's personal portfolio website built with Next.js 16.4.2 (App Router), React 19, TypeScript 5, Tailwind CSS 4, and GSAP 3.15. The site showcases full-stack development expertise with advanced interactive effects.
 
 ## Critical Information for AI Assistants
 
@@ -37,23 +37,21 @@ components/
     AboutMe/             -> AboutSection.tsx (server) -> AboutMe.tsx (statement + tags) + GitHubActivity.tsx (contribution calendar)
     Experience/          -> Experience.tsx (minimal stacked list + replayable GSAP)
     TechStack/           -> TechStack.tsx + keyboard/ (R3F 3D keyboard: layout/palette/build/controller/KeyboardCanvas)
-    Projects/            -> Projects.tsx (Direction B spreads; Projects/Certificates tabs; desktop pinned stack)
+    Projects/            -> Projects.tsx shell + ShowcaseTabs/ProjectIndex/CertificateIndex/ShowcaseIndex/ShowcasePreview, useShowcaseMotion + usePreviewSwap (Option A index; no pin)
     Contact/             -> Contact.tsx (static form + replayable GSAP reveal)
-  ui/                    -> Reusable UI (Button, RollingText, ScrollFloat, Bento, PDF preview, navigation styles)
+  ui/                    -> Reusable UI (PDF preview, cursor, cursor grid, Turnstile, navigation styles)
     CertificatePdfPreview/ -> Lazy PDF.js first-page canvas renderer
-    ScrollFloat/         -> ScrollFloat.tsx (Tailwind CSS only)
-    LineSidebar/         -> LineSidebar.tsx + .module.css (CSS variables)
-    TiltedCard/          -> TiltedCard.tsx + TiltedCard.css (interactive card tilt)
-  navbar/                -> Navbar.tsx + .module.css (complex transitions)
+  navbar/                -> Navbar.tsx (pure Tailwind)
   loader/                -> Preloader (canvas stage + sr-only progressbar; drawing lives in lib/animations/preloader*)
   footer/                -> Footer.tsx (server-rendered navigation and contact placeholders)
-  effects/               -> Visual effects (Magnet, SpecularButton, FloatingLines)
 
 lib/
   fonts.ts               -> Font configurations
   site.ts                -> Shared typed navigation and contact destinations
   useActiveSection.ts    -> Scroll detection hook
-  animations/            -> Animation logic (useRoleCycle, preloader)
+  useMediaQuery.ts       -> SSR-safe media query hook; breakpoints.ts holds the shared queries
+  techStack.ts           -> Tech Stack names shared by the section, the keyboard and the chat profile
+  animations/            -> Preloader (painter, worker, glyphs, holds), primeStagger, resyncAfterRefresh, scrollRestore
 
 features/
   analytics/             -> Shared limits/activity, client delta state, server session logic
@@ -61,12 +59,10 @@ features/
   admin/analytics/       -> Authenticated reporting DTOs and server RPC queries
 
 public/
-  profile.jpeg           -> About/profile image
-  tech/                  -> Local original-color technology SVG assets
-  projectsTemporary/     -> Temporary project screenshots
-  certsTemporary/        -> Retained legacy certificate assets (unused by live UI)
+  profile.jpeg           -> Site icon
+  Profile 2.png          -> Hero portrait
+  keyboard/              -> Baked studio reflections for the 3D keyboard (environment.png)
   vendor/pdfjs/          -> Generated local PDF.js worker/WASM assets (gitignored)
-  *.svg                  -> SVG icons
 ```
 
 #### Key Technical Decisions
@@ -74,10 +70,10 @@ public/
 - **Tailwind CSS 4 FIRST** - Use utility classes for all standard styling
 - **Native CSS only when necessary** - Complex gradients, transitions, CSS variables, WebGL effects
 - **CSS Modules** (`.module.css`) for component-specific complex styles that Tailwind can't handle
-- **Dynamic imports for heavy components** - e.g., `FloatingLines` uses `dynamic(() => import(), { ssr: false })`
+- **Dynamic imports for heavy components** - e.g., the Tech Stack `KeyboardCanvas` uses `dynamic(() => import(), { ssr: false })`
 - **GSAP for animations** - Complex timelines and interactions
 - **Homepage composition** - Home -> WhatIDo -> AboutMe -> Experience -> TechStack -> Projects -> Contact
-- **Three.js/OGL for WebGL** - Advanced visual effects
+- **Three.js + @react-three/fiber** - the Tech Stack keyboard is the only WebGL on the site
 - **Dynamic showcase boundary** - Projects and Certificates are queried independently on the server and passed to the existing animated client showcase as serialized DTOs.
 - **Certificate feature boundary** - `features/admin/certificates/` owns generated-type aliases, DTOs, validation, public/admin queries, and authenticated metadata Server Actions.
 - **PDF-only credentials** - The authenticated browser uploads directly to `certificate-files/certificates/<uuid>/certificate.pdf`; Server Actions derive and verify that path, and public cards lazily render page 1 through `CertificatePdfPreview`.
@@ -86,11 +82,11 @@ public/
 - **Contact messages are never stored** - `/api/contact` validates, rate-limits, checks bans and Turnstile, then `features/contact/email.ts` emails the message straight to the owner via Resend (`RESEND_API_KEY`, `NOTIFICATION_EMAIL`, `NOTIFICATION_FROM_EMAIL`, server-only). The site tells visitors their message "isn't stored on this site" — do not reintroduce a messages table or persist submissions without changing that notice.
 - **3D keyboard (Tech Stack)** - `@react-three/fiber` renders the board on demand (`frameloop="demand"`), lazy-loaded (`next/dynamic`, ssr:false) and built while the preloader holds (see Preloader hold). All three.js mutation lives in `keyboard/controller.ts` (React only wires it). Key legends are painted once as theme-neutral masks (red = glyph, green = dot) and coloured by the keycap shader, so a theme switch only changes colours (`setTheme` in a layout effect, no repaint, no rebuild). Studio reflections come from the baked `public/keyboard/environment.png` (CubeUV, made by `scripts/bake-keyboard-environment.html`) because three's runtime PMREM compiles a GGX shader that takes seconds on Windows; never reintroduce `PMREMGenerator` at runtime. Shaders are pre-compiled with `gl.compileAsync(scene, camera)` (the whole scene: passing the stage separately double-counts lights). DPR is device-sharp but capped by a pixel budget (`pickDpr`). Shadows redraw only when the board moves. Dark page → white board, light page → black board. Physical keys are mirrored only while the section is visible and never inside fields/dialogs (`shouldMirrorKey`); nothing typed is stored or sent, and keys are never `preventDefault`ed.
 - **No-WebGL safety** - `KeyboardCanvas` checks WebGL once and wraps the R3F `Canvas` in an error boundary; without WebGL the board is dropped (`onUnavailable`) and the tool chips update the readout directly. A renderer failure must never take the page down.
-- **Showcase frames** - every Projects/Certificates spread uses one `FRAME_RATIO` (16:9). Screenshots fill it (`object-cover object-top`); certificate page 1 sits whole on white paper (never cropped). Loading never shifts layout. PDF previews share one PDF.js worker and paint one at a time in idle moments, on-screen first.
-- **Projects showcase motion** - desktop (`min-width: 1024px` and `min-height: 560px`) pins a card stack: the header reveals as the section approaches (done when the pin starts), the first spread is already in place and later spreads slide over it; the pin is built once and sized for the longer tab, and a tab switch only rebuilds the open list's timeline at the current scroll progress (no scroll jump, no replay, no global `ScrollTrigger.refresh()`). Phones, tablets and short screens get a plain list (no pin, no scrub): the header, each frame and each copy block play a short reveal once, on their own trigger, with `toggleActions: 'play play none none'` so a jump straight past still reveals; after a tab switch, spreads already on screen are simply shown. Verified with 1–15 projects.
-- **Phone reveals** - where content stacks (phones/tablets), scrubbed reveals trigger on each element itself (frame, copy, panel, field), never on a section top, so they play while on screen.
+- **Showcase frames** - the desktop preview frame is 16:10 with a definite size (`CertificatePdfPreview` needs a measurable height); screenshots fill it (`object-cover object-top`); certificate page 1 sits whole on an inset white sheet (`PaperFrame`, never cropped). The contact-sheet cards on phones/tablets are √2 (`aspect-[1.414/1]`). Captions share one grid cell, so switching items never shifts layout. PDF previews share one PDF.js worker and paint one at a time in idle moments, on-screen first.
+- **Projects showcase (Option A · Index)** - nothing is pinned or scrubbed, so content of any length works on any screen height (the old pinned card stack overlapped on short screens; don't reintroduce a pin). One layout is rendered at a time via `useMediaQuery(DESKTOP_QUERY)` (`lib/breakpoints.ts`): desktop (≥1024px) is the index — titles as a list beside a sticky preview; hover (80ms intent, fine pointers only), focus, click and ↑/↓/Home/End select; preview visuals mount lazily once wanted and stay mounted. Phones/tablets: projects as full entries (screenshot, title, stack, description, link); certificates as a contact sheet (1 column, 2 from `sm`). The tabs are WAI-ARIA tabs and double as the heading; their size comes from the column width (`calc((100cqi - 2.75rem) / 9.6)`), so both words stay on one line at every width. Motion (`useShowcaseMotion`, `usePreviewSwap`) follows the HyperFrames rules: paused timelines from `fromTo` with explicit start states, transforms/opacity/clip-path only, grouped staggers capped at 0.5s (`ScrollTrigger.batch`), `power3.out` settle / `power3.inOut` wipes. Reveals play on enter or when jumped past and reset only once their element is fully below the screen (replayable). The header is built once; a tab switch rebuilds only the open panel, shows what is already on screen, and re-measures only triggers from the section down. Deferred ScrollTrigger callbacks are wrapped with `context.add(name, fn)` so a revert kills their tweens; `context.add(fn)` would run them immediately.
+- **Phone reveals** - where content stacks (phones/tablets), reveals trigger on each element itself (frame, copy, card, panel, field), never on a section top, so they play while on screen.
 - **Preloader progress** - the preloader draws the JM outline by real loading progress, then fills it and lifts. Pieces report through `holdPreloader(weight)` in `lib/animations/preloaderHold.ts` (`progress(0–1)`, `release()`): the page itself (weight 1: hydrated, then fonts) and the Tech Stack board (weight 3, registered in a layout effect: set-up, keys row by row, legends, reflections, shaders, first rendered frame; capped at 7s). The JM and the percentage under it are **one canvas drawn off the main thread**: `lib/animations/preloader.worker.ts` paints on an OffscreenCanvas with the shared painter `lib/animations/preloaderCanvas.ts`, so hydration and the keyboard's WebGL stalls never freeze it (where OffscreenCanvas is missing, `startPreloaderCanvas` runs the same painter on the main thread). The worker is created when `Preloader.tsx` loads (`createPreloaderWorker`), before hydration, because the browser needs free main-thread moments to start a worker. Outline and number come from one value in the same frame, so they always match: the letters are traced in writing order (J, then M, overlapping by `STROKE_OVERLAP`, each over its own length) and finish exactly at 100%; the number starts at 1 with the first stroke (never a lone "0%") and reads 100 only on real completion. Pacing follows the real loading rhythm: it chases each progress jump quickly (`CHASE_RATE`), then crawls slowly a little past the real progress while loading waits (`CRAWL_SHARE`, `CRAWL_MIN_SPEED`, capped at 99%) so it never stops dead, and finishes decisively on completion. Don't replace it with an even, time-like pace: that read as rigid and fake. Glyphs are baked vector paths (`preloaderGlyphs.ts`, generated by `scripts/extract-preloader-glyphs.py` from Urbanist Bold and Geist 500) because a worker cannot use page fonts. The reveal (fill, hold, clear) runs in the worker; the curtain fade is a compositor Web Animation (`liftPreloaderCurtain`). A screen-reader `role="progressbar"` mirrors the percentage. While it is up, `isPreloading()` lets streamed sections skip their own `ScrollTrigger.refresh()` (still `sort()`); the preloader's single refresh on completion measures everything. `usePreloaderPhase()` is `intro` → `loading` (first idle after hydration; heavy pieces start here) → `done`.
-- **Refresh-safe callbacks** - a `ScrollTrigger.refresh()` rewinds animations with callbacks running and restores them silently, so anything an `onUpdate` drives (keyboard camera, Projects list, calendar) must also be re-applied via `resyncAfterRefresh(sync)` (`lib/animations/resyncAfterRefresh.ts`).
+- **Refresh-safe callbacks** - a `ScrollTrigger.refresh()` rewinds animations with callbacks running and restores them silently, so anything an `onUpdate` drives (keyboard camera, calendar) must also be re-applied via `resyncAfterRefresh(sync)` (`lib/animations/resyncAfterRefresh.ts`).
 - **Scroll restoration** - the browser restores a reload's position before the pins exist and lands too high, so `lib/animations/scrollRestore.ts` takes over (`history.scrollRestoration = 'manual'`, position saved on `pagehide` in sessionStorage) and the preloader puts it back after measuring, before the curtain lifts. Reload and back/forward only.
 - **Staggered scroll reveals** - a staggered `fromTo` in a scrubbed timeline only renders its first target's start state until the playhead reaches the rest, so everything after it shows fully on a fresh load. Always pass the from-vars through `primeStagger(targets, from)` (`lib/animations/primeStagger.ts`).
 - **Keyboard sound** - `keyboard/sound.ts` unlocks one shared AudioContext on the first click/tap/key anywhere (browsers forbid sound before a gesture; scrolling is not one) and reuses one noise buffer. Mouse/pen press keys on pointer-down (instant click); touch presses on tap release. Only presses the visitor makes play a click: scroll-driven presses are always silent (protects visitors' speakers) — don't add sound to them.
@@ -237,7 +233,7 @@ export default function Page({ params }: PageProps) {
   - Dynamic CSS custom properties
   - Backdrop filters with complex layering
   - WebGL/Canvas container styles
-- **Protected native CSS files:** `SpecularButton.css`, `Navbar.module.css`, `LineSidebar.module.css`, and effect-only pieces of `components/ui/Bento/Bento.css`
+- The only native CSS today is `app/globals.css` (theme tokens, scrollbar, reduced motion, theme-swap guard)
 - **Naming:** `Component.module.css` co-located with component
 - **BEM-like naming inside modules:** `.container`, `.button`, `.button__icon`
 
@@ -291,22 +287,22 @@ import { useGSAP } from '@gsap/react';
 // Icons
 import { Download, Menu, X } from 'lucide-react';
 
-// 3D/WebGL
-import { Renderer, Camera, Transform, Mesh } from 'ogl';
+// 3D/WebGL (Tech Stack keyboard)
+import { Canvas } from '@react-three/fiber';
 import * as THREE from 'three';
 ```
 
 #### Path Aliases
 - `@/` maps to project root
-- Use: `import Button from '@/components/ui/Button'`
+- Use: `import CertificatePdfPreview from '@/components/ui/CertificatePdfPreview/CertificatePdfPreview'`
 
 ### Performance Considerations
 
 #### Code Splitting
 ```typescript
 // Heavy components (WebGL, large libraries)
-const FloatingLines = dynamic(
-  () => import('@/components/effects/FloatingLines/FloatingLines'),
+const KeyboardCanvas = dynamic(
+  () => import('@/components/sections/TechStack/keyboard/KeyboardCanvas'),
   { ssr: false }
 );
 ```
@@ -391,61 +387,15 @@ See `.github/workflows/test.yml` for workflow configuration.
 - Focus on development excellence
 
 ### Known Patterns in Codebase
-
-#### Button Component
-```typescript
-<Button
-  href="/cv.pdf"
-  variant="specular"    // or "default", "ghost"
-  size="lg"             // or "sm", "md"
-  radius={999}          // Border radius
-  magnetic              // Enable magnetic hover
-  magnetPadding={15}    // Magnetic effect area
-  glowProximity={60}    // Glow effect distance
->
-  Download CV
-</Button>
-```
-
-#### FloatingLines Effect
-```typescript
-<FloatingLines
-  linesGradient={['#e945f5', '#7C3AED', '#760068']}
-  lineCount={4}
-  bendRadius={8}
-  animationSpeed={1}
-  bendStrength={-2}
-  lineDistance={8}
-  interactive={false}
-  parallax={false}
-/>
-```
-
-#### Magnet Wrapper
-```typescript
-<Magnet padding={20} disabled={false}>
-  <button>Hover me</button>
-</Magnet>
-```
+- Buttons and links are plain Tailwind elements: square, `border-[var(--text)]`, inverting to `bg-[var(--inverse-bg)] text-[var(--inverse-text)]` on hover (see `ShowcaseLink` in `components/sections/Projects/ShowcaseParts.tsx`). There is no shared Button component.
+- Section headers share one pattern: a `font-display` kicker, a `data-*-line` hairline that GSAP draws, and a mono counter.
 
 ### AI Assistant Guidelines
 
-#### Converted Components (Now Using Tailwind CSS Only)
-The following components have been converted from CSS Modules to pure Tailwind CSS:
-- **Home.tsx** - Hero section (removed `Home.module.css`)
-- **ScrollFloat.tsx** - Scroll animation component (removed `ScrollFloat.module.css`)
-- **WhatIDo.tsx** - What I Do section (removed `WhatIDo.module.css`)
-
-#### Components That MUST Keep Native CSS
-The following require native CSS for effects Tailwind cannot express:
-- **LineSidebar.module.css** - Dynamic CSS custom properties for proximity effects
-- **SpecularButton.css** - Canvas effect styling
-- **components/ui/Bento/Bento.css** - Border-glow pseudo-element and generated spotlight only
-  (glow colour now comes from `--glow-color`; the glow is disabled in the public showcase)
-- **app/globals.css** - theme tokens and `[data-theme="dark"] .tech-icon-adaptive`
-  (inverts single-colour brand glyphs in dark mode)
-
-`Navbar.tsx` is **pure Tailwind** — there is no `Navbar.module.css`.
+#### Native CSS
+Everything is Tailwind except `app/globals.css` (theme tokens, scrollbar, reduced motion and the
+`data-theme-switching` guard). `Navbar.tsx` is pure Tailwind. Unused components, effects and assets
+from earlier designs were removed in Oct 2026; don't resurrect them without a design that uses them.
 
 #### What to Do
 ✅ Read `AGENTS.md` for comprehensive information  
@@ -467,7 +417,6 @@ The following require native CSS for effects Tailwind cannot express:
 ❌ Don't ignore TypeScript/ESLint errors  
 ❌ Don't use deprecated Next.js APIs  
 ❌ **Don't create CSS Modules for simple styling - use Tailwind instead**  
-❌ **Don't convert protected effect CSS (Navbar, LineSidebar, Bento, TiltedCard, SpecularButton) without proving parity**
 
 ### Quick Reference
 

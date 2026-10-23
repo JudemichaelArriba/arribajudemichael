@@ -12,7 +12,7 @@ jest.mock('@upstash/redis', () => ({
 }));
 jest.mock('@upstash/ratelimit', () => ({
   Ratelimit: class RatelimitMock {
-    static slidingWindow = jest.fn(() => ({ limiter: true }));
+    static slidingWindow: jest.Mock = jest.fn(() => ({ limiter: true }));
     limit: jest.Mock;
 
     constructor(options: { prefix: string }) {

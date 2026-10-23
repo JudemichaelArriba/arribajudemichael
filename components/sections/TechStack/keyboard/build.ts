@@ -242,6 +242,11 @@ function keyColours(palette: BoardPalette, kind: KeyKind, jitterAmount: number) 
 /**
  * Legends are painted once as a theme-neutral mask: red = glyph, green = dot, black = keycap.
  * The keycap shader turns the mask into colours, so switching theme never repaints a texture.
+ *
+ * On screen a keycap top is only ~60-80px tall, so the GPU samples this 256px mask several mip
+ * levels down. Glyphs are therefore bold and large enough for their strokes to survive that
+ * minification (thin strokes blur into the keycap and read as faint grey), at no extra texture
+ * size or painting cost.
  */
 function legendTexture(label: string, tw: number, td: number, fontStack: string, maxAnisotropy: number): Texture {
     const LS = 256;
@@ -260,24 +265,26 @@ function legendTexture(label: string, tw: number, td: number, fontStack: string,
             if (/[←-↓]/.test(label)) {
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                ctx.font = `400 136px ${fontStack}`;
+                ctx.font = `500 160px ${fontStack}`;
                 ctx.fillText(label, cw / 2, ch / 2);
             } else if (label.length === 1) {
                 ctx.textAlign = 'left';
                 ctx.textBaseline = 'alphabetic';
-                ctx.font = `500 124px ${fontStack}`;
-                ctx.fillText(label.toUpperCase(), 80, 190);
+                ctx.font = `600 152px ${fontStack}`;
+                ctx.fillText(label.toUpperCase(), 80, 204);
             } else {
+                // Word legends (Tab, Shift, PgUp…): the longest, "BACKSPACE", still uses about
+                // half of its 2u key at this size.
                 ctx.textAlign = 'left';
                 ctx.textBaseline = 'alphabetic';
-                ctx.font = `500 66px ${fontStack}`;
-                ctx.fillText(label.toUpperCase(), 80, 156);
+                ctx.font = `600 88px ${fontStack}`;
+                ctx.fillText(label.toUpperCase(), 80, 172);
             }
         }
         if (MARKED_KEYS.has(label)) {
             ctx.fillStyle = '#00ff00';
             ctx.beginPath();
-            ctx.arc(cw - 96, ch - 96, 18, 0, Math.PI * 2);
+            ctx.arc(cw - 96, ch - 96, 22, 0, Math.PI * 2);
             ctx.fill();
         }
     }
@@ -290,8 +297,10 @@ function legendTexture(label: string, tw: number, td: number, fontStack: string,
 const LEGEND_UNIFORMS = `uniform vec3 legendBg;
 uniform vec3 legendFg;
 uniform vec3 legendDot;`;
+// The small negative LOD bias samples one notch sharper than the GPU would pick for a keycap this
+// small (anisotropic filtering keeps it clean), so legends stay crisp. Free: no extra texels.
 const LEGEND_MAP_FRAGMENT = `#ifdef USE_MAP
-    vec4 legendMask = texture2D( map, vMapUv );
+    vec4 legendMask = texture2D( map, vMapUv, -0.6 );
     diffuseColor.rgb *= mix( mix( legendBg, legendFg, legendMask.r ), legendDot, legendMask.g );
 #endif`;
 

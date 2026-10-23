@@ -6,6 +6,9 @@ function requestWith(headers: Record<string, string>): Request {
   return { headers: new Headers(headers) } as Request;
 }
 
+// Next.js types NODE_ENV as read-only; tests switch it through this writable view.
+const env = process.env as Record<string, string | undefined>;
+
 describe('getContactSourceIdentifier', () => {
   const originalEnvironment = {
     hashSecret: process.env.CONTACT_IP_HASH_SECRET,
@@ -15,7 +18,7 @@ describe('getContactSourceIdentifier', () => {
 
   afterEach(() => {
     process.env.CONTACT_IP_HASH_SECRET = originalEnvironment.hashSecret;
-    process.env.NODE_ENV = originalEnvironment.nodeEnv;
+    env.NODE_ENV = originalEnvironment.nodeEnv;
     process.env.VERCEL = originalEnvironment.vercel;
   });
 
@@ -30,7 +33,7 @@ describe('getContactSourceIdentifier', () => {
 
   it('does not trust forwarding headers in non-Vercel production', () => {
     process.env.CONTACT_IP_HASH_SECRET = 'hash-secret';
-    process.env.NODE_ENV = 'production';
+    env.NODE_ENV = 'production';
     delete process.env.VERCEL;
 
     expect(getContactSourceIdentifier(requestWith({ 'x-real-ip': '203.0.113.8' }))).toEqual({
@@ -41,7 +44,7 @@ describe('getContactSourceIdentifier', () => {
 
   it('uses the first valid trusted Vercel address and returns only its HMAC', () => {
     process.env.CONTACT_IP_HASH_SECRET = 'hash-secret';
-    process.env.NODE_ENV = 'production';
+    env.NODE_ENV = 'production';
     process.env.VERCEL = '1';
 
     const result = getContactSourceIdentifier(requestWith({
@@ -59,7 +62,7 @@ describe('getContactSourceIdentifier', () => {
 
   it('uses a deterministic localhost source only in development', () => {
     process.env.CONTACT_IP_HASH_SECRET = 'hash-secret';
-    process.env.NODE_ENV = 'development';
+    env.NODE_ENV = 'development';
 
     const first = getContactSourceIdentifier(requestWith({}));
     const second = getContactSourceIdentifier(requestWith({}));

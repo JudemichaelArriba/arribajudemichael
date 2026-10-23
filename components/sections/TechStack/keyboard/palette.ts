@@ -40,8 +40,8 @@ const LIGHTING: Record<Theme, StageLighting> = {
 const BLACK_BOARD: BoardPalette = {
     caseColor: 0x111111, caseMetalness: 0.3, caseRoughness: 0.8, caseEnv: 0.25,
     base: '#141414', modifier: '#0e0e0e', accent: '#EDEDED',
-    text: '#EDEDED', textModifier: '#8a8a8a', textAccent: '#0B0B0B',
-    dot: '#8a8a8a', dotAccent: '#0B0B0B',
+    text: '#EDEDED', textModifier: '#b0b0b0', textAccent: '#0B0B0B',
+    dot: '#a8a8a8', dotAccent: '#0B0B0B',
     plate: 0x070707, switchBody: 0x151515, stem: 0x222222,
     keyEnv: 0.14, knobMetalness: 0.5, knobRoughness: 0.68,
 };
@@ -49,8 +49,8 @@ const BLACK_BOARD: BoardPalette = {
 const WHITE_BOARD = (page: Theme): BoardPalette => ({
     caseColor: page === 'dark' ? 0xe9e9e6 : 0xe2e2df, caseMetalness: 0, caseRoughness: 0.85, caseEnv: 0.2,
     base: '#fbfbfa', modifier: '#e9e9e6', accent: '#141414',
-    text: '#141414', textModifier: '#8f8f8f', textAccent: '#F7F7F6',
-    dot: '#a3a3a3', dotAccent: '#F7F7F6',
+    text: '#141414', textModifier: '#5c5c5c', textAccent: '#F7F7F6',
+    dot: '#7a7a7a', dotAccent: '#F7F7F6',
     plate: 0xcfcfcc, switchBody: 0xdcdcd9, stem: 0xc9c9c6,
     keyEnv: 0.1, knobMetalness: 0.05, knobRoughness: 0.85,
 });
