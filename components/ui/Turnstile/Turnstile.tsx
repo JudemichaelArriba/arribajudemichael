@@ -9,6 +9,9 @@ import {
     type CSSProperties,
 } from 'react';
 
+import { useTheme } from '@/components/theme/ThemeProvider';
+import { isTheme, type Theme } from '@/lib/theme';
+
 export type TurnstileAction = 'login' | 'contact';
 export type TurnstileStatus = 'ready' | 'verified' | 'expired' | 'error';
 
@@ -22,7 +25,7 @@ interface TurnstileProps {
 interface TurnstileRenderOptions {
     sitekey: string;
     action: TurnstileAction;
-    theme: 'dark';
+    theme: Theme;
     size: 'flexible';
     appearance: 'always';
     execution: 'render';
@@ -62,6 +65,15 @@ const TURNSTILE_SCRIPT_URL =
 const WIDGET_MIN_WIDTH = 300;
 const WIDGET_NOMINAL_HEIGHT = 65;
 
+/**
+ * The theme the widget actually sits in: the nearest `data-theme`, so it follows the public page
+ * toggle and stays dark inside areas that pin a theme (the login page pins dark).
+ */
+function surroundingTheme(element: HTMLElement, fallback: Theme): Theme {
+    const value = element.closest('[data-theme]')?.getAttribute('data-theme');
+    return isTheme(value) ? value : fallback;
+}
+
 export default function Turnstile({
     action,
     resetKey,
@@ -69,6 +81,8 @@ export default function Turnstile({
     className = '',
 }: TurnstileProps) {
     const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+    // A theme switch re-renders the widget in the new colours; Turnstile re-verifies on its own.
+    const { theme: pageTheme } = useTheme();
     const frameRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const widgetIdRef = useRef<string | null>(null);
@@ -142,7 +156,7 @@ export default function Turnstile({
             widgetIdRef.current = api.render(container, {
                 sitekey: siteKey,
                 action,
-                theme: 'dark',
+                theme: surroundingTheme(container, pageTheme),
                 size: 'flexible',
                 appearance: 'always',
                 execution: 'render',
@@ -165,7 +179,7 @@ export default function Turnstile({
         }
 
         return removeWidget;
-    }, [action, isScriptReady, removeWidget, siteKey]);
+    }, [action, isScriptReady, pageTheme, removeWidget, siteKey]);
 
     useEffect(() => {
         if (Object.is(previousResetKeyRef.current, resetKey)) {
@@ -187,7 +201,7 @@ export default function Turnstile({
         return (
             <p
                 role="alert"
-                className={`text-sm leading-relaxed text-red-300/75 ${className}`}
+                className={`text-sm leading-relaxed text-[var(--danger)] ${className}`}
             >
                 Security verification is unavailable. Please try again later.
             </p>

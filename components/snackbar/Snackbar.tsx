@@ -533,18 +533,26 @@ export function SnackbarProvider({ children }: SnackbarProviderProps) {
 
     useEffect(() => {
         mountedRef.current = true;
+        // The maps are created once and only mutated, so the instances taken here are the ones
+        // holding every pending timer when the provider unmounts.
+        const autoDismissTimers = autoDismissTimersRef.current;
+        const removalTimers = removalTimersRef.current;
+        const entryFrames = entryFramesRef.current;
+        const remainingMs = remainingMsRef.current;
+        const timerStartedAt = timerStartedAtRef.current;
+        const pauseReasons = pauseReasonsRef.current;
 
         return () => {
             mountedRef.current = false;
-            autoDismissTimersRef.current.forEach((timer) => window.clearTimeout(timer));
-            removalTimersRef.current.forEach((timer) => window.clearTimeout(timer));
-            entryFramesRef.current.forEach((frame) => window.cancelAnimationFrame(frame));
-            autoDismissTimersRef.current.clear();
-            removalTimersRef.current.clear();
-            entryFramesRef.current.clear();
-            remainingMsRef.current.clear();
-            timerStartedAtRef.current.clear();
-            pauseReasonsRef.current.clear();
+            autoDismissTimers.forEach((timer) => window.clearTimeout(timer));
+            removalTimers.forEach((timer) => window.clearTimeout(timer));
+            entryFrames.forEach((frame) => window.cancelAnimationFrame(frame));
+            autoDismissTimers.clear();
+            removalTimers.clear();
+            entryFrames.clear();
+            remainingMs.clear();
+            timerStartedAt.clear();
+            pauseReasons.clear();
             itemsRef.current = [];
         };
     }, []);
