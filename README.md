@@ -51,11 +51,13 @@ npm run test:coverage
 
 ### Test Coverage
 
-- **235+ test cases** covering:
-  - UI components (Button, RollingText, Magnet, ScrollFloat)
-  - Custom hooks (useActiveSection, useRoleCycle)
-  - Page sections (Home, WhatIDo)
-  - Navigation and layout (Navbar, Preloader)
+A risk-based Jest + React Testing Library suite, co-located in `__tests__/` folders, covering:
+  - Authentication and protected routes
+  - Contact validation, rate limits, bans and Turnstile
+  - Project, certificate and experience mutations
+  - Analytics sessions, batching, retries and exclusions
+  - The Ask assistant (schema, moderation, model fallback, output filtering)
+  - Navigation, the Projects showcase and other key UI behaviour
 
 ### Continuous Integration
 
@@ -70,9 +72,6 @@ Tests run automatically on every push and pull request via GitHub Actions:
 ```bash
 # Run linter
 npm run lint
-
-# Format code (if configured)
-npm run format
 ```
 
 ## Project Structure
@@ -81,7 +80,6 @@ npm run format
 arribajudemichael/
 ├── app/                 # Next.js App Router
 ├── components/          # React components
-│   ├── effects/        # Visual effects (Magnet, SpecularButton, FloatingLines)
 │   ├── sections/       # Page sections (Home, WhatIDo, etc.)
 │   ├── ui/             # Reusable UI components
 │   ├── navbar/         # Navigation components

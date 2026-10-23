@@ -113,10 +113,6 @@ body {
   transition: background-color 320ms ease, color 320ms ease;
 }
 
-.site-background {
-  background: var(--site-bg);
-}
-
 .font-display {
   font-family: var(--font-name), "Segoe UI", sans-serif;
 }
@@ -127,27 +123,6 @@ body {
 
 .font-name {
   font-family: var(--font-name), "Segoe UI", sans-serif;
-}
-
-/* Preloader wordmark */
-.stroke-text {
-  fill: none;
-  stroke: var(--text);
-  stroke-width: 1.2px;
-}
-
-.fill-text {
-  fill: var(--text);
-}
-
-.glow-text {
-  filter: none;
-}
-
-/* Single-colour brand marks (e.g. the GitHub glyph) need flipping in dark mode.
-   Tailwind has no configured `data-theme` variant, so this stays native CSS. */
-[data-theme="dark"] .tech-icon-adaptive {
-  filter: brightness(0) invert(1);
 }
 
 html {
@@ -199,14 +174,4 @@ html {
     animation: none !important;
     transition: none !important;
   }
-
-  .scroll-float-char {
-    opacity: 1 !important;
-    transform: none !important;
-    will-change: auto !important;
-  }
-}
-
-.scroll-float-animating .scroll-float-char {
-  will-change: opacity, transform;
 }

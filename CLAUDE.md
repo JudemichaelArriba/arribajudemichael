@@ -39,21 +39,19 @@ components/
     TechStack/           -> TechStack.tsx + keyboard/ (R3F 3D keyboard: layout/palette/build/controller/KeyboardCanvas)
     Projects/            -> Projects.tsx shell + ShowcaseTabs/ProjectIndex/CertificateIndex/ShowcaseIndex/ShowcasePreview, useShowcaseMotion + usePreviewSwap (Option A index; no pin)
     Contact/             -> Contact.tsx (static form + replayable GSAP reveal)
-  ui/                    -> Reusable UI (Button, RollingText, ScrollFloat, Bento, PDF preview, navigation styles)
+  ui/                    -> Reusable UI (PDF preview, cursor, cursor grid, Turnstile, navigation styles)
     CertificatePdfPreview/ -> Lazy PDF.js first-page canvas renderer
-    ScrollFloat/         -> ScrollFloat.tsx (Tailwind CSS only)
-    LineSidebar/         -> LineSidebar.tsx + .module.css (CSS variables)
-    TiltedCard/          -> TiltedCard.tsx + TiltedCard.css (interactive card tilt)
-  navbar/                -> Navbar.tsx + .module.css (complex transitions)
+  navbar/                -> Navbar.tsx (pure Tailwind)
   loader/                -> Preloader (canvas stage + sr-only progressbar; drawing lives in lib/animations/preloader*)
   footer/                -> Footer.tsx (server-rendered navigation and contact placeholders)
-  effects/               -> Visual effects (Magnet, SpecularButton, FloatingLines)
 
 lib/
   fonts.ts               -> Font configurations
   site.ts                -> Shared typed navigation and contact destinations
   useActiveSection.ts    -> Scroll detection hook
-  animations/            -> Animation logic (useRoleCycle, preloader)
+  useMediaQuery.ts       -> SSR-safe media query hook; breakpoints.ts holds the shared queries
+  techStack.ts           -> Tech Stack names shared by the section, the keyboard and the chat profile
+  animations/            -> Preloader (painter, worker, glyphs, holds), primeStagger, resyncAfterRefresh, scrollRestore
 
 features/
   analytics/             -> Shared limits/activity, client delta state, server session logic
@@ -61,12 +59,10 @@ features/
   admin/analytics/       -> Authenticated reporting DTOs and server RPC queries
 
 public/
-  profile.jpeg           -> About/profile image
-  tech/                  -> Local original-color technology SVG assets
-  projectsTemporary/     -> Temporary project screenshots
-  certsTemporary/        -> Retained legacy certificate assets (unused by live UI)
+  profile.jpeg           -> Site icon
+  Profile 2.png          -> Hero portrait
+  keyboard/              -> Baked studio reflections for the 3D keyboard (environment.png)
   vendor/pdfjs/          -> Generated local PDF.js worker/WASM assets (gitignored)
-  *.svg                  -> SVG icons
 ```
 
 #### Key Technical Decisions
@@ -74,10 +70,10 @@ public/
 - **Tailwind CSS 4 FIRST** - Use utility classes for all standard styling
 - **Native CSS only when necessary** - Complex gradients, transitions, CSS variables, WebGL effects
 - **CSS Modules** (`.module.css`) for component-specific complex styles that Tailwind can't handle
-- **Dynamic imports for heavy components** - e.g., `FloatingLines` uses `dynamic(() => import(), { ssr: false })`
+- **Dynamic imports for heavy components** - e.g., the Tech Stack `KeyboardCanvas` uses `dynamic(() => import(), { ssr: false })`
 - **GSAP for animations** - Complex timelines and interactions
 - **Homepage composition** - Home -> WhatIDo -> AboutMe -> Experience -> TechStack -> Projects -> Contact
-- **Three.js/OGL for WebGL** - Advanced visual effects
+- **Three.js + @react-three/fiber** - the Tech Stack keyboard is the only WebGL on the site
 - **Dynamic showcase boundary** - Projects and Certificates are queried independently on the server and passed to the existing animated client showcase as serialized DTOs.
 - **Certificate feature boundary** - `features/admin/certificates/` owns generated-type aliases, DTOs, validation, public/admin queries, and authenticated metadata Server Actions.
 - **PDF-only credentials** - The authenticated browser uploads directly to `certificate-files/certificates/<uuid>/certificate.pdf`; Server Actions derive and verify that path, and public cards lazily render page 1 through `CertificatePdfPreview`.
@@ -237,7 +233,7 @@ export default function Page({ params }: PageProps) {
   - Dynamic CSS custom properties
   - Backdrop filters with complex layering
   - WebGL/Canvas container styles
-- **Protected native CSS files:** `SpecularButton.css`, `Navbar.module.css`, `LineSidebar.module.css`, and effect-only pieces of `components/ui/Bento/Bento.css`
+- The only native CSS today is `app/globals.css` (theme tokens, scrollbar, reduced motion, theme-swap guard)
 - **Naming:** `Component.module.css` co-located with component
 - **BEM-like naming inside modules:** `.container`, `.button`, `.button__icon`
 
@@ -291,22 +287,22 @@ import { useGSAP } from '@gsap/react';
 // Icons
 import { Download, Menu, X } from 'lucide-react';
 
-// 3D/WebGL
-import { Renderer, Camera, Transform, Mesh } from 'ogl';
+// 3D/WebGL (Tech Stack keyboard)
+import { Canvas } from '@react-three/fiber';
 import * as THREE from 'three';
 ```
 
 #### Path Aliases
 - `@/` maps to project root
-- Use: `import Button from '@/components/ui/Button'`
+- Use: `import CertificatePdfPreview from '@/components/ui/CertificatePdfPreview/CertificatePdfPreview'`
 
 ### Performance Considerations
 
 #### Code Splitting
 ```typescript
 // Heavy components (WebGL, large libraries)
-const FloatingLines = dynamic(
-  () => import('@/components/effects/FloatingLines/FloatingLines'),
+const KeyboardCanvas = dynamic(
+  () => import('@/components/sections/TechStack/keyboard/KeyboardCanvas'),
   { ssr: false }
 );
 ```
@@ -391,61 +387,15 @@ See `.github/workflows/test.yml` for workflow configuration.
 - Focus on development excellence
 
 ### Known Patterns in Codebase
-
-#### Button Component
-```typescript
-<Button
-  href="/cv.pdf"
-  variant="specular"    // or "default", "ghost"
-  size="lg"             // or "sm", "md"
-  radius={999}          // Border radius
-  magnetic              // Enable magnetic hover
-  magnetPadding={15}    // Magnetic effect area
-  glowProximity={60}    // Glow effect distance
->
-  Download CV
-</Button>
-```
-
-#### FloatingLines Effect
-```typescript
-<FloatingLines
-  linesGradient={['#e945f5', '#7C3AED', '#760068']}
-  lineCount={4}
-  bendRadius={8}
-  animationSpeed={1}
-  bendStrength={-2}
-  lineDistance={8}
-  interactive={false}
-  parallax={false}
-/>
-```
-
-#### Magnet Wrapper
-```typescript
-<Magnet padding={20} disabled={false}>
-  <button>Hover me</button>
-</Magnet>
-```
+- Buttons and links are plain Tailwind elements: square, `border-[var(--text)]`, inverting to `bg-[var(--inverse-bg)] text-[var(--inverse-text)]` on hover (see `ShowcaseLink` in `components/sections/Projects/ShowcaseParts.tsx`). There is no shared Button component.
+- Section headers share one pattern: a `font-display` kicker, a `data-*-line` hairline that GSAP draws, and a mono counter.
 
 ### AI Assistant Guidelines
 
-#### Converted Components (Now Using Tailwind CSS Only)
-The following components have been converted from CSS Modules to pure Tailwind CSS:
-- **Home.tsx** - Hero section (removed `Home.module.css`)
-- **ScrollFloat.tsx** - Scroll animation component (removed `ScrollFloat.module.css`)
-- **WhatIDo.tsx** - What I Do section (removed `WhatIDo.module.css`)
-
-#### Components That MUST Keep Native CSS
-The following require native CSS for effects Tailwind cannot express:
-- **LineSidebar.module.css** - Dynamic CSS custom properties for proximity effects
-- **SpecularButton.css** - Canvas effect styling
-- **components/ui/Bento/Bento.css** - Border-glow pseudo-element and generated spotlight only
-  (glow colour now comes from `--glow-color`; the glow is disabled in the public showcase)
-- **app/globals.css** - theme tokens and `[data-theme="dark"] .tech-icon-adaptive`
-  (inverts single-colour brand glyphs in dark mode)
-
-`Navbar.tsx` is **pure Tailwind** — there is no `Navbar.module.css`.
+#### Native CSS
+Everything is Tailwind except `app/globals.css` (theme tokens, scrollbar, reduced motion and the
+`data-theme-switching` guard). `Navbar.tsx` is pure Tailwind. Unused components, effects and assets
+from earlier designs were removed in Oct 2026; don't resurrect them without a design that uses them.
 
 #### What to Do
 ✅ Read `AGENTS.md` for comprehensive information  
@@ -467,7 +417,6 @@ The following require native CSS for effects Tailwind cannot express:
 ❌ Don't ignore TypeScript/ESLint errors  
 ❌ Don't use deprecated Next.js APIs  
 ❌ **Don't create CSS Modules for simple styling - use Tailwind instead**  
-❌ **Don't convert protected effect CSS (Navbar, LineSidebar, Bento, TiltedCard, SpecularButton) without proving parity**
 
 ### Quick Reference
 

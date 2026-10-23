@@ -30,40 +30,32 @@ arribajudemichael/
 │   └── favicon.ico               # Site favicon
 ├── components/
 │   ├── sections/                 # Page sections and page-level section scenes
-│   │   ├── home/                 # Hero section with FloatingLines effect
+│   │   ├── home/                 # Stacked hero: name, role loop, profile photo, cursor grid
 │   │   │   └── Home.tsx          # Uses Tailwind CSS (no CSS module)
 │   │   ├── WhatIDo/              # What I Do section
 │   │   │   └── WhatIDo.tsx       # Tailwind CSS only
 │   │   ├── AboutMe/              # About statement + GitHub contribution calendar
 │   │   │   ├── AboutSection.tsx  # Server wrapper: loads cached GitHub contributions
 │   │   │   ├── AboutMe.tsx       # Tailwind CSS only
-│   │   │   ├── GitHubActivity.tsx # Monochrome contribution calendar (DTO only)
-│   │   │   └── AboutBento.tsx    # Thin wrapper around shared Bento UI
+│   │   │   └── GitHubActivity.tsx # Monochrome contribution calendar (DTO only)
 │   │   ├── Experience/           # Replayable timeline section
 │   │   │   └── Experience.tsx
-│   │   ├── TechStack/            # Categorized technology grid
-│   │   │   └── TechStack.tsx     # Unframed icon/name lists + reversible scrubbed per-tech reveal
+│   │   ├── TechStack/            # Tool chips + R3F 3D keyboard
+│   │   │   ├── TechStack.tsx     # Category chip lists, readout, keyboard wiring
+│   │   │   └── keyboard/         # layout, palette, build, controller, sound, KeyboardCanvas
 │   │   ├── Projects/             # Dynamic projects and certificates showcase
 │   │   │   └── Projects.tsx      # Option A index (desktop list + sticky preview; phone list / certificate contact sheet), PDF.js previews, replayable GSAP reveals, no pin
 │   │   └── Contact/              # Static contact form + contact channel presentation
 │   │       └── Contact.tsx       # Tailwind UI + replayable GSAP reveal
 │   ├── ui/                       # Reusable UI components
-│   │   ├── Button.tsx            # Custom button with specular/magnetic variants
 │   │   ├── navigationStyles.ts   # Shared Navbar/Footer link underline animation
-│   │   ├── RollingText.tsx       # Animated text roller component
-│   │   ├── ScrollFloat/          # Scroll-triggered float animation
-│   │   │   └── ScrollFloat.tsx   # Uses Tailwind CSS (no CSS module)
 │   │   ├── CertificatePdfPreview/ # Lazy PDF.js page-one canvas renderer
 │   │   │   └── CertificatePdfPreview.tsx
-│   │   ├── LineSidebar/          # Proximity-based sidebar navigation
-│   │   │   ├── LineSidebar.tsx
-│   │   │   └── LineSidebar.module.css  # Custom CSS variables (keep native CSS)
-│   │   └── TiltedCard/           # Interactive profile/card tilt effect
-│   │       ├── TiltedCard.tsx
-│   │       └── TiltedCard.css    # 3D tilt/overlay styles (keep native CSS)
+│   │   ├── Cursor/               # Custom cursor (fine pointers only)
+│   │   ├── CursorGrid/           # Hero cursor-reactive grid
+│   │   └── Turnstile/            # Cloudflare Turnstile widget for the contact form
 │   ├── navbar/                   # Navigation
-│   │   ├── Navbar.tsx            # Main navigation bar
-│   │   └── Navbar.module.css     # Complex transitions (keep native CSS)
+│   │   └── Navbar.tsx            # Main navigation bar (pure Tailwind)
 │   ├── loader/                   # Loading components
 │   │   └── Preloader.tsx         # Page preloader wrapper (canvas stage, worker start, curtain)
 │   ├── footer/                   # Semantic public-site footer
@@ -74,33 +66,23 @@ arribajudemichael/
 │   │   ├── AskNavButton.tsx      # Navbar "Ask" button + Nero hover tooltip (instant, Esc/scroll dismiss)
 │   │   ├── askHint.ts            # Tooltip frequency: 20 min cool-down, repeats until the chat is first used
 │   │   └── chatMessages.ts       # Pure helpers: wire format, turns, safe link segments
-│   └── effects/                  # Visual effects
-│       ├── Magnet/               # Magnetic hover effect
-│       │   └── Magnet.tsx
-│       ├── SpecularButton/       # Specular light button effect
-│       │   ├── SpecularButton.tsx
-│       │   └── SpecularButton.css  # Canvas effects (keep native CSS)
-│       └── FloatingLines/        # WebGL hero background (Three.js)
-│           ├── FloatingLines.tsx
-│           └── three.d.ts        # Local Three.js declarations used by the effect
 ├── lib/
 │   ├── fonts.ts                  # Font configurations (Bricolage Grotesque)
 │   ├── site.ts                   # Shared typed navigation and contact configuration
 │   ├── techStack.ts              # Tech Stack data shared by the section and the chat profile
 │   ├── security/                 # Server-only rate limits, source hashing, origin check, chat output filter
 │   ├── useActiveSection.ts       # Hook for active section detection
+│   ├── useMediaQuery.ts          # SSR-safe media query hook
+│   ├── breakpoints.ts            # Shared media queries (desktop, fine hover, reduced motion)
 │   └── animations/
-│       ├── useRoleCycle.ts       # Text role cycling animation
+│       ├── preloaderHold.ts      # Real loading progress holds; primeStagger, resyncAfterRefresh, scrollRestore helpers
 │       └── preloader.ts          # Preloader canvas host (worker or main-thread fallback) + curtain lift
 │                                 #   preloaderCanvas.ts (painter), preloader.worker.ts, preloaderGlyphs.ts (generated)
 ├── public/                       # Static assets
-│   ├── profile.jpeg              # About/profile image
-│   ├── tech/                     # Locally hosted original-color technology SVGs
-│   ├── projectsTemporary/        # Temporary static project screenshots
-│   ├── certsTemporary/           # Retained legacy certificate assets (unused by live UI)
-│   ├── vendor/pdfjs/             # Generated worker/WASM assets (gitignored)
-│   ├── *.svg                     # SVG icons
-│   └── [fonts if any]
+│   ├── profile.jpeg              # Site icon
+│   ├── Profile 2.png             # Hero portrait
+│   ├── keyboard/environment.png  # Baked studio reflections for the 3D keyboard
+│   └── vendor/pdfjs/             # Generated worker/WASM assets (gitignored)
 └── Configuration files:
     ├── next.config.ts            # Next.js configuration
     ├── tsconfig.json             # TypeScript config
@@ -122,7 +104,7 @@ arribajudemichael/
 ### 2. Component Architecture
 - **Server Components by default** (Next.js 16 App Router)
 - Client components explicitly marked with `'use client'`
-- Dynamic imports for heavy components (e.g., FloatingLines with `ssr: false`)
+- Dynamic imports for heavy components (e.g., the Tech Stack `KeyboardCanvas` with `ssr: false`)
 - Component co-location: styles next to component files
 - Projects and Certificates are read from Supabase on the server and passed as serializable DTOs into the existing animated public showcase. Fetch them independently so one failed query does not hide the other view.
 - Certificate data access lives in `features/admin/certificates/`: public reads are published-only and cached with the `certificates` tag; admin reads are authenticated and uncached; mutations use authenticated Server Actions and invalidate both public and admin views.
@@ -157,21 +139,19 @@ arribajudemichael/
 ### 4. Styling Approach
 - **Tailwind CSS 4 is mandatory for standard styling** - Use utility classes for layout, spacing, sizing, typography, colors, borders, shadows, responsive states, and simple hover/focus states.
 - **Use Tailwind even when a CSS file already exists** - Keep or add native CSS only for rules that Tailwind would make fragile, unreadable, or less correct.
-- **Native CSS is protected only when necessary** for:
+- **Native CSS only when necessary** for:
   - Pseudo-elements, masks, `color-mix`, complex layered backgrounds, or browser-specific selectors
-  - Complex state transitions and backdrop layering (e.g., `Navbar.module.css`)
-  - Dynamic CSS custom properties and proximity effects (e.g., `LineSidebar.module.css`)
-  - WebGL/Canvas containers and generated DOM effects (e.g., `SpecularButton.css`)
-  - Effect-only rules in `components/ui/Bento/Bento.css` such as glow variables and border-glow pseudo-elements
-- **Protected native CSS files:** `SpecularButton.css`, `Navbar.module.css`, `LineSidebar.module.css`, and effect-only pieces of `components/ui/Bento/Bento.css`.
+  - Complex state transitions, backdrop layering and dynamic CSS custom properties
+  - WebGL/Canvas containers and generated DOM effects
+- The only native CSS left is `app/globals.css` (theme tokens, scrollbar, reduced motion, theme-swap guard).
 - CSS Modules (`.module.css`) are for component-specific complex effects only, not ordinary layout or typography.
 - Global styles in `app/globals.css` are for Tailwind directives, CSS variables, scrollbar, reduced-motion, and true global utilities.
 - Tailwind arbitrary values (`className="text-[#5227FF]"`) are preferred for one-off exact design values.
 - Empty or unused CSS files must be removed after conversion.
 ### 5. Animation & Effects
 - **GSAP 3.15** for complex animations (@gsap/react)
-- **Three.js/OGL** for WebGL effects such as FloatingLines
-- Custom hooks for animation logic (`useRoleCycle`, etc.)
+- **Three.js + @react-three/fiber** for the Tech Stack keyboard (the only WebGL on the site)
+- Shared animation helpers in `lib/animations/` (`primeStagger`, `resyncAfterRefresh`, `preloaderHold`, `scrollRestore`)
 - Performance-focused: animations isolated, lazy-loaded when heavy
 
 ### 6. Typography
@@ -180,13 +160,7 @@ arribajudemichael/
 - Font variables applied via CSS custom properties
 
 ### 7. UI Components
-- **Button component** (`components/ui/Button.tsx`):
-  - Variants: `default`, `specular`, `ghost`
-  - Sizes: `sm`, `md`, `lg`
-  - Features: magnetic hover, glow effects, customizable radius
-  - Props: `href`, `variant`, `size`, `radius`, `magnetic`, `magnetPadding`, `glowProximity`
-- **RollingText** for animated text transitions
-- **Magnet wrapper** for magnetic hover effects on any component
+- Buttons and links are plain Tailwind elements styled with the theme tokens (square, `--inverse-bg` on hover); there is no shared Button component.
 - **CertificatePdfPreview** for lazy client-only PDF page-one previews backed by local PDF.js runtime assets
 
 ## Development Guidelines
@@ -333,7 +307,6 @@ export default function Component({ title, onAction }: ComponentProps) {
 - `gsap@3.15.0` - Animation library
 - `@gsap/react@2.1.2` - GSAP React integration
 - `three@0.185.1` - 3D/WebGL library
-- `ogl@1.0.11` - Lightweight WebGL library
 - `pdfjs-dist@6` - Client-side first-page certificate PDF rendering
 
 ### AI Chat
