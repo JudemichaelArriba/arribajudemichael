@@ -15,6 +15,8 @@ import sys
 from pathlib import Path
 
 from fontTools.pens.basePen import BasePen
+from fontTools.pens.boundsPen import BoundsPen
+from fontTools.pens.transformPen import TransformPen
 from fontTools.ttLib import TTFont
 from fontTools.varLib.instancer import instantiateVariableFont
 
@@ -105,12 +107,17 @@ def main(urbanist_path, geist_path):
     baseline = JM_MIDDLE_Y + x_height / 2
     x = JM_CENTER_X - width / 2
     jm = []
+    # Exact ink extent of the mark (not its advance box), so other elements can centre on what the
+    # eye sees: the letters' side bearings make the ink sit slightly off the layout centre.
+    ink = BoundsPen(glyphs)
     for char, advance in zip('JM', advances):
         origin = x
         pen = TracePen(glyphs, lambda gx, gy, o=origin: (o + gx * scale, baseline - gy * scale), 2)
         glyphs[glyph_name(urbanist, char)].draw(pen)
+        glyphs[glyph_name(urbanist, char)].draw(TransformPen(ink, (scale, 0, 0, -scale, origin, baseline)))
         jm.extend(pen.contours)
         x += advance + JM_LETTER_SPACING
+    ink_left, _, ink_right, _ = ink.bounds
 
     # Counter: digits and % from Geist at the counter's weight, in em units (baseline at 0).
     geist = instantiateVariableFont(TTFont(geist_path), {'wght': COUNTER_WEIGHT})
@@ -137,6 +144,9 @@ def main(urbanist_path, geist_path):
         '',
         f'/** Bottom of the JM letters (their baseline) in the logo space. */',
         f'export const JM_BASELINE = {baseline:.2f};',
+        '',
+        f'/** Horizontal centre of the JM ink (not its advance box) in the logo space. */',
+        f'export const JM_INK_CENTER_X = {(ink_left + ink_right) / 2:.2f};',
         '',
         f'/** Geist {COUNTER_WEIGHT} cap height, in em. */',
         f'export const COUNTER_CAP_HEIGHT = {cap_height:.4f};',

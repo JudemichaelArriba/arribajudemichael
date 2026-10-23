@@ -10,6 +10,9 @@ export const JM_CONTOURS: readonly { d: string; length: number }[] = [
 /** Bottom of the JM letters (their baseline) in the logo space. */
 export const JM_BASELINE = 84.75;
 
+/** Horizontal centre of the JM ink (not its advance box) in the logo space. */
+export const JM_INK_CENTER_X = 258.42;
+
 /** Geist 500 cap height, in em. */
 export const COUNTER_CAP_HEIGHT = 0.7100;
 

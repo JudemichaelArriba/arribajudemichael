@@ -1,4 +1,4 @@
-import { COUNTER_CAP_HEIGHT, COUNTER_GLYPHS, JM_BASELINE, JM_CONTOURS } from './preloaderGlyphs';
+import { COUNTER_CAP_HEIGHT, COUNTER_GLYPHS, JM_BASELINE, JM_CONTOURS, JM_INK_CENTER_X } from './preloaderGlyphs';
 
 /**
  * The preloader's drawing: the JM outline traced by the loading progress, the percentage under it,
@@ -44,6 +44,13 @@ const COUNTER_PERCENT_SCALE = 0.62;
 const COUNTER_PERCENT_SPACE = 0.18;
 /** Digits sit in equal cells (tabular), so the number never jitters sideways while counting. */
 const COUNTER_CELL = Math.max(...'23456789'.split('').map((digit) => COUNTER_GLYPHS[digit].advance));
+/**
+ * Optical centring. The letters' side bearings put the JM's ink 1-2 units left of the layout
+ * centre, so the whole drawing is shifted until the ink sits on the canvas centre line. The digits
+ * centre on that same line and the small % hangs to their right, outside the centring: the eye
+ * reads the number, not its unit, as the thing under the mark.
+ */
+const OPTICAL_SHIFT = PRELOADER_ART_WIDTH / 2 - JM_INK_CENTER_X;
 
 /**
  * Pacing. Real progress arrives in uneven jumps (the keyboard reports set-up, rows, legends,
@@ -116,7 +123,8 @@ export function createPreloaderPainter(ctx: Context2D, palette: PreloaderPalette
         ctx.clearRect(0, 0, width, height);
         if (drawingSince === null) return;
         const scale = width / PRELOADER_ART_WIDTH;
-        ctx.setTransform(scale, 0, 0, scale, 0, 0);
+        const shiftX = OPTICAL_SHIFT * scale;
+        ctx.setTransform(scale, 0, 0, scale, shiftX, 0);
 
         const sinceComplete = completedAt === null ? -1 : now - completedAt;
         const fill = sinceComplete < 0 ? 0 : easeOut(clamp01(sinceComplete / FILL_MS));
@@ -143,23 +151,22 @@ export function createPreloaderPainter(ctx: Context2D, palette: PreloaderPalette
             ctx.fill(letters);
         }
 
-        // The counter, centred under the JM, its % raised to the digits' cap height.
+        // The counter: digits centred under the JM's ink, the % hanging after them at cap height.
         const digits = String(shown);
         const percentScale = COUNTER_PERCENT_SCALE;
         const percent = glyphs.get('%');
-        const percentWidth = (percent?.advance ?? 0) * percentScale;
-        const totalWidth = (digits.length * COUNTER_CELL + COUNTER_PERCENT_SPACE + percentWidth) * COUNTER_SIZE;
+        const digitsWidth = digits.length * COUNTER_CELL * COUNTER_SIZE;
         const capTop = JM_BASELINE + COUNTER_GAP;
         const baseline = capTop + COUNTER_CAP_HEIGHT * COUNTER_SIZE;
         const appear = easeOut(clamp01((now - drawingSince) / COUNTER_FADE_IN_MS));
         ctx.globalAlpha = (0.3 + 0.7 * appear) * (1 - fading);
         ctx.fillStyle = palette.text;
-        let x = PRELOADER_ART_WIDTH / 2 - totalWidth / 2;
+        let x = PRELOADER_ART_WIDTH / 2 - digitsWidth / 2;
         for (const char of digits) {
             const glyph = glyphs.get(char);
             if (glyph) {
                 const left = x + ((COUNTER_CELL - glyph.advance) / 2) * COUNTER_SIZE;
-                ctx.setTransform(scale * COUNTER_SIZE, 0, 0, scale * COUNTER_SIZE, scale * left, scale * baseline);
+                ctx.setTransform(scale * COUNTER_SIZE, 0, 0, scale * COUNTER_SIZE, shiftX + scale * left, scale * baseline);
                 ctx.fill(glyph.path);
             }
             x += COUNTER_CELL * COUNTER_SIZE;
@@ -168,7 +175,7 @@ export function createPreloaderPainter(ctx: Context2D, palette: PreloaderPalette
             const size = COUNTER_SIZE * percentScale;
             x += COUNTER_PERCENT_SPACE * COUNTER_SIZE;
             ctx.fillStyle = palette.muted;
-            ctx.setTransform(scale * size, 0, 0, scale * size, scale * x, scale * (capTop + COUNTER_CAP_HEIGHT * size));
+            ctx.setTransform(scale * size, 0, 0, scale * size, shiftX + scale * x, scale * (capTop + COUNTER_CAP_HEIGHT * size));
             ctx.fill(percent.path);
         }
         ctx.globalAlpha = 1;
