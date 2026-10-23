@@ -44,7 +44,7 @@ arribajudemichael/
 │   │   ├── TechStack/            # Categorized technology grid
 │   │   │   └── TechStack.tsx     # Unframed icon/name lists + reversible scrubbed per-tech reveal
 │   │   ├── Projects/             # Dynamic projects and certificates showcase
-│   │   │   └── Projects.tsx      # Supabase DTOs + PDF.js previews + replayable GSAP reveal
+│   │   │   └── Projects.tsx      # Option A index (desktop list + sticky preview; phone list / certificate contact sheet), PDF.js previews, replayable GSAP reveals, no pin
 │   │   └── Contact/              # Static contact form + contact channel presentation
 │   │       └── Contact.tsx       # Tailwind UI + replayable GSAP reveal
 │   ├── ui/                       # Reusable UI components
