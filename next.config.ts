@@ -58,7 +58,8 @@ const nextConfig: NextConfig = {
                     { key: 'X-Content-Type-Options', value: 'nosniff' },
                     { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
                     { key: 'X-Frame-Options', value: 'DENY' },
-                    { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+                    // microphone=(self): Ask's optional voice input; embedded frames still get none.
+                    { key: 'Permissions-Policy', value: 'camera=(), microphone=(self), geolocation=()' },
                     { key: 'Content-Security-Policy-Report-Only', value: contentSecurityPolicy },
                 ],
             },

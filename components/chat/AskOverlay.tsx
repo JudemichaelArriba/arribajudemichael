@@ -7,14 +7,17 @@ import {
     useRef,
     useState,
     type FormEvent,
+    type Ref,
     type KeyboardEvent as ReactKeyboardEvent,
 } from 'react';
 import { useChat } from '@ai-sdk/react';
 import { APICallError, DefaultChatTransport } from 'ai';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
-import { ArrowRight, CornerDownLeft, X } from 'lucide-react';
+import { ArrowRight, CornerDownLeft, Mic, Square, X } from 'lucide-react';
 import type { SiteSectionId } from '@/lib/site';
+import { useMicLevel } from '@/lib/useMicLevel';
+import { useSpeechToText, type SpeechToTextError } from '@/lib/useSpeechToText';
 import {
     MAX_QUESTION_LENGTH,
     getSectionLabel,
@@ -45,6 +48,8 @@ const FOCUSABLE = 'a[href], button:not([disabled]), textarea:not([disabled]), in
 const COUNTER_THRESHOLD = MAX_QUESTION_LENGTH - 100;
 const MAX_INPUT_HEIGHT = 160;
 const FOLLOW_THRESHOLD = 96;
+/** Where the empty state's mic lands in the open timeline: with the privacy note, after the rule. */
+const VOICE_ENTRANCE_AT = 1.0;
 
 type ErrorKind = 'rate_limited' | 'unavailable' | 'error';
 
@@ -52,6 +57,13 @@ const ERROR_COPY: Record<ErrorKind, string> = {
     rate_limited: "You've asked a lot of questions — try again in a few minutes.",
     unavailable: 'Ask is resting right now. Please try again later.',
     error: 'Something went wrong, please try again.',
+};
+
+const VOICE_HINT_COPY: Record<SpeechToTextError, string> = {
+    unavailable: "Voice input isn't available in this browser. Please type your message.",
+    'not-allowed': "Mic access blocked — allow it in your browser's site settings, or type your message.",
+    'no-microphone': 'No microphone found. Please type your message.',
+    'no-speech': "Didn't catch anything — press the mic and try again, or type your message.",
 };
 
 function toErrorKind(error: Error): ErrorKind {
@@ -78,6 +90,54 @@ function ThinkingDots() {
             <span className="size-[5px] bg-[var(--text)] opacity-55 motion-safe:animate-pulse motion-safe:[animation-delay:150ms]" />
             <span className="size-[5px] bg-[var(--text)] opacity-25 motion-safe:animate-pulse motion-safe:[animation-delay:300ms]" />
         </span>
+    );
+}
+
+interface VoiceButtonProps {
+    listening: boolean;
+    hearing: boolean;
+    /** A live mic level is available; `meterRef` receives it as `--mic-level`. */
+    metered: boolean;
+    meterRef: Ref<HTMLSpanElement>;
+    disabled?: boolean;
+    onToggle: () => void;
+    className: string;
+}
+
+function VoiceButton({ listening, hearing, metered, meterRef, disabled, onToggle, className }: VoiceButtonProps) {
+    return (
+        <button
+            type="button"
+            data-ask-voice
+            onClick={onToggle}
+            disabled={disabled}
+            aria-label="Voice input"
+            aria-pressed={listening}
+            className={`relative inline-flex shrink-0 items-center justify-center transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--text)]/45 disabled:opacity-40 motion-reduce:transition-none ${className}`}
+        >
+            {listening ? (
+                <>
+                    <Square aria-hidden="true" size={12} strokeWidth={2.4} />
+                    {metered ? (
+                        // Three bars follow the live mic level the instant a sound is made.
+                        <span ref={meterRef} aria-hidden="true" className="absolute right-1.5 top-1.5 flex h-2 items-end gap-px">
+                            <span className="h-full w-0.5 origin-bottom bg-current [transform:scaleY(calc(0.25+var(--mic-level,0)*0.5))]" />
+                            <span className="h-full w-0.5 origin-bottom bg-current [transform:scaleY(calc(0.25+var(--mic-level,0)*0.75))]" />
+                            <span className="h-full w-0.5 origin-bottom bg-current [transform:scaleY(calc(0.25+var(--mic-level,0)*0.6))]" />
+                        </span>
+                    ) : (
+                        // No level reading (phones, or before the mic opens): dim while waiting,
+                        // pulsing once speech is detected.
+                        <span
+                            aria-hidden="true"
+                            className={`absolute right-1.5 top-1.5 size-[5px] bg-current transition-opacity duration-300 ${hearing ? 'motion-safe:animate-pulse' : 'opacity-35'}`}
+                        />
+                    )}
+                </>
+            ) : (
+                <Mic aria-hidden="true" size={15} strokeWidth={2} />
+            )}
+        </button>
     );
 }
 
@@ -206,6 +266,28 @@ export default function AskOverlay({ isOpen, onClose, onClosed }: AskOverlayProp
     const followStreamRef = useRef(true);
     const wasTypingRef = useRef(false);
     const [draft, setDraft] = useState('');
+    // Dictation appends to whatever was already typed (`base`). Once the visitor types, sends or
+    // leaves, `active` turns off so a late result can never overwrite or refill the input.
+    const dictationRef = useRef({ active: false, base: '' });
+    const wasListeningRef = useRef(false);
+
+    // Speech only ever fills the draft; sending stays a deliberate Send or Enter.
+    const speech = useSpeechToText({
+        onTranscript: (heard) => {
+            const { active, base } = dictationRef.current;
+            if (!active) return;
+            setDraft((base && heard ? `${base} ${heard}` : base || heard).slice(0, MAX_QUESTION_LENGTH));
+        },
+    });
+    const { listening, stop: stopListening } = speech;
+    const voiceMeterRef = useRef<HTMLSpanElement>(null);
+    // Started only once the recognizer has opened the mic, so it never prompts on its own.
+    const micLevel = useMicLevel(listening && speech.micOpen, voiceMeterRef);
+    // The local meter reacts within a frame; the speech service's own detection lags behind it.
+    const hearing = speech.hearing || micLevel.heard;
+    // Speech before the mic opens is lost, so the first state says to wait.
+    const voicePlaceholder = !speech.micOpen ? 'Starting mic…' : hearing ? 'Hearing you…' : 'Listening…';
+    const voiceHint = speech.error ? VOICE_HINT_COPY[speech.error] : null;
 
     useEffect(() => {
         onClosedRef.current = onClosed;
@@ -341,6 +423,37 @@ export default function AskOverlay({ isOpen, onClose, onClosed }: AskOverlayProp
         { scope: rootRef, dependencies: [isOpen] },
     );
 
+    // Voice support is detected after the overlay mounts, so on the first open the mic arrives
+    // after the open timeline was built. Either way it gets the note's rise on the note's beat.
+    // (In the conversation view it sits inside the dock and rises with it.)
+    useGSAP(
+        () => {
+            const opening = timelineRef.current;
+            if (!isOpen || !speech.supported || !opening) return;
+            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+            const mic = gsap.utils
+                .selector(rootRef)('[data-ask-voice]')
+                .filter((button) => !button.closest('[data-ask-dock]'));
+            if (!mic.length) return;
+
+            gsap.killTweensOf(mic);
+            gsap.fromTo(
+                mic,
+                { y: 18, opacity: 0 },
+                {
+                    y: 0,
+                    opacity: 1,
+                    duration: 0.6,
+                    ease: 'expo.out',
+                    clearProps: 'transform,opacity',
+                    delay: Math.max(0, VOICE_ENTRANCE_AT - opening.time()),
+                },
+            );
+        },
+        { scope: rootRef, dependencies: [isOpen, speech.supported] },
+    );
+
     useEffect(() => {
         if (!isOpen) return;
         const previousOverflow = document.body.style.overflow;
@@ -413,9 +526,31 @@ export default function AskOverlay({ isOpen, onClose, onClosed }: AskOverlayProp
         input.style.height = `${Math.min(input.scrollHeight, MAX_INPUT_HEIGHT)}px`;
     }, [draft, hasConversation]);
 
+    const endDictation = () => {
+        dictationRef.current.active = false;
+        stopListening();
+    };
+
+    const toggleVoiceInput = () => {
+        // Stopping keeps dictation active so the final result still lands in the input.
+        if (listening) {
+            stopListening();
+            return;
+        }
+        dictationRef.current = { active: true, base: draft.trimEnd() };
+        speech.start();
+    };
+
+    const handleDraftChange = (value: string) => {
+        // Typing takes over from dictation.
+        if (dictationRef.current.active) endDictation();
+        setDraft(value);
+    };
+
     const submit = (text: string) => {
         const question = text.trim().slice(0, MAX_QUESTION_LENGTH);
         if (!question || isBusy) return;
+        endDictation();
         clearError();
         setDraft('');
         followStreamRef.current = true;
@@ -436,12 +571,30 @@ export default function AskOverlay({ isOpen, onClose, onClosed }: AskOverlayProp
     };
 
     const startNewChat = () => {
+        endDictation();
         stop();
         setMessages([]);
         clearError();
         setDraft('');
         window.requestAnimationFrame(() => inputRef.current?.focus({ preventScroll: true }));
     };
+
+    useEffect(() => {
+        if (isOpen) return;
+        dictationRef.current.active = false;
+        stopListening();
+    }, [isOpen, stopListening]);
+
+    // When dictation ends, hand the caret back so the visitor can review and press Enter. Not on
+    // touch screens, where focusing the field would throw the keyboard over the input.
+    useEffect(() => {
+        const stopped = wasListeningRef.current && !listening;
+        wasListeningRef.current = listening;
+        const input = inputRef.current;
+        if (!stopped || !isOpen || !input || prefersTouchInput()) return;
+        input.focus({ preventScroll: true });
+        input.setSelectionRange(input.value.length, input.value.length);
+    }, [isOpen, listening]);
 
     const jumpTo = (section: SiteSectionId) => {
         // Release the scroll lock now; its cleanup runs only after the close re-render.
@@ -505,10 +658,17 @@ export default function AskOverlay({ isOpen, onClose, onClosed }: AskOverlayProp
         return () => window.cancelAnimationFrame(frame);
     }, [hasConversation, isOpen]);
 
-    // Sits right under whichever input is showing: the privacy notice, plus a counter near the limit.
+    // Sits right under whichever input is showing: the privacy notice, the voice notes, plus a
+    // counter near the limit.
     const inputNote = (
         <div data-ask-note className="mt-2.5 flex items-start justify-between gap-4 font-mono text-[9px] uppercase tracking-[0.12em] text-[var(--faint)] md:text-[10px]">
-            <span>Don&apos;t share sensitive personal information &middot; Chats aren&apos;t stored</span>
+            <div className="flex min-w-0 flex-col gap-1">
+                <span>Don&apos;t share sensitive personal information &middot; Chats aren&apos;t stored</span>
+                {speech.supported ? <span>Voice input is processed by your browser&apos;s speech service.</span> : null}
+                <span role="status" className="text-[var(--muted)] empty:hidden">
+                    {voiceHint}
+                </span>
+            </div>
             {draft.length >= COUNTER_THRESHOLD ? (
                 <span className="shrink-0 tabular-nums">
                     {draft.length} / {MAX_QUESTION_LENGTH}
@@ -635,12 +795,23 @@ export default function AskOverlay({ isOpen, onClose, onClosed }: AskOverlayProp
                                         rows={1}
                                         value={draft}
                                         maxLength={MAX_QUESTION_LENGTH}
-                                        onChange={(event) => setDraft(event.target.value)}
+                                        onChange={(event) => handleDraftChange(event.target.value)}
                                         onKeyDown={handleInputKeyDown}
-                                        placeholder="Ask a follow-up…"
+                                        placeholder={listening ? voicePlaceholder : 'Ask a follow-up…'}
                                         className={`${inputClassName} text-base leading-6`}
                                     />
                                 </div>
+                                {speech.supported ? (
+                                    <VoiceButton
+                                        listening={listening}
+                                        hearing={hearing}
+                                        metered={micLevel.live}
+                                        meterRef={voiceMeterRef}
+                                        disabled={isBusy}
+                                        onToggle={toggleVoiceInput}
+                                        className={`w-12 border-l border-[var(--hairline)] focus-visible:ring-inset ${listening ? 'bg-[var(--surface-muted)] text-[var(--text)]' : 'text-[var(--muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]'}`}
+                                    />
+                                ) : null}
                                 {isBusy ? (
                                     <button
                                         type="button"
@@ -677,16 +848,29 @@ export default function AskOverlay({ isOpen, onClose, onClosed }: AskOverlayProp
 
                         <form onSubmit={handleSubmit} className="mt-6 max-w-[47.5rem] [@media(min-height:720px)]:mt-10">
                             <label htmlFor="ask-input" className="sr-only">Your question about Jude</label>
-                            <textarea
-                                id="ask-input"
-                                ref={inputRef}
-                                rows={1}
-                                value={draft}
-                                maxLength={MAX_QUESTION_LENGTH}
-                                onChange={(event) => setDraft(event.target.value)}
-                                onKeyDown={handleInputKeyDown}
-                                className={`${inputClassName} text-[1.35rem] leading-snug md:text-[1.65rem]`}
-                            />
+                            <div className="flex items-end gap-3">
+                                <textarea
+                                    id="ask-input"
+                                    ref={inputRef}
+                                    rows={1}
+                                    value={draft}
+                                    maxLength={MAX_QUESTION_LENGTH}
+                                    onChange={(event) => handleDraftChange(event.target.value)}
+                                    onKeyDown={handleInputKeyDown}
+                                    placeholder={listening ? voicePlaceholder : undefined}
+                                    className={`${inputClassName} min-w-0 flex-1 text-[1.35rem] leading-snug md:text-[1.65rem]`}
+                                />
+                                {speech.supported ? (
+                                    <VoiceButton
+                                        listening={listening}
+                                        hearing={hearing}
+                                        metered={micLevel.live}
+                                        meterRef={voiceMeterRef}
+                                        onToggle={toggleVoiceInput}
+                                        className={`size-10 border ${listening ? 'border-[var(--inverse-bg)] bg-[var(--inverse-bg)] text-[var(--inverse-text)]' : 'border-[var(--hairline-strong)] text-[var(--text)] hover:border-[var(--inverse-bg)] hover:bg-[var(--inverse-bg)] hover:text-[var(--inverse-text)]'}`}
+                                    />
+                                ) : null}
+                            </div>
                             <div data-ask-rule aria-hidden="true" className="mt-3 h-px w-full bg-[var(--hairline)]" />
                             {inputNote}
                         </form>
@@ -733,6 +917,9 @@ export default function AskOverlay({ isOpen, onClose, onClosed }: AskOverlayProp
 
             <p className="sr-only" aria-live="polite">
                 {isBusy ? 'Ask is answering.' : status === 'ready' && hasConversation ? 'Answer ready.' : ''}
+            </p>
+            <p className="sr-only" aria-live="polite">
+                {listening ? 'Listening.' : ''}
             </p>
         </div>
     );
