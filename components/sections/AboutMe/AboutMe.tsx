@@ -81,25 +81,30 @@ export default function AboutMe({ contributions }: AboutMeProps) {
                 }
 
                 // Count-ups write only the number's own text node and always end on the real value.
+                // The final text comes from the data, never the DOM: a re-run (Fast Refresh, a motion
+                // preference change) would otherwise read a count-up frame such as "0" as the result.
+                const restores: (() => void)[] = [];
                 gsap.utils.toArray<HTMLElement>('[data-count-to]', activity).forEach((el) => {
                     const target = Number(el.dataset.countTo);
                     const node = el.firstChild;
                     if (!Number.isFinite(target) || !node) return;
-                    const final = node.nodeValue;
+                    const final = target.toLocaleString('en-US');
                     const counter = { value: 0 };
                     const syncCounter = () => {
                         node.nodeValue = counter.value >= 1 ? final : Math.round(target * counter.value).toLocaleString('en-US');
                     };
                     syncs.push(syncCounter);
+                    restores.push(() => { node.nodeValue = final; });
                     calendar.fromTo(counter, { value: 0 }, { value: 1, duration: 0.75, onUpdate: syncCounter }, 0.1);
                 });
 
                 calendar.fromTo(blocks.slice(2), primeStagger(blocks.slice(2), { autoAlpha: 0, y: 16 }), { autoAlpha: 1, y: 0, duration: 0.15, stagger: 0.05 }, 0.8);
                 const stopResync = resyncAfterRefresh(() => syncs.forEach((sync) => sync()));
-                // On breakpoint change / unmount, show the whole calendar again.
+                // On breakpoint change / unmount, show the whole calendar and the real numbers again.
                 return () => {
                     stopResync();
                     grid?.style.removeProperty('--reveal');
+                    restores.forEach((restore) => restore());
                 };
             }, section);
 
@@ -169,3 +174,4 @@ export default function AboutMe({ contributions }: AboutMeProps) {
         </section>
     );
 }
+
