@@ -219,7 +219,7 @@ export default function TechStack() {
             className="relative w-full overflow-hidden bg-[var(--site-bg)] pb-10 pt-24 lg:flex lg:min-h-svh lg:flex-col lg:pb-12 compact:pb-8 compact:pt-20 short:pb-6 short:pt-[4.5rem]"
         >
             <div className="relative z-[2] mx-auto flex w-full max-w-7xl items-center gap-4 px-5 md:px-8 pointer-events-none">
-                <p className="shrink-0 font-display text-xs font-bold uppercase leading-none tracking-[0.14em] text-[var(--text)]">
+                <p className="shrink-0 font-[family-name:var(--font-hero)] text-xs font-normal uppercase leading-none tracking-[0.14em] text-[var(--text)]">
                     Tech Stack
                 </p>
                 <span data-tech-rule aria-hidden="true" className="h-px min-w-8 flex-1 bg-[var(--hairline)]" />
@@ -235,7 +235,7 @@ export default function TechStack() {
                 <div className="lg:w-[max(26rem,min(44rem,52%,calc(100vw-90svh-2.5rem-max(2rem,50vw-38rem))))]">
                     <h2
                         id="techstack-heading"
-                        className="relative z-[3] m-0 font-display text-[2.9rem] font-extrabold leading-[0.95] tracking-[-0.035em] text-[var(--text)] lg:text-[clamp(3.6rem,5.6vw,5.1rem)] compact:text-[clamp(2.8rem,7svh,4.4rem)] short:text-[clamp(2.4rem,7.5svh,3.6rem)]"
+                        className="relative z-[3] m-0 font-[family-name:var(--font-hero)] text-[2.9rem] font-normal leading-[0.95] tracking-[-0.035em] text-[var(--text)] lg:text-[clamp(3.6rem,5.6vw,5.1rem)] compact:text-[clamp(2.8rem,7svh,4.4rem)] short:text-[clamp(2.4rem,7.5svh,3.6rem)]"
                     >
                         <span className="block overflow-hidden pb-[0.06em]">
                             <span data-tech-line className="block">The tools</span>
@@ -282,7 +282,7 @@ export default function TechStack() {
                         <div
                             ref={letterRef}
                             aria-hidden="true"
-                            className={`min-w-11 whitespace-nowrap font-display font-extrabold leading-[0.9] tracking-[-0.035em] text-[var(--text)] ${readout.glyph.length > 3
+                            className={`min-w-11 whitespace-nowrap font-[family-name:var(--font-hero)] font-normal leading-[0.9] tracking-[-0.035em] text-[var(--text)] ${readout.glyph.length > 3
                                 ? 'text-[2.5rem] lg:text-[5.5rem] short:text-[min(5.5rem,11svh)]'
                                 : 'text-[3.5rem] lg:text-[9.4rem] short:text-[min(9.4rem,18svh)]'} ${readout.tools === null ? 'opacity-[0.18]' : ''}`}
                         >

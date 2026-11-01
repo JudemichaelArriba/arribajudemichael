@@ -93,7 +93,7 @@ export default function WhatIDo({ sentence = DEFAULT_SENTENCE }: WhatIDoProps) {
         >
             <div className="inner relative z-[1] mx-auto w-full max-w-7xl text-left">
                 <div ref={headerRef} className="flex w-full items-center gap-4">
-                    <p className="eyebrow shrink-0 font-display text-xs font-bold uppercase leading-none tracking-[0.14em] text-[var(--text)]">
+                    <p className="eyebrow shrink-0 font-[family-name:var(--font-hero)] text-xs font-normal uppercase leading-none tracking-[0.14em] text-[var(--text)]">
                         What I do
                     </p>
                     <span
@@ -109,7 +109,7 @@ export default function WhatIDo({ sentence = DEFAULT_SENTENCE }: WhatIDoProps) {
                 {/* Plain words in the flow, revealed with a stagger. The previous
                     per-character colour scrub kept breaking across theme switches
                     and left the sentence half-lit, so nothing here animates colour. */}
-                <h2 className="statement mt-12 w-full max-w-6xl text-left font-display text-[2.15rem] font-bold leading-[1.1] tracking-[-0.02em] text-[var(--text)] [text-wrap:pretty] sm:mt-16 sm:text-5xl lg:text-[3.6rem]">
+                <h2 className="statement mt-12 w-full max-w-6xl text-left font-[family-name:var(--font-hero)] text-[2.15rem] font-normal leading-[1.1] tracking-[-0.02em] text-[var(--text)] [text-wrap:pretty] sm:mt-16 sm:text-5xl lg:text-[3.6rem]">
                     {sentence.split(' ').map((word, index) => (
                         <span
                             key={`${word}-${index}`}
@@ -136,7 +136,7 @@ export default function WhatIDo({ sentence = DEFAULT_SENTENCE }: WhatIDoProps) {
                                 {capability.code}
                             </span>
                             <div>
-                                <h3 className="font-display text-base font-bold leading-snug text-[var(--text)] sm:text-lg">
+                                <h3 className="font-[family-name:var(--font-hero)] text-base font-normal leading-snug text-[var(--text)] sm:text-lg">
                                     {capability.label}
                                 </h3>
                                 <p className="mt-1.5 max-w-[28ch] text-sm leading-relaxed text-[var(--muted)]">

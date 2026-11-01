@@ -78,7 +78,7 @@ export default function Experience({
     >
       <div className="mx-auto max-w-7xl">
         <div className="experience-heading-copy flex w-full items-center gap-4">
-          <p className="shrink-0 font-display text-xs font-bold uppercase leading-none tracking-[0.14em] text-[var(--text)]">
+          <p className="shrink-0 font-[family-name:var(--font-hero)] text-xs font-normal uppercase leading-none tracking-[0.14em] text-[var(--text)]">
             Experience
           </p>
           <span
@@ -94,20 +94,20 @@ export default function Experience({
         <div className="mt-12 flex flex-col gap-8 lg:mt-16 lg:flex-row lg:items-end lg:justify-between lg:gap-16">
           <h2
             id="experience-heading"
-            className="experience-title max-w-[18ch] font-display text-4xl font-bold leading-[1.06] tracking-[-0.025em] text-[var(--text)] sm:text-5xl lg:text-[3.1rem]"
+            className="experience-title max-w-[18ch] font-[family-name:var(--font-hero)] text-4xl font-normal leading-[1.06] tracking-[-0.025em] text-[var(--text)] sm:text-5xl lg:text-[3.1rem]"
           >
             A record of building, shipping, and learning.
           </h2>
 
           <div className="experience-summary flex shrink-0 gap-10 sm:gap-14">
             <div>
-              <p className="font-display text-3xl font-bold tabular-nums text-[var(--text)]">{milestoneCount}</p>
+              <p className="font-[family-name:var(--font-hero)] text-3xl font-normal tabular-nums text-[var(--text)]">{milestoneCount}</p>
               <p className="mt-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--faint)]">
                 Milestones
               </p>
             </div>
             <div>
-              <p className="font-display text-3xl font-bold tabular-nums text-[var(--text)]">2023</p>
+              <p className="font-[family-name:var(--font-hero)] text-3xl font-normal tabular-nums text-[var(--text)]">2023</p>
               <p className="mt-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--faint)]">
                 Starting point
               </p>
@@ -131,7 +131,7 @@ export default function Experience({
                 </time>
 
                 <div className="order-3 col-span-2 min-w-0 sm:order-2 sm:col-span-1">
-                  <h3 className="font-display text-2xl font-bold leading-[1.15] tracking-[-0.02em] text-[var(--text)] transition-colors duration-300 ease-out group-hover:text-[var(--inverse-text)] motion-reduce:transition-none sm:text-[1.75rem]">
+                  <h3 className="font-[family-name:var(--font-hero)] text-2xl font-normal leading-[1.15] tracking-[-0.02em] text-[var(--text)] transition-colors duration-300 ease-out group-hover:text-[var(--inverse-text)] motion-reduce:transition-none sm:text-[1.75rem]">
                     {item.title}
                   </h3>
                   <p className="mt-2.5 max-w-[62ch] text-sm leading-[1.6] text-[var(--muted)] transition-colors duration-300 ease-out group-hover:text-[var(--inverse-text)]/70 motion-reduce:transition-none">
@@ -165,7 +165,7 @@ export default function Experience({
             <p className="font-mono text-[10px] font-bold uppercase tracking-[0.13em] text-[var(--faint)]">
               Timeline status
             </p>
-            <h3 className="mt-4 font-display text-2xl font-bold tracking-[-0.02em] text-[var(--text)]">
+            <h3 className="mt-4 font-[family-name:var(--font-hero)] text-2xl font-normal tracking-[-0.02em] text-[var(--text)]">
               {experiencesUnavailable
                 ? 'Experience is temporarily unavailable.'
                 : 'Experience milestones are being prepared.'}

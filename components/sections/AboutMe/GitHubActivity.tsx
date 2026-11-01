@@ -121,7 +121,7 @@ export default function GitHubActivity({ contributions }: GitHubActivityProps) {
                     <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--faint)]">
                         GitHub activity
                     </p>
-                    <h3 className="mt-3.5 font-display text-3xl font-bold leading-[1.05] tracking-[-0.025em] text-[var(--text)] sm:text-4xl lg:text-[2.5rem]">
+                    <h3 className="mt-3.5 font-[family-name:var(--font-hero)] text-3xl font-normal leading-[1.05] tracking-[-0.025em] text-[var(--text)] sm:text-4xl lg:text-[2.5rem]">
                         {totalContributions > 0 ? (
                             <><span data-count-to={totalContributions}>{totalContributions.toLocaleString('en-US')}</span>{totalContributions === 1 ? ' contribution' : ' contributions'}</>
                         ) : 'No contributions'}{' '}in the last year
@@ -248,7 +248,7 @@ export default function GitHubActivity({ contributions }: GitHubActivityProps) {
                         <dt className="mt-1.5 font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--faint)]">
                             {item.label}
                         </dt>
-                        <dd className="m-0 font-display text-xl font-bold tracking-[-0.02em] text-[var(--text)] sm:text-2xl">
+                        <dd className="m-0 font-[family-name:var(--font-hero)] text-xl font-normal tracking-[-0.02em] text-[var(--text)] sm:text-2xl">
                             {item.value}
                         </dd>
                     </div>

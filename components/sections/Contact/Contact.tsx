@@ -351,7 +351,7 @@ export default function Contact() {
         >
             <div className="mx-auto max-w-7xl">
                 <div className="contact-heading flex w-full items-center gap-4">
-                    <p className="shrink-0 font-display text-xs font-bold uppercase leading-none tracking-[0.14em] text-[var(--text)]">
+                    <p className="shrink-0 font-[family-name:var(--font-hero)] text-xs font-normal uppercase leading-none tracking-[0.14em] text-[var(--text)]">
                         Contact
                     </p>
                     <span
@@ -369,7 +369,7 @@ export default function Contact() {
                         <div className="contact-intro max-w-2xl">
                             <h2
                                 id="contact-heading"
-                                className="font-display text-4xl font-bold leading-[1.05] tracking-[-0.025em] text-[var(--text)] sm:text-5xl lg:text-[3.4rem]"
+                                className="font-[family-name:var(--font-hero)] text-4xl font-normal leading-[1.05] tracking-[-0.025em] text-[var(--text)] sm:text-5xl lg:text-[3.4rem]"
                             >
                                 {CONTACT_HEADING_WORDS.map((word, index) => (
                                     <Fragment key={word}>
@@ -401,7 +401,7 @@ export default function Contact() {
 
                     <div className="contact-form-panel min-w-0 border border-[var(--hairline)] bg-[var(--surface)] p-5 shadow-[var(--shadow-card)] sm:p-7 lg:p-8">
                         <div className="flex flex-wrap items-end justify-between gap-3 border-b border-[var(--hairline)] pb-5">
-                            <h3 className="font-display text-xl font-bold tracking-[-0.02em] text-[var(--text)] sm:text-2xl">
+                            <h3 className="font-[family-name:var(--font-hero)] text-xl font-normal tracking-[-0.02em] text-[var(--text)] sm:text-2xl">
                                 Message details
                             </h3>
                             <span className="border border-[var(--hairline)] px-2 py-1 font-mono text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--faint)]">

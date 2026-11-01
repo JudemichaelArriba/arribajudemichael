@@ -118,7 +118,7 @@ export default function AboutMe({ contributions }: AboutMeProps) {
         >
             <div className="mx-auto max-w-7xl">
                 <div ref={sectionHeaderRef} className="flex w-full items-center gap-4">
-                    <p className="shrink-0 font-display text-xs font-bold uppercase leading-none tracking-[0.14em] text-[var(--text)]">
+                    <p className="shrink-0 font-[family-name:var(--font-hero)] text-xs font-normal uppercase leading-none tracking-[0.14em] text-[var(--text)]">
                         About Me
                     </p>
                     <span
@@ -135,7 +135,7 @@ export default function AboutMe({ contributions }: AboutMeProps) {
                     <h2
                         id="about-heading"
                         ref={headingRef}
-                        className="min-w-0 font-display text-4xl font-bold leading-[1.02] tracking-[-0.03em] text-[var(--text)] sm:text-5xl lg:text-[4.25rem]"
+                        className="min-w-0 font-[family-name:var(--font-hero)] text-4xl font-normal leading-[1.02] tracking-[-0.03em] text-[var(--text)] sm:text-5xl lg:text-[4.25rem]"
                     >
                         Student by day,
                         <br />

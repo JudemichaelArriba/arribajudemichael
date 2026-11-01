@@ -13,7 +13,7 @@ export default function ShowcaseState({ panel, unavailable }: { panel: ShowcaseP
             className="flex flex-col items-center justify-center gap-3 border-y border-[var(--hairline)] py-16 text-center"
         >
             <Icon aria-hidden="true" size={24} strokeWidth={1.5} className="text-[var(--faint)]" />
-            <h3 className="font-display text-lg font-bold tracking-[-0.02em] text-[var(--text)]">
+            <h3 className="font-[family-name:var(--font-hero)] text-lg font-normal tracking-[-0.02em] text-[var(--text)]">
                 {unavailable ? `${noun} are temporarily unavailable.` : `${noun} are being prepared.`}
             </h3>
             <p className="max-w-md text-sm leading-relaxed text-[var(--muted)]">

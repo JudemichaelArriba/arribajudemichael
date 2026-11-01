@@ -85,7 +85,7 @@ export default function ProjectReel({ projects, unavailable = false }: ProjectRe
         >
             <div className="mx-auto w-full max-w-7xl px-5 md:px-8">
                 <div className="flex w-full items-center gap-4">
-                    <p className="shrink-0 font-display text-xs font-bold uppercase leading-none tracking-[0.14em] text-[var(--text)]">
+                    <p className="shrink-0 font-[family-name:var(--font-hero)] text-xs font-normal uppercase leading-none tracking-[0.14em] text-[var(--text)]">
                         Projects
                     </p>
                     <span data-reel-rule aria-hidden="true" className="h-px min-w-8 flex-1 bg-[var(--hairline)]" />
@@ -97,7 +97,7 @@ export default function ProjectReel({ projects, unavailable = false }: ProjectRe
                 <div className={`mt-10 flex items-end justify-between gap-8 ${pinnable ? 'reel-pin:mt-[3svh]' : ''}`}>
                     <h2
                         id="projects-heading"
-                        className="font-display text-[clamp(2.4rem,4.4vw,4rem)] font-extrabold leading-[0.95] tracking-[-0.035em] text-[var(--text)] short:text-[clamp(2.2rem,6.5svh,3.2rem)]"
+                        className="font-[family-name:var(--font-hero)] text-[clamp(2.4rem,4.4vw,4rem)] font-normal leading-[0.95] tracking-[-0.035em] text-[var(--text)] short:text-[clamp(2.2rem,6.5svh,3.2rem)]"
                     >
                         <span className="block overflow-hidden pb-[0.06em]">
                             <span data-reel-line className="block">Projects</span>
@@ -163,7 +163,7 @@ export default function ProjectReel({ projects, unavailable = false }: ProjectRe
                                             ? 'translate-y-0 opacity-100 delay-100'
                                             : 'pointer-events-none -translate-y-2 opacity-0'}`}
                                     >
-                                        <h3 className="line-clamp-2 min-w-0 font-display text-[clamp(1.3rem,2vw,1.75rem)] font-bold leading-[1.15] tracking-[-0.02em] text-[var(--text)] lg:min-w-[16rem] lg:flex-1">
+                                        <h3 className="line-clamp-2 min-w-0 font-[family-name:var(--font-hero)] text-[clamp(1.3rem,2vw,1.75rem)] font-normal leading-[1.15] tracking-[-0.02em] text-[var(--text)] lg:min-w-[16rem] lg:flex-1">
                                             {project.title}
                                         </h3>
                                         <p className="sr-only">{project.description}</p>

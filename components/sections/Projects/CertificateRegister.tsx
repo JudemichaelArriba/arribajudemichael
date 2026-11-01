@@ -125,7 +125,7 @@ export default function CertificateRegister({ certificates, unavailable = false 
                 <div data-register-title>
                     <p className={`mb-3.5 ${MONO_LABEL}`}>Certificates</p>
                     {showCertificates && (
-                        <h3 className="font-display text-[clamp(1.9rem,3.2vw,2.75rem)] font-bold leading-[1.06] tracking-[-0.025em] text-[var(--text)] [text-wrap:balance]">
+                        <h3 className="font-[family-name:var(--font-hero)] text-[clamp(1.9rem,3.2vw,2.75rem)] font-normal leading-[1.06] tracking-[-0.025em] text-[var(--text)] [text-wrap:balance]">
                             {certificateSummary(certificates)}
                         </h3>
                     )}
@@ -168,7 +168,7 @@ export default function CertificateRegister({ certificates, unavailable = false 
                                     <span className="font-mono text-[10.5px] uppercase leading-[1.5] tracking-[0.12em] text-[var(--faint)] transition-colors duration-300 ease-out group-hover:text-[var(--inverse-text)]/60 group-focus-visible:text-[var(--inverse-text)]/60 motion-reduce:transition-none">
                                         {certificate.issuer}
                                     </span>
-                                    <h4 className="font-display text-[1.05rem] font-bold leading-[1.25] tracking-[-0.015em] lg:text-[1.2rem]">
+                                    <h4 className="font-[family-name:var(--font-hero)] text-[1.05rem] font-normal leading-[1.25] tracking-[-0.015em] lg:text-[1.2rem]">
                                         {certificate.title}
                                     </h4>
                                     <span className="mt-1 inline-flex items-center gap-2 border-b border-current py-[5px] font-mono text-[11px] font-bold uppercase leading-none tracking-[0.12em] opacity-70 transition-opacity duration-300 group-hover:opacity-100 group-focus-visible:opacity-100 motion-reduce:transition-none">
