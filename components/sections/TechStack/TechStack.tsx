@@ -166,7 +166,9 @@ export default function TechStack() {
                             scrollTrigger: { trigger: section, start: 'top top', end: () => `+=${Math.max(window.innerHeight * 1.4, 1100)}`, pin: true, scrub: 0.6, invalidateOnRefresh: true },
                         })
                             .fromTo('[data-tech-rule]', { scaleX: 0 }, { scaleX: 1, transformOrigin: 'left center', duration: 0.15 }, 0)
-                            .fromTo('[data-tech-line]', primeStagger('[data-tech-line]', { yPercent: 110 }), { yPercent: 0, ease: 'power3.out', duration: 0.2, stagger: 0.06 }, 0.04)
+                            // 120%: Anton's dots and caps rise above the line box, so 110% left the i's dot
+                            // showing in the mask. y: 0 resets a px offset GSAP may re-read after a refresh.
+                            .fromTo('[data-tech-line]', primeStagger('[data-tech-line]', { y: 0, yPercent: 120 }), { y: 0, yPercent: 0, ease: 'power3.out', duration: 0.2, stagger: 0.06 }, 0.04)
                             .fromTo('[data-tech-lead]', { autoAlpha: 0, y: 16 }, { autoAlpha: 1, y: 0, duration: 0.15 }, 0.14)
                             .fromTo('[data-tech-group]', primeStagger('[data-tech-group]', { autoAlpha: 0, y: 20 }), { autoAlpha: 1, y: 0, duration: 0.12, stagger: 0.04 }, 0.2)
                             .fromTo(proxy, { p: 0 }, cameraTween, 0);
@@ -178,7 +180,7 @@ export default function TechStack() {
                             scrollTrigger: { trigger: section, start: 'top 85%', end: 'top 35%', scrub: 0.6, invalidateOnRefresh: true },
                         })
                             .fromTo('[data-tech-rule]', { scaleX: 0 }, { scaleX: 1, transformOrigin: 'left center', duration: 0.3 }, 0)
-                            .fromTo('[data-tech-line]', primeStagger('[data-tech-line]', { yPercent: 110 }), { yPercent: 0, ease: 'power3.out', duration: 0.5, stagger: 0.12 }, 0.1)
+                            .fromTo('[data-tech-line]', primeStagger('[data-tech-line]', { y: 0, yPercent: 120 }), { y: 0, yPercent: 0, ease: 'power3.out', duration: 0.5, stagger: 0.12 }, 0.1)
                             .fromTo('[data-tech-lead]', { autoAlpha: 0, y: 16 }, { autoAlpha: 1, y: 0, duration: 0.4 }, 0.4);
                         const stage = section.querySelector('[data-tech-stage]');
                         gsap.timeline({

@@ -124,7 +124,8 @@ export function useReelMotion(
                         scrollTrigger: { trigger: stage, start: 'top 85%', end: pinned ? 'top top' : 'top 35%', scrub: 0.6, invalidateOnRefresh: true },
                     })
                         .fromTo('[data-reel-rule]', { scaleX: 0 }, { scaleX: 1, transformOrigin: 'left center', duration: 0.3 }, 0)
-                        .fromTo('[data-reel-line]', { yPercent: 110 }, { yPercent: 0, ease: 'power3.out', duration: 0.4 }, 0.05)
+                        // 120%: Anton's caps and dots rise above the line box (110% left them in the mask).
+                        .fromTo('[data-reel-line]', { y: 0, yPercent: 120 }, { y: 0, yPercent: 0, ease: 'power3.out', duration: 0.4 }, 0.05)
                         .fromTo('[data-reel-lead]', { autoAlpha: 0, y: 16 }, { autoAlpha: 1, y: 0, duration: 0.3 }, 0.2);
                     if (viewport) {
                         entrance.fromTo(viewport, { autoAlpha: 0, x: 120 }, { autoAlpha: 1, x: 0, ease: 'power3.out', duration: 0.5 }, 0.15);
