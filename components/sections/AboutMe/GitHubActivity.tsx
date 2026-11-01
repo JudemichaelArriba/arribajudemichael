@@ -70,6 +70,12 @@ export default function GitHubActivity({ contributions }: GitHubActivityProps) {
     const rangeLabel = `${firstLabel} – ${lastLabel}`;
     const profileUrl = `https://github.com/${username}`;
     const columnTemplate = { gridTemplateColumns: `repeat(${weeks.length}, var(--cell))` };
+    // Cells share the width left beside the weekday labels, so the calendar fills its row
+    // edge to edge; below 10px they stop shrinking and the calendar scrolls instead.
+    const calendarSize = {
+        '--weeks': weeks.length,
+        '--cell': 'max(10px, (100cqw - var(--label) - 0.75rem - (var(--weeks) - 1) * var(--gap)) / var(--weeks))',
+    } as CSSProperties;
 
     // Like GitHub, open narrow screens on the most recent weeks.
     useEffect(() => {
@@ -146,9 +152,10 @@ export default function GitHubActivity({ contributions }: GitHubActivityProps) {
 
             <div
                 data-about-activity
-                className="mt-10 flex gap-3 [--cell:10px] [--gap:2px] lg:[--cell:13px] lg:[--gap:3px] xl:[--cell:18px] xl:[--gap:4px]"
+                className="@container mt-10 flex gap-3 [--gap:2px] [--label:1.5rem] lg:[--gap:3px] xl:[--gap:4px]"
+                style={calendarSize}
             >
-                <div aria-hidden="true" className="shrink-0 pt-[26px]">
+                <div aria-hidden="true" className="w-[var(--label)] shrink-0 pt-[26px]">
                     <div className="grid grid-rows-[repeat(7,var(--cell))] gap-y-[var(--gap)]">
                         {WEEKDAY_LABELS.map((label, index) => (
                             <span
@@ -161,7 +168,9 @@ export default function GitHubActivity({ contributions }: GitHubActivityProps) {
                     </div>
                 </div>
 
-                <div ref={scrollerRef} className="min-w-0 overflow-x-auto pb-2">
+                {/* The 3px inline padding (cancelled by the margin) keeps the hovered day's outline
+                    inside the scroller, which clips overflow, on the first and last columns. */}
+                <div ref={scrollerRef} className="-mx-[3px] min-w-0 overflow-x-auto px-[3px] pb-2">
                     <div className="relative w-max">
                         <div
                             aria-hidden="true"
