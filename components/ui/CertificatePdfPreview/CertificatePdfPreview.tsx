@@ -11,6 +11,8 @@ interface CertificatePdfPreviewProps {
     source: string | File | null;
     label: string;
     eager?: boolean;
+    /** For thumbnails too small for words: the loading and error states show only their icon. */
+    compact?: boolean;
     className?: string;
 }
 
@@ -34,11 +36,6 @@ let sharedWorker: import('pdfjs-dist').PDFWorker | null = null;
 function previewWorker(pdfjs: typeof import('pdfjs-dist')) {
     if (!sharedWorker || sharedWorker.destroyed) sharedWorker = pdfjs.PDFWorker.create({ name: 'certificate-previews' });
     return sharedWorker;
-}
-
-/** Fetches PDF.js ahead of time (e.g. on intent to open certificates). Safe as an event handler. */
-export function preloadPdfRuntime(): void {
-    void loadPdfRuntime().catch(() => undefined);
 }
 
 /**
@@ -91,6 +88,7 @@ export default function CertificatePdfPreview({
     source,
     label,
     eager = false,
+    compact = false,
     className = '',
 }: CertificatePdfPreviewProps) {
     const containerRef = useRef<HTMLDivElement>(null);
@@ -284,12 +282,12 @@ export default function CertificatePdfPreview({
                                 strokeWidth={1.6}
                                 className="animate-spin motion-reduce:animate-none"
                             />
-                            <span className="mt-2 text-[11px] font-bold">Loading PDF preview</span>
+                            <span className={compact ? 'sr-only' : 'mt-2 text-[11px] font-bold'}>Loading PDF preview</span>
                         </>
                     ) : (
                         <>
                             <FileText aria-hidden="true" size={24} strokeWidth={1.5} />
-                            <span className="mt-2 text-[11px] font-bold">Preview unavailable</span>
+                            <span className={compact ? 'sr-only' : 'mt-2 text-[11px] font-bold'}>Preview unavailable</span>
                         </>
                     )}
                 </div>

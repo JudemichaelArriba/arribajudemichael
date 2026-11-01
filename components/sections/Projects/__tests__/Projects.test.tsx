@@ -3,14 +3,13 @@ import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import Projects from '../Projects';
 import type { PublicCertificateDto } from '@/features/admin/certificates/types';
 import type { PublicProjectDto } from '@/features/admin/projects/types';
-import { DESKTOP_QUERY } from '@/lib/breakpoints';
+import { certificateSummary } from '../showcase';
 
 // Motion and PDF rendering are out of scope here; only structure and behaviour are tested.
 jest.mock('@gsap/react', () => ({ useGSAP: jest.fn() }));
 jest.mock('@/components/ui/CertificatePdfPreview/CertificatePdfPreview', () => ({
   __esModule: true,
-  default: ({ label }: { label: string }) => <div role="img" aria-label={label} />,
-  preloadPdfRuntime: jest.fn(),
+  default: ({ label, eager }: { label: string; eager?: boolean }) => <div role="img" aria-label={label} data-eager={String(!!eager)} />,
 }));
 jest.mock('next/image', () => ({
   __esModule: true,
@@ -109,53 +108,83 @@ describe('Projects reel', () => {
   });
 });
 
-describe('Certificates below the reel', () => {
-  it('shows certificates as a contact sheet on phones and tablets, each opening its PDF', () => {
+describe('Certificate register', () => {
+  const register = () => screen.getByRole('list', { name: 'Certificates' });
+
+  it('states how many certificates there are and from how many issuers', () => {
     render(<Projects projects={PROJECTS} certificates={CERTIFICATES} />);
 
-    const pdf = screen.getByRole('link', { name: /python essentials 1 certificate pdf/i });
+    expect(screen.getByRole('heading', { level: 3, name: '2 certificates from 2 issuers.' })).toBeInTheDocument();
+  });
+
+  it('makes each whole cell one link to its PDF, named by what it shows', () => {
+    render(<Projects projects={PROJECTS} certificates={CERTIFICATES} />);
+
+    const links = within(register()).getAllByRole('link');
+    expect(links).toHaveLength(2);
+    const pdf = within(register()).getByRole('link', { name: /python essentials 1/i });
     expect(pdf).toHaveAttribute('href', 'https://cdn.example/c1.pdf');
     expectNewTab(pdf);
-    expect(within(pdf).getByRole('heading', { name: 'Python Essentials 1' })).toBeInTheDocument();
-    expect(within(pdf).getByRole('img', { name: 'Python Essentials 1 first-page preview' })).toBeInTheDocument();
+    expect(pdf).toHaveAccessibleName('Cisco Networking Academy Python Essentials 1 Open PDF (opens in a new tab)');
+    expect(within(pdf).getByRole('heading', { level: 4, name: 'Python Essentials 1' })).toBeInTheDocument();
+    // Page 1 repeats the title, so it is hidden from assistive technology.
+    expect(within(pdf).queryByRole('img')).not.toBeInTheDocument();
   });
 
-  it('keeps the projects visible when certificates are unavailable', () => {
-    render(<Projects projects={PROJECTS} certificates={[]} certificatesUnavailable />);
+  it('starts loading every page once the grid nears the screen, even while cells are clipped shut', () => {
+    const observers: { callback: IntersectionObserverCallback; options?: IntersectionObserverInit; target?: Element }[] = [];
+    const original = global.IntersectionObserver;
+    global.IntersectionObserver = class {
+      readonly root = null;
+      readonly rootMargin = '';
+      readonly thresholds = [0];
+      private record: (typeof observers)[number];
+      constructor(callback: IntersectionObserverCallback, options?: IntersectionObserverInit) {
+        this.record = { callback, options };
+        observers.push(this.record);
+      }
+      observe(target: Element) { this.record.target = target; }
+      disconnect() {}
+      unobserve() {}
+      takeRecords(): IntersectionObserverEntry[] { return []; }
+    } as unknown as typeof IntersectionObserver;
 
+    try {
+      render(<Projects projects={PROJECTS} certificates={CERTIFICATES} />);
+      const pages = () => Array.from(document.querySelectorAll('[data-register-grid] [data-eager]'));
+      expect(pages().map((page) => page.getAttribute('data-eager'))).toEqual(['false', 'false']);
+
+      const gridObserver = observers.find(({ target }) => target === register());
+      expect(gridObserver?.options?.rootMargin).toBe('100% 0px');
+      act(() => gridObserver?.callback([{ isIntersecting: true } as IntersectionObserverEntry], {} as IntersectionObserver));
+      expect(pages().map((page) => page.getAttribute('data-eager'))).toEqual(['true', 'true']);
+    } finally {
+      global.IntersectionObserver = original;
+    }
+  });
+
+  it('shows explicit empty and unavailable states while the projects stay visible', () => {
+    const { rerender } = render(<Projects projects={PROJECTS} certificates={[]} />);
+    expect(screen.getByText('Certificates are being prepared.')).toBeInTheDocument();
+    expect(screen.queryByRole('list', { name: 'Certificates' })).not.toBeInTheDocument();
+
+    rerender(<Projects projects={PROJECTS} certificates={CERTIFICATES} certificatesUnavailable />);
     expect(screen.getByText('Certificates are temporarily unavailable.')).toBeInTheDocument();
+    expect(screen.queryByRole('list', { name: 'Certificates' })).not.toBeInTheDocument();
     expect(within(projectList()).getAllByRole('listitem')).toHaveLength(3);
   });
+});
 
-  describe('on desktop', () => {
-    const originalMatchMedia = window.matchMedia;
+describe('certificateSummary', () => {
+  it('uses singular nouns for one', () => {
+    expect(certificateSummary([{ issuer: 'Cisco Networking Academy' }])).toBe('1 certificate from 1 issuer.');
+  });
 
-    beforeEach(() => {
-      window.matchMedia = jest.fn().mockImplementation((query: string) => ({
-        matches: query === DESKTOP_QUERY,
-        media: query,
-        onchange: null,
-        addListener: jest.fn(),
-        removeListener: jest.fn(),
-        addEventListener: jest.fn(),
-        removeEventListener: jest.fn(),
-        dispatchEvent: jest.fn(),
-      }));
-    });
-
-    afterEach(() => {
-      window.matchMedia = originalMatchMedia;
-    });
-
-    it('previews the selected certificate with its issuer and PDF link', () => {
-      render(<Projects projects={PROJECTS} certificates={CERTIFICATES} />);
-
-      fireEvent.click(screen.getByRole('button', { name: /programmer of the year/i }));
-      // The issuer already ends with a full stop; the sentence keeps exactly one.
-      expect(screen.getAllByText('Issued by Aces Tagum College, Inc.').length).toBeGreaterThan(0);
-      const pdf = screen.getByRole('link', { name: /programmer of the year certificate pdf/i });
-      expect(pdf).toHaveAttribute('href', 'https://cdn.example/c2.pdf');
-      expectNewTab(pdf);
-    });
+  it('counts an issuer once however it is spaced or capitalised', () => {
+    expect(certificateSummary([
+      { issuer: 'Aces Tagum College, Inc.' },
+      { issuer: '  aces  tagum college, inc. ' },
+      { issuer: 'Cisco Networking Academy' },
+    ])).toBe('3 certificates from 2 issuers.');
   });
 });

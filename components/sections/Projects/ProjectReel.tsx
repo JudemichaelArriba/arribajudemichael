@@ -180,7 +180,7 @@ export default function ProjectReel({ projects, unavailable = false }: ProjectRe
                                             )}
                                         </dl>
                                         {project.githubUrl && (
-                                            <ShowcaseLink href={project.githubUrl} label={repositoryLabel(project)} variant="button">
+                                            <ShowcaseLink href={project.githubUrl} label={repositoryLabel(project)}>
                                                 Repository
                                             </ShowcaseLink>
                                         )}

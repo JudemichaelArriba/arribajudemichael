@@ -1,4 +1,4 @@
-const CERTIFICATE_ROWS = [0, 1, 2] as const;
+const CERTIFICATE_CELLS = [0, 1, 2] as const;
 
 function SkeletonBlock({ className }: { className: string }) {
     return <div className={`bg-[var(--hairline)] ${className}`} />;
@@ -6,7 +6,7 @@ function SkeletonBlock({ className }: { className: string }) {
 
 /**
  * Streams in place of the section; mirrors its shape (the reel's stage with its frame, readout and
- * ruler, then the certificates) so nothing jumps when the real section arrives.
+ * ruler, then the certificate register) so nothing jumps when the real section arrives.
  */
 export default function ProjectsSkeleton() {
     return (
@@ -53,16 +53,30 @@ export default function ProjectsSkeleton() {
                     </div>
                 </div>
 
-                <div className="mx-auto max-w-7xl px-5 pb-24 pt-14 md:px-8 md:pb-32">
-                    <div className="flex w-full items-center gap-4">
-                        <SkeletonBlock className="h-2.5 w-24 shrink-0" />
-                        <SkeletonBlock className="h-px min-w-8 flex-1" />
+                <div className="mx-auto w-full max-w-7xl px-5 pb-[clamp(3.5rem,7vw,6.5rem)] pt-[clamp(3.5rem,7vw,6rem)] md:px-8">
+                    <div className="h-px bg-[var(--hairline)]" />
+                    <div className="flex flex-col gap-[1.125rem] pt-[clamp(3rem,6vw,5rem)] lg:flex-row lg:items-end lg:justify-between lg:gap-12">
+                        <div>
+                            <SkeletonBlock className="mb-3.5 h-2.5 w-24" />
+                            <SkeletonBlock className="h-[clamp(1.75rem,3vw,2.6rem)] w-[min(100%,26rem)]" />
+                        </div>
+                        <div className="w-full max-w-[18rem] space-y-2.5">
+                            <SkeletonBlock className="h-3.5 w-full" />
+                            <SkeletonBlock className="h-3.5 w-2/3 lg:ml-auto" />
+                        </div>
                     </div>
-                    <div className="mt-11 border-b border-[var(--hairline)] lg:mt-14">
-                        {CERTIFICATE_ROWS.map((row) => (
-                            <div key={row} className="border-t border-[var(--hairline)] py-6">
-                                <SkeletonBlock className="h-5 w-3/5" />
-                                <SkeletonBlock className="mt-3 h-2.5 w-2/5" />
+                    <div className="mt-[clamp(2.25rem,4.5vw,3.5rem)] grid grid-cols-1 border-b border-[var(--hairline)] sm:grid-cols-2 sm:gap-x-6 lg:grid-cols-3 lg:gap-x-0">
+                        {CERTIFICATE_CELLS.map((cell) => (
+                            <div
+                                key={cell}
+                                className="grid grid-cols-[5.5rem_minmax(0,1fr)] items-start gap-[1.125rem] border-t border-[var(--hairline)] px-3 py-[1.125rem] lg:grid-cols-1 lg:gap-5 lg:border-l lg:px-6 lg:py-7 lg:[&:nth-child(3n+1)]:border-l-0"
+                            >
+                                <div className="aspect-[1.414/1] bg-[var(--surface-muted)] shadow-[0_0_0_1px_var(--hairline)]" />
+                                <div className="space-y-2.5">
+                                    <SkeletonBlock className="h-2.5 w-2/5" />
+                                    <SkeletonBlock className="h-4 w-4/5" />
+                                    <SkeletonBlock className="h-2.5 w-20" />
+                                </div>
                             </div>
                         ))}
                     </div>
