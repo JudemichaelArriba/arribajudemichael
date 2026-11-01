@@ -1,16 +1,15 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 
 import Projects from '../Projects';
 import type { PublicCertificateDto } from '@/features/admin/certificates/types';
 import type { PublicProjectDto } from '@/features/admin/projects/types';
-import { DESKTOP_QUERY } from '@/lib/breakpoints';
+import { certificateSummary } from '../showcase';
 
 // Motion and PDF rendering are out of scope here; only structure and behaviour are tested.
 jest.mock('@gsap/react', () => ({ useGSAP: jest.fn() }));
 jest.mock('@/components/ui/CertificatePdfPreview/CertificatePdfPreview', () => ({
   __esModule: true,
-  default: ({ label }: { label: string }) => <div role="img" aria-label={label} />,
-  preloadPdfRuntime: jest.fn(),
+  default: ({ label, eager }: { label: string; eager?: boolean }) => <div role="img" aria-label={label} data-eager={String(!!eager)} />,
 }));
 jest.mock('next/image', () => ({
   __esModule: true,
@@ -21,6 +20,7 @@ jest.mock('next/image', () => ({
 const PROJECTS: PublicProjectDto[] = [
   { id: 'p1', title: 'Admission System', category: 'Admission System', description: 'Admissions.', imageUrl: 'https://cdn.example/p1.png', imageAlt: 'Admission screenshot', githubUrl: 'https://github.com/example/admission', tags: ['Angular', 'Laravel', 'MySQL'] },
   { id: 'p2', title: 'Lodgify', category: 'Hotel Booking System', description: 'Bookings.', imageUrl: null, imageAlt: null, githubUrl: null, tags: [] },
+  { id: 'p3', title: 'Clinic Queue', category: 'Queue System', description: 'Queues.', imageUrl: 'https://cdn.example/p3.png', imageAlt: 'Clinic screenshot', githubUrl: 'https://github.com/example/clinic', tags: ['React'] },
 ];
 const CERTIFICATES: PublicCertificateDto[] = [
   { id: 'c1', title: 'Python Essentials 1', issuer: 'Cisco Networking Academy', pdfUrl: 'https://cdn.example/c1.pdf', updatedAt: '2026-10-01T00:00:00Z' },
@@ -32,117 +32,159 @@ function expectNewTab(link: HTMLElement) {
   expect(link).toHaveAttribute('rel', 'noopener noreferrer');
 }
 
-describe('Projects showcase tabs', () => {
-  it('shows one panel at a time and switches with a click or the arrow keys', () => {
+const projectList = () => screen.getByRole('list', { name: 'Projects' });
+const projectItem = (title: string) => within(projectList()).getByRole('heading', { name: title }).closest('li') as HTMLElement;
+
+describe('Projects reel', () => {
+  it('labels the section with its heading and lists every project for assistive technology', () => {
     render(<Projects projects={PROJECTS} certificates={CERTIFICATES} />);
 
-    const projectsTab = screen.getByRole('tab', { name: /projects/i });
-    const certificatesTab = screen.getByRole('tab', { name: /certificates/i });
-    expect(projectsTab).toHaveAttribute('aria-selected', 'true');
-    expect(certificatesTab).toHaveAttribute('aria-selected', 'false');
-    expect(screen.getByRole('tabpanel')).toHaveAttribute('aria-labelledby', projectsTab.id);
-    expect(screen.queryByText('Python Essentials 1')).not.toBeInTheDocument();
-
-    fireEvent.click(certificatesTab);
-    expect(certificatesTab).toHaveAttribute('aria-selected', 'true');
-    expect(screen.getByRole('heading', { name: 'Python Essentials 1' })).toBeInTheDocument();
-    expect(screen.queryByText('Lodgify')).not.toBeInTheDocument();
-
-    fireEvent.keyDown(certificatesTab, { key: 'ArrowRight' });
-    expect(projectsTab).toHaveAttribute('aria-selected', 'true');
-    expect(projectsTab).toHaveFocus();
-    expect(screen.getByRole('heading', { name: 'Lodgify' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Projects' })).toHaveAttribute('id', 'projects');
+    const items = within(projectList()).getAllByRole('listitem');
+    expect(items).toHaveLength(3);
+    expect(within(items[0]).getByText('Angular · Laravel · MySQL')).toBeInTheDocument();
+    expect(within(items[0]).getByText('Admissions.')).toBeInTheDocument();
+    // The strip only repeats the screenshots, so it stays out of the accessibility tree.
+    expect(document.querySelector('[data-reel-viewport]')).toHaveAttribute('aria-hidden', 'true');
+    expect(document.querySelectorAll('[data-reel-frame]')).toHaveLength(3);
   });
 
-  it('shows explicit empty and unavailable states', () => {
-    render(<Projects projects={[]} certificates={[]} certificatesUnavailable />);
-
-    expect(screen.getByText('Projects are being prepared.')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('tab', { name: /certificates/i }));
-    expect(screen.getByText('Certificates are temporarily unavailable.')).toBeInTheDocument();
-  });
-});
-
-describe('Projects showcase on phones and tablets', () => {
-  it('lists every project in full, with its stack and repository', () => {
+  it('describes the first project under the playhead until another is chosen on the ruler', () => {
     render(<Projects projects={PROJECTS} certificates={CERTIFICATES} />);
 
-    expect(screen.getAllByRole('article')).toHaveLength(2);
-    expect(screen.getByRole('heading', { name: 'Admission System' })).toBeInTheDocument();
-    expect(screen.getByText('Angular · Laravel · MySQL')).toBeInTheDocument();
-    expect(screen.getByText('Bookings.')).toBeInTheDocument();
+    expect(projectItem('Admission System')).toHaveAttribute('aria-current', 'true');
+    expect(screen.getByRole('button', { name: 'Show Admission System' })).toHaveAttribute('aria-current', 'true');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show Clinic Queue' }));
+    expect(projectItem('Clinic Queue')).toHaveAttribute('aria-current', 'true');
+    expect(projectItem('Admission System')).not.toHaveAttribute('aria-current');
+    expect(screen.getByRole('button', { name: 'Show Clinic Queue' })).toHaveAttribute('aria-current', 'true');
+    expect(screen.getByRole('button', { name: 'Show Admission System' })).not.toHaveAttribute('aria-current');
+  });
+
+  it('brings a project under the playhead when keyboard focus reaches its link', () => {
+    render(<Projects projects={PROJECTS} certificates={CERTIFICATES} />);
+
+    const link = screen.getByRole('link', { name: /clinic queue repository/i });
+    act(() => link.focus());
+    expect(projectItem('Clinic Queue')).toHaveAttribute('aria-current', 'true');
+  });
+
+  it('opens repositories in a new tab and shows no dead link for a project without one', () => {
+    render(<Projects projects={PROJECTS} certificates={CERTIFICATES} />);
 
     const repo = screen.getByRole('link', { name: /admission system repository/i });
     expect(repo).toHaveAttribute('href', 'https://github.com/example/admission');
     expectNewTab(repo);
-    // A project without a repository shows no dead link.
-    expect(screen.queryByRole('link', { name: /lodgify repository/i })).not.toBeInTheDocument();
+    expect(within(projectItem('Lodgify')).queryByRole('link')).not.toBeInTheDocument();
+    // An empty stack is left out instead of showing an empty label.
+    expect(within(projectItem('Lodgify')).queryByText('Stack')).not.toBeInTheDocument();
   });
 
-  it('shows certificates as a contact sheet whose cards open the PDF', () => {
+  it('numbers every frame against the total', () => {
     render(<Projects projects={PROJECTS} certificates={CERTIFICATES} />);
-    fireEvent.click(screen.getByRole('tab', { name: /certificates/i }));
 
-    expect(screen.getAllByRole('article')).toHaveLength(2);
-    const pdf = screen.getByRole('link', { name: /python essentials 1 certificate pdf/i });
-    expect(pdf).toHaveAttribute('href', 'https://cdn.example/c1.pdf');
-    expectNewTab(pdf);
-    expect(within(pdf).getByRole('heading', { name: 'Python Essentials 1' })).toBeInTheDocument();
-    expect(within(pdf).getByRole('img', { name: 'Python Essentials 1 first-page preview' })).toBeInTheDocument();
+    expect(screen.getByText('Project 01 / 03')).toBeInTheDocument();
+    expect(screen.getByText('Project 03 / 03')).toBeInTheDocument();
+  });
+
+  it('does not set up a scrolling reel for a single project', () => {
+    render(<Projects projects={PROJECTS.slice(0, 1)} certificates={CERTIFICATES} />);
+
+    expect(within(projectList()).getAllByRole('listitem')).toHaveLength(1);
+    expect(screen.queryByText(/scroll or drag the strip/i)).not.toBeInTheDocument();
+    expect(document.querySelector('[data-reel-viewport]')?.className).not.toMatch(/reel-pin:/);
+  });
+
+  it('shows explicit empty and unavailable states instead of the reel', () => {
+    const { rerender } = render(<Projects projects={[]} certificates={CERTIFICATES} />);
+    expect(screen.getByText('Projects are being prepared.')).toBeInTheDocument();
+    expect(screen.queryByRole('list', { name: 'Projects' })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: 'Projects' })).toBeInTheDocument();
+
+    rerender(<Projects projects={PROJECTS} certificates={CERTIFICATES} projectsUnavailable />);
+    expect(screen.getByText('Projects are temporarily unavailable.')).toBeInTheDocument();
+    expect(screen.queryByRole('list', { name: 'Projects' })).not.toBeInTheDocument();
   });
 });
 
-describe('Projects showcase on desktop', () => {
-  const originalMatchMedia = window.matchMedia;
+describe('Certificate register', () => {
+  const register = () => screen.getByRole('list', { name: 'Certificates' });
 
-  beforeEach(() => {
-    window.matchMedia = jest.fn().mockImplementation((query: string) => ({
-      matches: query === DESKTOP_QUERY,
-      media: query,
-      onchange: null,
-      addListener: jest.fn(),
-      removeListener: jest.fn(),
-      addEventListener: jest.fn(),
-      removeEventListener: jest.fn(),
-      dispatchEvent: jest.fn(),
-    }));
-  });
-
-  afterEach(() => {
-    window.matchMedia = originalMatchMedia;
-  });
-
-  it('previews the selected project and moves the selection with click and arrow keys', () => {
+  it('states how many certificates there are and from how many issuers', () => {
     render(<Projects projects={PROJECTS} certificates={CERTIFICATES} />);
 
-    const admission = screen.getByRole('button', { name: /admission system/i });
-    const lodgify = screen.getByRole('button', { name: /lodgify/i });
-    expect(admission).toHaveAttribute('aria-current', 'true');
-    expect(lodgify).not.toHaveAttribute('aria-current');
-    // Only the selected item's caption is exposed, so there is exactly one action to reach.
-    expect(screen.getByRole('link', { name: /admission system repository/i })).toHaveAttribute('href', 'https://github.com/example/admission');
-
-    fireEvent.click(lodgify);
-    expect(lodgify).toHaveAttribute('aria-current', 'true');
-    expect(admission).not.toHaveAttribute('aria-current');
-    expect(screen.queryByRole('link', { name: /repository/i })).not.toBeInTheDocument();
-
-    fireEvent.keyDown(lodgify, { key: 'ArrowUp' });
-    expect(admission).toHaveFocus();
-    expect(admission).toHaveAttribute('aria-current', 'true');
-    expectNewTab(screen.getByRole('link', { name: /admission system repository/i }));
+    expect(screen.getByRole('heading', { level: 3, name: '2 certificates from 2 issuers.' })).toBeInTheDocument();
   });
 
-  it('previews certificates with their issuer and PDF link', () => {
+  it('makes each whole cell one link to its PDF, named by what it shows', () => {
     render(<Projects projects={PROJECTS} certificates={CERTIFICATES} />);
-    fireEvent.click(screen.getByRole('tab', { name: /certificates/i }));
 
-    fireEvent.click(screen.getByRole('button', { name: /programmer of the year/i }));
-    // The issuer already ends with a full stop; the sentence keeps exactly one.
-    expect(screen.getAllByText('Issued by Aces Tagum College, Inc.').length).toBeGreaterThan(0);
-    const pdf = screen.getByRole('link', { name: /programmer of the year certificate pdf/i });
-    expect(pdf).toHaveAttribute('href', 'https://cdn.example/c2.pdf');
+    const links = within(register()).getAllByRole('link');
+    expect(links).toHaveLength(2);
+    const pdf = within(register()).getByRole('link', { name: /python essentials 1/i });
+    expect(pdf).toHaveAttribute('href', 'https://cdn.example/c1.pdf');
     expectNewTab(pdf);
-    expect(screen.getByRole('img', { name: 'Programmer of the Year first-page preview' })).toBeInTheDocument();
+    expect(pdf).toHaveAccessibleName('Cisco Networking Academy Python Essentials 1 Open PDF (opens in a new tab)');
+    expect(within(pdf).getByRole('heading', { level: 4, name: 'Python Essentials 1' })).toBeInTheDocument();
+    // Page 1 repeats the title, so it is hidden from assistive technology.
+    expect(within(pdf).queryByRole('img')).not.toBeInTheDocument();
+  });
+
+  it('starts loading every page once the grid nears the screen, even while cells are clipped shut', () => {
+    const observers: { callback: IntersectionObserverCallback; options?: IntersectionObserverInit; target?: Element }[] = [];
+    const original = global.IntersectionObserver;
+    global.IntersectionObserver = class {
+      readonly root = null;
+      readonly rootMargin = '';
+      readonly thresholds = [0];
+      private record: (typeof observers)[number];
+      constructor(callback: IntersectionObserverCallback, options?: IntersectionObserverInit) {
+        this.record = { callback, options };
+        observers.push(this.record);
+      }
+      observe(target: Element) { this.record.target = target; }
+      disconnect() {}
+      unobserve() {}
+      takeRecords(): IntersectionObserverEntry[] { return []; }
+    } as unknown as typeof IntersectionObserver;
+
+    try {
+      render(<Projects projects={PROJECTS} certificates={CERTIFICATES} />);
+      const pages = () => Array.from(document.querySelectorAll('[data-register-grid] [data-eager]'));
+      expect(pages().map((page) => page.getAttribute('data-eager'))).toEqual(['false', 'false']);
+
+      const gridObserver = observers.find(({ target }) => target === register());
+      expect(gridObserver?.options?.rootMargin).toBe('100% 0px');
+      act(() => gridObserver?.callback([{ isIntersecting: true } as IntersectionObserverEntry], {} as IntersectionObserver));
+      expect(pages().map((page) => page.getAttribute('data-eager'))).toEqual(['true', 'true']);
+    } finally {
+      global.IntersectionObserver = original;
+    }
+  });
+
+  it('shows explicit empty and unavailable states while the projects stay visible', () => {
+    const { rerender } = render(<Projects projects={PROJECTS} certificates={[]} />);
+    expect(screen.getByText('Certificates are being prepared.')).toBeInTheDocument();
+    expect(screen.queryByRole('list', { name: 'Certificates' })).not.toBeInTheDocument();
+
+    rerender(<Projects projects={PROJECTS} certificates={CERTIFICATES} certificatesUnavailable />);
+    expect(screen.getByText('Certificates are temporarily unavailable.')).toBeInTheDocument();
+    expect(screen.queryByRole('list', { name: 'Certificates' })).not.toBeInTheDocument();
+    expect(within(projectList()).getAllByRole('listitem')).toHaveLength(3);
+  });
+});
+
+describe('certificateSummary', () => {
+  it('uses singular nouns for one', () => {
+    expect(certificateSummary([{ issuer: 'Cisco Networking Academy' }])).toBe('1 certificate from 1 issuer.');
+  });
+
+  it('counts an issuer once however it is spaced or capitalised', () => {
+    expect(certificateSummary([
+      { issuer: 'Aces Tagum College, Inc.' },
+      { issuer: '  aces  tagum college, inc. ' },
+      { issuer: 'Cisco Networking Academy' },
+    ])).toBe('3 certificates from 2 issuers.');
   });
 });
