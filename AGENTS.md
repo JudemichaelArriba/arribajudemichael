@@ -44,7 +44,7 @@ arribajudemichael/
 │   │   │   ├── TechStack.tsx     # Category chip lists, readout, keyboard wiring
 │   │   │   └── keyboard/         # layout, palette, build, controller, sound, KeyboardCanvas
 │   │   ├── Projects/             # Dynamic projects and certificates showcase
-│   │   │   └── Projects.tsx      # Option A index (desktop list + sticky preview; phone list / certificate contact sheet), PDF.js previews, replayable GSAP reveals, no pin
+│   │   │   └── Projects.tsx      # Projects reel (pinned strip + ruler, ProjectReel/useReelMotion), then certificates (desktop index + sticky preview; phone contact sheet), PDF.js previews
 │   │   └── Contact/              # Static contact form + contact channel presentation
 │   │       └── Contact.tsx       # Tailwind UI + replayable GSAP reveal
 │   ├── ui/                       # Reusable UI components

@@ -1,63 +1,70 @@
-const LIST_ROWS = [0, 1, 2] as const;
+const CERTIFICATE_ROWS = [0, 1, 2] as const;
 
 function SkeletonBlock({ className }: { className: string }) {
     return <div className={`bg-[var(--hairline)] ${className}`} />;
 }
 
-/** Streams in place of the section; mirrors its shape (tab words, index and preview) so nothing jumps. */
+/**
+ * Streams in place of the section; mirrors its shape (the reel's stage with its frame, readout and
+ * ruler, then the certificates) so nothing jumps when the real section arrives.
+ */
 export default function ProjectsSkeleton() {
     return (
         <section
             id="projects"
             aria-busy="true"
             aria-label="Loading projects and certificates"
-            className="relative w-full scroll-mt-[calc(var(--nav-height,80px)+2rem)] px-5 py-24 md:px-8 md:py-32 short:py-24"
+            className="relative w-full scroll-mt-[calc(-1*(var(--nav-height,80px)+env(safe-area-inset-top)+2rem))]"
         >
             <span role="status" className="sr-only">
                 Loading projects and certificates...
             </span>
             <div aria-hidden="true" className="animate-pulse motion-reduce:animate-none">
-                <div className="mx-auto max-w-7xl">
+                <div className="flex flex-col overflow-hidden pb-16 pt-24 reel-pin:h-svh reel-pin:pb-[clamp(1rem,2.6svh,1.75rem)] reel-pin:pt-[calc(var(--nav-height,80px)+clamp(0.5rem,2svh,1.25rem))] max-lg:reel-pin:justify-center">
+                    <div className="mx-auto w-full max-w-7xl px-5 md:px-8">
+                        <div className="flex w-full items-center gap-4">
+                            <SkeletonBlock className="h-3 w-20 shrink-0" />
+                            <SkeletonBlock className="h-px min-w-8 flex-1" />
+                            <SkeletonBlock className="hidden h-2.5 w-16 shrink-0 sm:block" />
+                        </div>
+                        <div className="mt-10 flex items-end justify-between gap-8 reel-pin:mt-[3svh]">
+                            <SkeletonBlock className="h-[clamp(2.2rem,4vw,3.6rem)] w-[clamp(11rem,26vw,20rem)]" />
+                            <div className="hidden w-[18rem] space-y-2.5 lg:block">
+                                <SkeletonBlock className="ml-auto h-3.5 w-full" />
+                                <SkeletonBlock className="ml-auto h-3.5 w-2/3" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="relative mt-[2.4svh] flex justify-center overflow-hidden [container-type:inline-size] reel-pin:min-h-0 reel-pin:[container-type:size] lg:reel-pin:flex-1 max-lg:reel-pin:shrink max-lg:reel-pin:grow-0 max-lg:reel-pin:basis-[calc(88vw/1.6+2.5rem)]">
+                        <div className="grid w-[var(--fw)] content-center gap-3 [--fw:min(88cqw,1040px)] lg:[--fw:min(62cqw,1040px)] reel-pin:[--fw:min(88cqw,(100cqh_-_2.25rem)*1.6)] lg:reel-pin:[--fw:min(62cqw,(100cqh_-_2.25rem)*1.6,1040px)]">
+                            <SkeletonBlock className="h-2.5 w-28" />
+                            <div className="aspect-[16/10] w-full border border-[var(--hairline)] bg-[var(--surface-muted)]" />
+                        </div>
+                    </div>
+
+                    <div className="mx-auto mt-[2.4svh] grid w-full max-w-7xl gap-3.5 px-5 md:px-8">
+                        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:gap-10">
+                            <SkeletonBlock className="h-7 w-3/5 lg:flex-1" />
+                            <SkeletonBlock className="h-9 w-48" />
+                            <SkeletonBlock className="h-12 w-40" />
+                        </div>
+                        <div className="h-10 border-t border-[var(--hairline)]" />
+                    </div>
+                </div>
+
+                <div className="mx-auto max-w-7xl px-5 pb-24 pt-14 md:px-8 md:pb-32">
                     <div className="flex w-full items-center gap-4">
-                        <SkeletonBlock className="h-3 w-20 shrink-0" />
+                        <SkeletonBlock className="h-2.5 w-24 shrink-0" />
                         <SkeletonBlock className="h-px min-w-8 flex-1" />
-                        <SkeletonBlock className="hidden h-2.5 w-16 shrink-0 sm:block" />
                     </div>
-
-                    <div className="mt-11 grid gap-6 lg:mt-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,21rem)] lg:items-end lg:gap-12 short:mt-8">
-                        <div className="flex flex-wrap gap-x-[clamp(0.9rem,3vw,2.75rem)] gap-y-2">
-                            <SkeletonBlock className="h-[clamp(1.75rem,6vw,5rem)] w-[38%] min-w-28" />
-                            <SkeletonBlock className="h-[clamp(1.75rem,6vw,5rem)] w-[52%] min-w-40 opacity-60" />
-                        </div>
-                        <div className="space-y-2.5">
-                            <SkeletonBlock className="h-3.5 w-full max-w-sm" />
-                            <SkeletonBlock className="h-3.5 w-2/3 max-w-60" />
-                        </div>
-                    </div>
-
-                    <div className="mt-11 lg:mt-14 lg:grid lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start lg:gap-14 xl:gap-16 short:mt-9">
-                        <div className="hidden border-b border-[var(--hairline)] lg:block">
-                            {LIST_ROWS.map((row) => (
-                                <div key={row} className="grid grid-cols-[2.5rem_minmax(0,1fr)] gap-x-2.5 border-t border-[var(--hairline)] py-[1.375rem] short:py-4">
-                                    <SkeletonBlock className="mt-1.5 h-2.5 w-5" />
-                                    <div>
-                                        <SkeletonBlock className="h-6 w-4/5" />
-                                        <SkeletonBlock className="mt-3 h-2.5 w-3/5" />
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                        <div>
-                            <div className="aspect-[16/10] w-full border border-[var(--hairline)] bg-[var(--surface-muted)] short:max-h-[calc(100svh-var(--nav-height,80px)-16rem)]" />
-                            <div className="mt-6 space-y-2.5 lg:hidden">
-                                <SkeletonBlock className="h-7 w-3/4" />
-                                <SkeletonBlock className="h-2.5 w-1/2" />
+                    <div className="mt-11 border-b border-[var(--hairline)] lg:mt-14">
+                        {CERTIFICATE_ROWS.map((row) => (
+                            <div key={row} className="border-t border-[var(--hairline)] py-6">
+                                <SkeletonBlock className="h-5 w-3/5" />
+                                <SkeletonBlock className="mt-3 h-2.5 w-2/5" />
                             </div>
-                            <div className="mt-6 hidden space-y-2.5 lg:block short:mt-4">
-                                <SkeletonBlock className="h-3.5 w-full max-w-lg" />
-                                <SkeletonBlock className="h-3.5 w-4/5 max-w-md" />
-                            </div>
-                        </div>
+                        ))}
                     </div>
                 </div>
             </div>
