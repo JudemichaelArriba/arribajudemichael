@@ -1,5 +1,11 @@
 export type ShowcasePanel = 'projects' | 'certificates';
 
+/** Which side of the page a project's window sits on (and enters from). */
+export type ScreenSide = 'left' | 'right';
+
+/** Projects alternate sides: the first sits on the left, the next on the right, and so on. */
+export const sideOf = (index: number): ScreenSide => (index % 2 === 0 ? 'left' : 'right');
+
 export const FOCUS_RING = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--text)]/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--site-bg)]';
 
 /** Small uppercase metadata labels (numbers, categories, issuers). */

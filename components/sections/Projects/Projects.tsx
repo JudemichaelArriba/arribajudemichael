@@ -2,7 +2,7 @@ import type { PublicCertificateDto } from '@/features/admin/certificates/types';
 import type { PublicProjectDto } from '@/features/admin/projects/types';
 
 import CertificateRegister from './CertificateRegister';
-import ProjectReel from './ProjectReel';
+import ProjectScreens from './ProjectScreens';
 
 interface ProjectsProps {
     projects: PublicProjectDto[];
@@ -12,11 +12,11 @@ interface ProjectsProps {
 }
 
 /**
- * The Projects section: the projects as a reel on a pinned stage, then the certificates as a
- * register below it, kept out of the reel so they never compete with the projects.
+ * The Projects section: the projects as browser windows that alternate sides, then the
+ * certificates as a register below them, kept apart so they never compete with the projects.
  *
- * The stage reserves the navbar's height itself, so a jump to #projects (navbar, Ask) cancels the
- * page's scroll padding and lands exactly where the pin begins.
+ * The section clips sideways at the page edge, not at the content column: the windows reach past
+ * the column and turn in 3D, and the windows on the right slide in from beyond the page.
  */
 export default function Projects({
     projects,
@@ -29,9 +29,9 @@ export default function Projects({
             id="projects"
             data-analytics-section="projects"
             aria-labelledby="projects-heading"
-            className="relative w-full scroll-mt-[calc(-1*(var(--nav-height,80px)+env(safe-area-inset-top)+2rem))]"
+            className="relative w-full scroll-mt-[calc(var(--nav-height,80px)+2rem)] overflow-x-clip"
         >
-            <ProjectReel projects={projects} unavailable={projectsUnavailable} />
+            <ProjectScreens projects={projects} unavailable={projectsUnavailable} />
             <CertificateRegister certificates={certificates} unavailable={certificatesUnavailable} />
         </section>
     );
