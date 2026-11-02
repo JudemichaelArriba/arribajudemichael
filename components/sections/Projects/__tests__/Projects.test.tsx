@@ -1,9 +1,9 @@
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 
 import Projects from '../Projects';
 import type { PublicCertificateDto } from '@/features/admin/certificates/types';
 import type { PublicProjectDto } from '@/features/admin/projects/types';
-import { certificateSummary } from '../showcase';
+import { certificateSummary, sideOf } from '../showcase';
 
 // Motion and PDF rendering are out of scope here; only structure and behaviour are tested.
 jest.mock('@gsap/react', () => ({ useGSAP: jest.fn() }));
@@ -35,39 +35,36 @@ function expectNewTab(link: HTMLElement) {
 const projectList = () => screen.getByRole('list', { name: 'Projects' });
 const projectItem = (title: string) => within(projectList()).getByRole('heading', { name: title }).closest('li') as HTMLElement;
 
-describe('Projects reel', () => {
-  it('labels the section with its heading and lists every project for assistive technology', () => {
+describe('Project screens', () => {
+  it('labels the section with its heading and lists every project with its readout', () => {
     render(<Projects projects={PROJECTS} certificates={CERTIFICATES} />);
 
     expect(screen.getByRole('region', { name: 'Projects' })).toHaveAttribute('id', 'projects');
     const items = within(projectList()).getAllByRole('listitem');
     expect(items).toHaveLength(3);
+    expect(within(items[0]).getByRole('heading', { level: 3, name: 'Admission System' })).toBeInTheDocument();
+    expect(within(items[0]).getByText('Admissions.')).toBeVisible();
     expect(within(items[0]).getByText('Angular · Laravel · MySQL')).toBeInTheDocument();
-    expect(within(items[0]).getByText('Admissions.')).toBeInTheDocument();
-    // The strip only repeats the screenshots, so it stays out of the accessibility tree.
-    expect(document.querySelector('[data-reel-viewport]')).toHaveAttribute('aria-hidden', 'true');
-    expect(document.querySelectorAll('[data-reel-frame]')).toHaveLength(3);
+    expect(within(items[0]).getByText('Project 01')).toBeInTheDocument();
   });
 
-  it('describes the first project under the playhead until another is chosen on the ruler', () => {
+  it('keeps the decorative windows out of the accessibility tree and numbers them against the total', () => {
     render(<Projects projects={PROJECTS} certificates={CERTIFICATES} />);
 
-    expect(projectItem('Admission System')).toHaveAttribute('aria-current', 'true');
-    expect(screen.getByRole('button', { name: 'Show Admission System' })).toHaveAttribute('aria-current', 'true');
-
-    fireEvent.click(screen.getByRole('button', { name: 'Show Clinic Queue' }));
-    expect(projectItem('Clinic Queue')).toHaveAttribute('aria-current', 'true');
-    expect(projectItem('Admission System')).not.toHaveAttribute('aria-current');
-    expect(screen.getByRole('button', { name: 'Show Clinic Queue' })).toHaveAttribute('aria-current', 'true');
-    expect(screen.getByRole('button', { name: 'Show Admission System' })).not.toHaveAttribute('aria-current');
+    const windows = document.querySelectorAll('[data-screen-window]');
+    expect(windows).toHaveLength(3);
+    windows.forEach((screenWindow) => expect(screenWindow).toHaveAttribute('aria-hidden', 'true'));
+    expect(within(windows[2] as HTMLElement).getByText('03 / 03')).toBeInTheDocument();
+    // The screenshot repeats the readout, so it carries no alternative text of its own.
+    expect(windows[0].querySelector('img')).toHaveAttribute('alt', '');
   });
 
-  it('brings a project under the playhead when keyboard focus reaches its link', () => {
+  it('alternates the windows between the left and the right', () => {
     render(<Projects projects={PROJECTS} certificates={CERTIFICATES} />);
 
-    const link = screen.getByRole('link', { name: /clinic queue repository/i });
-    act(() => link.focus());
-    expect(projectItem('Clinic Queue')).toHaveAttribute('aria-current', 'true');
+    const sides = within(projectList()).getAllByRole('listitem').map((item) => item.getAttribute('data-screen'));
+    expect(sides).toEqual(['left', 'right', 'left']);
+    expect([0, 1, 2, 3].map(sideOf)).toEqual(['left', 'right', 'left', 'right']);
   });
 
   it('opens repositories in a new tab and shows no dead link for a project without one', () => {
@@ -81,22 +78,7 @@ describe('Projects reel', () => {
     expect(within(projectItem('Lodgify')).queryByText('Stack')).not.toBeInTheDocument();
   });
 
-  it('numbers every frame against the total', () => {
-    render(<Projects projects={PROJECTS} certificates={CERTIFICATES} />);
-
-    expect(screen.getByText('Project 01 / 03')).toBeInTheDocument();
-    expect(screen.getByText('Project 03 / 03')).toBeInTheDocument();
-  });
-
-  it('does not set up a scrolling reel for a single project', () => {
-    render(<Projects projects={PROJECTS.slice(0, 1)} certificates={CERTIFICATES} />);
-
-    expect(within(projectList()).getAllByRole('listitem')).toHaveLength(1);
-    expect(screen.queryByText(/scroll or drag the strip/i)).not.toBeInTheDocument();
-    expect(document.querySelector('[data-reel-viewport]')?.className).not.toMatch(/reel-pin:/);
-  });
-
-  it('shows explicit empty and unavailable states instead of the reel', () => {
+  it('shows explicit empty and unavailable states instead of the screens', () => {
     const { rerender } = render(<Projects projects={[]} certificates={CERTIFICATES} />);
     expect(screen.getByText('Projects are being prepared.')).toBeInTheDocument();
     expect(screen.queryByRole('list', { name: 'Projects' })).not.toBeInTheDocument();
