@@ -4,7 +4,6 @@ import { useRef } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useGSAP } from '@gsap/react';
-import { ArrowUpRight } from 'lucide-react';
 import { isPreloading } from '@/lib/animations/preloaderHold';
 import type { PublicExperienceDto } from '@/features/admin/experiences/types';
 
@@ -124,13 +123,13 @@ export default function Experience({
             {experiences.map((item) => (
               <li
                 key={item.id}
-                className="experience-row group grid grid-cols-[minmax(0,1fr)_1.5rem] items-start gap-x-5 gap-y-2 border-t border-[var(--hairline)] px-4 py-8 transition-colors duration-300 ease-out hover:bg-[var(--inverse-bg)] motion-reduce:transition-none sm:grid-cols-[10rem_minmax(0,1fr)_1.5rem] sm:gap-x-10"
+                className="experience-row group grid grid-cols-1 items-start gap-y-2 border-t border-[var(--hairline)] px-4 py-8 transition-colors duration-300 ease-out hover:bg-[var(--inverse-bg)] motion-reduce:transition-none sm:grid-cols-[10rem_minmax(0,1fr)] sm:gap-x-10"
               >
-                <time className="order-1 font-mono text-[11px] uppercase tracking-[0.1em] text-[var(--faint)] transition-colors duration-300 ease-out group-hover:text-[var(--inverse-text)]/60 motion-reduce:transition-none sm:pt-1.5">
+                <time className="font-mono text-[11px] uppercase tracking-[0.1em] text-[var(--faint)] transition-colors duration-300 ease-out group-hover:text-[var(--inverse-text)]/60 motion-reduce:transition-none sm:pt-1.5">
                   {item.dateLabel}
                 </time>
 
-                <div className="order-3 col-span-2 min-w-0 sm:order-2 sm:col-span-1">
+                <div className="min-w-0">
                   <h3 className="font-[family-name:var(--font-hero)] text-2xl font-normal leading-[1.15] tracking-[-0.02em] text-[var(--text)] transition-colors duration-300 ease-out group-hover:text-[var(--inverse-text)] motion-reduce:transition-none sm:text-[1.75rem]">
                     {item.title}
                   </h3>
@@ -151,12 +150,6 @@ export default function Experience({
                   </p>
                 </div>
 
-                <ArrowUpRight
-                  aria-hidden="true"
-                  size={20}
-                  strokeWidth={2.2}
-                  className="order-2 col-start-2 row-start-1 justify-self-end text-[var(--inverse-text)] opacity-0 transition-opacity duration-300 ease-out group-hover:opacity-100 motion-reduce:transition-none sm:order-3 sm:col-start-3 sm:pt-1"
-                />
               </li>
             ))}
           </ol>
