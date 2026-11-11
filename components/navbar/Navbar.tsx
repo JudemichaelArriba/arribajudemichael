@@ -1,11 +1,12 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Download, Menu, X } from 'lucide-react';
+import { Download, LoaderCircle, Menu, X } from 'lucide-react';
 import AskNavButton from '@/components/chat/AskNavButton';
 import { useAskChat } from '@/components/chat/ChatProvider';
 import { useActiveSection } from '@/lib/useActiveSection';
-import { SITE_NAVIGATION } from '@/lib/site';
+import { useFileDownload } from '@/lib/useFileDownload';
+import { CV_DOWNLOAD, SITE_NAVIGATION } from '@/lib/site';
 import { NAV_LINK_UNDERLINE_CLASS } from '@/components/ui/navigationStyles';
 import ThemeToggle from '@/components/theme/ThemeToggle';
 
@@ -125,6 +126,10 @@ export default function Navbar() {
         askChat.open();
     }, [askChat]);
 
+    // The phone menu stays open while the CV downloads, so its button can show the progress.
+    const closeMenu = useCallback(() => setMenuOpen(false), []);
+    const cv = useFileDownload(CV_DOWNLOAD, closeMenu);
+
     const isNavVisible = mode !== 'hidden';
     const isScrolled = mode !== 'top';
 
@@ -199,12 +204,20 @@ export default function Navbar() {
 
                             <ThemeToggle />
 
+                            {/* The label stays "CV" while loading so the button keeps its width. */}
                             <a
-                                href="/cv.pdf"
-                                aria-label="Download CV"
-                                className="group inline-flex h-10 shrink-0 items-center justify-center gap-2 bg-[var(--inverse-bg)] px-4 font-mono text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--inverse-text)] transition-[opacity,transform] duration-300 ease-out hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--text)]/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--site-bg)] active:scale-[0.98] motion-reduce:transition-none motion-reduce:active:scale-100"
+                                href={CV_DOWNLOAD.href}
+                                download={CV_DOWNLOAD.fileName}
+                                onClick={cv.onClick}
+                                aria-busy={cv.isDownloading}
+                                aria-label={cv.isDownloading ? 'Downloading CV' : 'Download CV'}
+                                className="group inline-flex h-10 shrink-0 items-center justify-center gap-2 bg-[var(--inverse-bg)] px-4 font-mono text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--inverse-text)] transition-[opacity,transform] duration-300 ease-out hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--text)]/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--site-bg)] active:scale-[0.98] aria-busy:cursor-wait aria-busy:opacity-55 motion-reduce:transition-none motion-reduce:active:scale-100"
                             >
-                                <Download aria-hidden="true" size={13} strokeWidth={2} className="transition-transform duration-300 group-hover:translate-y-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-y-0" />
+                                {cv.isDownloading ? (
+                                    <LoaderCircle aria-hidden="true" size={13} strokeWidth={2} className="animate-spin motion-reduce:animate-none" />
+                                ) : (
+                                    <Download aria-hidden="true" size={13} strokeWidth={2} className="transition-transform duration-300 group-hover:translate-y-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-y-0" />
+                                )}
                                 <span>CV</span>
                             </a>
                         </div>
@@ -292,12 +305,18 @@ export default function Navbar() {
                             className={`mt-5 transition-[opacity,transform] duration-300 ease-out motion-reduce:translate-y-0 motion-reduce:opacity-100 motion-reduce:transition-none ${menuOpen ? 'translate-y-0 opacity-100' : '-translate-y-1.5 opacity-0'}`}
                         >
                             <a
-                                href="/cv.pdf"
-                                onClick={() => setMenuOpen(false)}
-                                className="flex min-h-14 w-full items-center justify-between gap-3 bg-[var(--inverse-bg)] px-4 font-mono text-xs font-bold uppercase tracking-[0.12em] text-[var(--inverse-text)] transition-opacity duration-300 ease-out hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--text)]/45 motion-reduce:transition-none"
+                                href={CV_DOWNLOAD.href}
+                                download={CV_DOWNLOAD.fileName}
+                                onClick={cv.onClick}
+                                aria-busy={cv.isDownloading}
+                                className="flex min-h-14 w-full items-center justify-between gap-3 bg-[var(--inverse-bg)] px-4 font-mono text-xs font-bold uppercase tracking-[0.12em] text-[var(--inverse-text)] transition-opacity duration-300 ease-out hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--text)]/45 aria-busy:cursor-wait aria-busy:opacity-55 motion-reduce:transition-none"
                             >
-                                <span>Download CV</span>
-                                <Download aria-hidden="true" size={16} strokeWidth={2} />
+                                <span>{cv.isDownloading ? 'Downloading...' : 'Download CV'}</span>
+                                {cv.isDownloading ? (
+                                    <LoaderCircle aria-hidden="true" size={16} strokeWidth={2} className="animate-spin motion-reduce:animate-none" />
+                                ) : (
+                                    <Download aria-hidden="true" size={16} strokeWidth={2} />
+                                )}
                             </a>
                         </li>
                     </ul>

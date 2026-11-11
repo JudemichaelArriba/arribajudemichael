@@ -126,6 +126,76 @@ describe('Navbar', () => {
     expect(screen.getByRole('button', { name: 'Open menu' })).toHaveAttribute('aria-expanded', 'false');
   });
 
+  describe('CV download', () => {
+    let savedLinks: { href: string; download: string }[];
+    let resolveFetch: (response: Response) => void;
+    let rejectFetch: (error: Error) => void;
+
+    beforeEach(() => {
+      savedLinks = [];
+      jest.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
+        savedLinks.push({ href: this.getAttribute('href') ?? '', download: this.download });
+      });
+      global.fetch = jest.fn(
+        () =>
+          new Promise<Response>((resolve, reject) => {
+            resolveFetch = resolve;
+            rejectFetch = reject;
+          })
+      ) as unknown as typeof fetch;
+      URL.createObjectURL = jest.fn(() => 'blob:cv');
+      URL.revokeObjectURL = jest.fn();
+    });
+
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    const cvLink = () => screen.getByRole('link', { name: /Download CV|Downloading CV/ });
+
+    it('shows a loading state until the CV has arrived, then saves it under its file name', async () => {
+      render(<Navbar />);
+      const link = cvLink();
+
+      fireEvent.click(link);
+
+      expect(global.fetch).toHaveBeenCalledWith('/cv.pdf');
+      expect(link).toHaveAttribute('aria-busy', 'true');
+      expect(link).toHaveAccessibleName('Downloading CV');
+
+      fireEvent.click(link);
+      expect(global.fetch).toHaveBeenCalledTimes(1);
+
+      await act(async () => {
+        resolveFetch({ ok: true, status: 200, blob: async () => new Blob(['%PDF']) } as Response);
+      });
+
+      expect(savedLinks).toEqual([{ href: 'blob:cv', download: 'Jude_Arriba_CV_2026.pdf' }]);
+      expect(link).toHaveAttribute('aria-busy', 'false');
+      expect(link).toHaveAccessibleName('Download CV');
+    });
+
+    it('lets the browser download the file itself when fetching it fails', async () => {
+      render(<Navbar />);
+
+      fireEvent.click(cvLink());
+      await act(async () => {
+        rejectFetch(new Error('offline'));
+      });
+
+      expect(savedLinks).toEqual([{ href: '/cv.pdf', download: 'Jude_Arriba_CV_2026.pdf' }]);
+      expect(cvLink()).toHaveAttribute('aria-busy', 'false');
+    });
+
+    it('leaves modified clicks (new tab, save link) to the browser', () => {
+      render(<Navbar />);
+
+      fireEvent.click(cvLink(), { ctrlKey: true });
+
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+  });
+
   it('exposes the active destination with aria-current', () => {
     useActiveSection.mockReturnValue('contact');
     render(<Navbar />);

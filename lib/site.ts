@@ -19,7 +19,20 @@ export interface ContactChannel {
     href: string;
 }
 
+export interface DownloadableFile {
+    /** Where the file is served from (a file in `public/`). */
+    href: string;
+    /** The name the visitor's browser saves it under. */
+    fileName: string;
+}
+
 export const GITHUB_USERNAME = 'JudemichaelArriba';
+
+/** The CV behind the navbar's CV button. Replace `public/cv.pdf` to update it; the URL stays the same. */
+export const CV_DOWNLOAD: DownloadableFile = {
+    href: '/cv.pdf',
+    fileName: 'Jude_Arriba_CV_2026.pdf',
+};
 
 export const SITE_NAVIGATION: readonly SiteNavigationItem[] = [
     { id: 'home', label: 'Home' },
